@@ -1,4 +1,4 @@
-﻿namespace c2flux
+namespace c2flux
 {
     public static class AppConstants
     {
@@ -11,14 +11,14 @@
             "Copyright © Daniel Capilla";
 
         public const string GitHubRepositoryUrl =
-            "https://github.com/UncleRiot/WTF";
+            "https://github.com/UncleRiot/c2flux";
         public const string GitHubLatestReleaseApiUrl =
-            "https://api.github.com/repos/UncleRiot/WTF/releases/latest";
+            "https://api.github.com/repos/UncleRiot/c2flux/releases/latest";
         public const string HelpUrl =
-            "https://github.com/UncleRiot/WTF/wiki";
+            "https://github.com/UncleRiot/c2flux/wiki";
         public const string KoFiUrl =
             "https://ko-fi.com/uncleriot";
         public const string GitHubUserAgent =
-            "WTF-WhereIsTheFilespace";
+            "c2flux";
     }
 }

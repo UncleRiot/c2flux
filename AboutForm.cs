@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
@@ -122,7 +122,7 @@ namespace c2flux
             labelVersion = new Label
             {
                 Name = "labelVersion",
-                Text = LocalizationService.GetText("About.VersionPrefix") + GetApplicationVersionText(),
+                Text = LocalizationService.GetText("About.VersionPrefix") + GitHubUpdateService.GetApplicationVersionText(),
                 AutoSize = true,
                 Location = new Point(122, 82),
                 BackColor = Color.Transparent
@@ -284,28 +284,6 @@ namespace c2flux
             return output;
         }
 
-        private string GetApplicationVersionText()
-        {
-            Assembly assembly = typeof(AboutForm).Assembly;
-
-            foreach (object attribute in assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false))
-            {
-                if (attribute is AssemblyInformationalVersionAttribute informationalVersionAttribute &&
-                    !string.IsNullOrWhiteSpace(informationalVersionAttribute.InformationalVersion))
-                {
-                    return informationalVersionAttribute.InformationalVersion.Split('+')[0];
-                }
-            }
-
-            Version version = assembly.GetName().Version;
-
-            if (version == null)
-            {
-                return LocalizationService.GetText("Common.Unknown");
-            }
-
-            return version.Major + "." + version.Minor + "." + version.Build;
-        }
 
         private async void UpdateGitHubStatusAsync()
         {
@@ -313,7 +291,7 @@ namespace c2flux
             linkLabelUpdate.Tag = string.Empty;
             linkLabelUpdate.Links.Clear();
 
-            GitHubUpdateResult result = await CheckForUpdateAsync(GetApplicationVersionText());
+            GitHubUpdateResult result = await GitHubUpdateService.CheckForUpdateAsync();
 
             if (IsDisposed)
                 return;
@@ -341,73 +319,8 @@ namespace c2flux
             linkLabelUpdate.Links.Add(0, linkLabelUpdate.Text.Length);
         }
 
-        private async Task<GitHubUpdateResult> CheckForUpdateAsync(string currentVersionText)
-        {
-            try
-            {
-                using HttpClient httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-                    AppConstants.GitHubUserAgent);
 
-                string json = await httpClient.GetStringAsync(AppConstants.GitHubLatestReleaseApiUrl);
 
-                using JsonDocument jsonDocument = JsonDocument.Parse(json);
-                JsonElement root = jsonDocument.RootElement;
-
-                string latestVersionText = root.TryGetProperty("tag_name", out JsonElement tagNameElement)
-                    ? NormalizeVersionText(tagNameElement.GetString())
-                    : string.Empty;
-
-                string downloadUrl = root.TryGetProperty("html_url", out JsonElement htmlUrlElement)
-                    ? htmlUrlElement.GetString()
-                    : AppConstants.GitHubRepositoryUrl;
-
-                bool updateAvailable = IsNewerVersion(latestVersionText, currentVersionText);
-
-                return new GitHubUpdateResult
-                {
-                    CanConnectToGitHub = true,
-                    UpdateAvailable = updateAvailable,
-                    LatestVersion = latestVersionText,
-                    DownloadUrl = downloadUrl
-                };
-            }
-            catch
-            {
-                return new GitHubUpdateResult
-                {
-                    CanConnectToGitHub = false,
-                    UpdateAvailable = false,
-                    LatestVersion = string.Empty,
-                    DownloadUrl = string.Empty
-                };
-            }
-        }
-
-        private string NormalizeVersionText(string versionText)
-        {
-            if (string.IsNullOrWhiteSpace(versionText))
-            {
-                return string.Empty;
-            }
-
-            return versionText.Trim().TrimStart('v', 'V');
-        }
-
-        private bool IsNewerVersion(string latestVersionText, string currentVersionText)
-        {
-            if (!Version.TryParse(NormalizeVersionText(latestVersionText), out Version latestVersion))
-            {
-                return false;
-            }
-
-            if (!Version.TryParse(NormalizeVersionText(currentVersionText), out Version currentVersion))
-            {
-                return false;
-            }
-
-            return latestVersion > currentVersion;
-        }
 
         private void linkLabelUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
@@ -450,12 +363,5 @@ namespace c2flux
             });
         }
 
-        private sealed class GitHubUpdateResult
-        {
-            public bool CanConnectToGitHub { get; set; }
-            public bool UpdateAvailable { get; set; }
-            public string LatestVersion { get; set; }
-            public string DownloadUrl { get; set; }
-        }
     }
 }

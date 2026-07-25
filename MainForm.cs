@@ -278,7 +278,7 @@ namespace c2flux
 
             _suspendPersistentSettingsSave = false;
         }
-        private void MainForm_Shown(object sender, EventArgs e)
+        private async void MainForm_Shown(object sender, EventArgs e)
         {
             Shown -= MainForm_Shown;
 
@@ -287,6 +287,31 @@ namespace c2flux
 
             StartStartupScanIfRequested();
             OpenStartupSearchIfRequested();
+
+            if (_settings.AutoCheckForUpdates)
+            {
+                await CheckForUpdateOnStartupAsync();
+            }
+        }
+
+        private async Task CheckForUpdateOnStartupAsync()
+        {
+            GitHubUpdateResult result =
+                await GitHubUpdateService.CheckForUpdateAsync();
+
+            if (IsDisposed ||
+                !result.CanConnectToGitHub ||
+                !result.UpdateAvailable)
+            {
+                return;
+            }
+
+            using UpdateAvailableForm updateAvailableForm =
+                new UpdateAvailableForm(
+                    _settings.Layout,
+                    result);
+
+            updateAvailableForm.ShowDialog(this);
         }
 
         private void OpenStartupSearchIfRequested()

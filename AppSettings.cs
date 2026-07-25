@@ -37,11 +37,19 @@ namespace c2flux
 
     public sealed class AppSettings
     {
-        private static readonly string SettingsDirectoryPath = System.AppContext.BaseDirectory;
+        private static readonly string SettingsDirectoryPath =
+            System.IO.Path.Combine(
+                System.AppContext.BaseDirectory,
+                "Settings");
 
         private static readonly string SettingsFilePath = System.IO.Path.Combine(
             SettingsDirectoryPath,
             "settings.json");
+
+        private static readonly string LegacySettingsFilePath =
+            System.IO.Path.Combine(
+                System.AppContext.BaseDirectory,
+                "settings.json");
 
         public bool ShowFilesInTree { get; set; }
         public bool SkipReparsePoints { get; set; } = true;
@@ -149,6 +157,8 @@ namespace c2flux
 
         public static AppSettings Load()
         {
+            MigrateLegacySettingsFile();
+
             if (!System.IO.File.Exists(SettingsFilePath))
             {
                 return new AppSettings();
@@ -194,6 +204,26 @@ namespace c2flux
             catch
             {
                 return new AppSettings();
+            }
+        }
+
+        private static void MigrateLegacySettingsFile()
+        {
+            if (System.IO.File.Exists(SettingsFilePath) ||
+                !System.IO.File.Exists(LegacySettingsFilePath))
+            {
+                return;
+            }
+
+            try
+            {
+                System.IO.Directory.CreateDirectory(SettingsDirectoryPath);
+                System.IO.File.Move(
+                    LegacySettingsFilePath,
+                    SettingsFilePath);
+            }
+            catch
+            {
             }
         }
 

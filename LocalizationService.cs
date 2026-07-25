@@ -170,7 +170,7 @@ namespace c2flux
 
         public static string GetSettingsDirectoryPath()
         {
-            return Path.Combine(AppContext.BaseDirectory, "Settings");
+            return Path.Combine(AppContext.BaseDirectory, "Languages");
         }
 
         public static void EnsureLanguageFiles()
@@ -528,6 +528,9 @@ namespace c2flux
                 ["About.GitHubUnavailable"] = "GitHub nicht erreichbar",
                 ["About.NoNewVersion"] = "Keine neue Version verfügbar",
                 ["About.UpdateAvailable"] = "Update verfügbar: {0}",
+                ["About.UpdateAvailableMessage"] = "Eine neue Version von {0} ist verfügbar: {1}",
+                ["About.UpdateDownload"] = "Download",
+                ["About.UpdateLater"] = "Später",
                 ["About.FreeText"] = "{0} ist kostenlos nutzbar.",
                 ["About.SupportText"] = "Wenn dir dieses Tool hilft, kannst du die Entwicklung hier unterstützen:",
                                 ["Elevation.Message"] = "Möchten Sie {0} mit erhöhten Rechten ausführen, um die\nScangeschwindigkeit und Genauigkeit zu steigern?",
@@ -875,6 +878,9 @@ namespace c2flux
                 ["About.GitHubUnavailable"] = "GitHub unreachable",
                 ["About.NoNewVersion"] = "No new version available",
                 ["About.UpdateAvailable"] = "Update available: {0}",
+                ["About.UpdateAvailableMessage"] = "A new version of {0} is available: {1}",
+                ["About.UpdateDownload"] = "Download",
+                ["About.UpdateLater"] = "Later",
                 ["About.FreeText"] = "{0} can be used free of charge.",
                 ["About.SupportText"] = "If this tool helps you, you can support development here:",
                                 ["Elevation.Message"] = "Would you like to run {0} with elevated privileges to\nincrease scan speed and accuracy?",

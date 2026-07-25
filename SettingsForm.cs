@@ -957,12 +957,21 @@ namespace c2flux
             if (warningResult != DialogResult.Yes)
                 return;
 
+            string languageDirectoryPath = Path.Combine(
+                AppContext.BaseDirectory,
+                "Languages");
+
+            Directory.CreateDirectory(languageDirectoryPath);
+
             using OpenFileDialog openFileDialog = new OpenFileDialog
             {
                 Title = LocalizationService.GetText("Settings.AddLanguage"),
                 Filter = LocalizationService.GetText("Settings.LanguageFileFilter"),
+                InitialDirectory = languageDirectoryPath,
+                FileName = string.Empty,
                 CheckFileExists = true,
-                Multiselect = false
+                Multiselect = false,
+                RestoreDirectory = true
             };
 
             if (openFileDialog.ShowDialog(this) != DialogResult.OK)

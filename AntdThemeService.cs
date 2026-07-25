@@ -672,6 +672,39 @@ namespace c2flux
 
 
         // ============================================================
+        // Update available dialog
+        // ============================================================
+
+        // Fenster
+        public const int UpdateAvailableDialogWidth = 420;
+        public const int UpdateAvailableDialogHeight = 176;
+
+        // Ausrufezeichen
+        public const int UpdateAvailableIconLeft = 36;
+        public const int UpdateAvailableIconTop = 32;
+        public const int UpdateAvailableIconWidth = 36;
+        public const int UpdateAvailableIconHeight = 36;
+
+        // Meldung rechts neben dem Standardsymbol
+        public const int UpdateAvailableMessageLeft = 80;
+        public const int UpdateAvailableMessageTop = 24;
+        public const int UpdateAvailableMessageWidth = 324;
+        public const int UpdateAvailableMessageHeight = 48;
+
+        // Standardgröße der Dialogbuttons entsprechend AboutForm
+        public const int UpdateAvailableButtonWidth = 90;
+        public const int UpdateAvailableButtonHeight = 32;
+
+        // Abstand der Dialogbuttons zueinander
+        public const int UpdateAvailableButtonSpacing = 8;
+
+        // Abstand der Dialogbuttons zur rechten Fensterkante entsprechend AboutForm
+        public const int UpdateAvailableButtonRightMargin = 20;
+
+        // Abstand der Dialogbuttons zur unteren Fensterkante entsprechend AboutForm
+        public const int UpdateAvailableButtonBottomMargin = 23;
+
+        // ============================================================
         // Database selection dialog
         // ============================================================
 
@@ -2678,6 +2711,92 @@ namespace c2flux
             Apply(layout);
             form.Icon = AppResources.ApplicationIcon;
             ApplyWindowsTheme(form, layout);
+        }
+
+        public static void ConfigureUpdateAvailableForm(
+            Form form,
+            PictureBox informationIcon,
+            Label messageLabel,
+            AntdUI.Button downloadButton,
+            AntdUI.Button laterButton,
+            AppLayout layout)
+        {
+            if (form == null ||
+                informationIcon == null ||
+                messageLabel == null ||
+                downloadButton == null ||
+                laterButton == null)
+            {
+                return;
+            }
+
+            form.StartPosition = FormStartPosition.CenterParent;
+            form.ClientSize = new Size(
+                UpdateAvailableDialogWidth,
+                UpdateAvailableDialogHeight);
+            form.MinimumSize = form.Size;
+            form.MaximumSize = form.Size;
+            form.MaximizeBox = false;
+            form.MinimizeBox = false;
+            form.ShowInTaskbar = false;
+            form.SizeGripStyle = SizeGripStyle.Hide;
+
+            informationIcon.Location = new Point(
+                UpdateAvailableIconLeft,
+                UpdateAvailableIconTop);
+            informationIcon.Size = new Size(
+                UpdateAvailableIconWidth,
+                UpdateAvailableIconHeight);
+            informationIcon.SizeMode = PictureBoxSizeMode.CenterImage;
+            informationIcon.BackColor = Color.Transparent;
+
+            messageLabel.Location = new Point(
+                UpdateAvailableMessageLeft,
+                UpdateAvailableMessageTop);
+            messageLabel.Size = new Size(
+                UpdateAvailableMessageWidth,
+                UpdateAvailableMessageHeight);
+            messageLabel.AutoSize = false;
+            messageLabel.TextAlign = ContentAlignment.MiddleLeft;
+
+            int buttonTop =
+                form.ClientSize.Height -
+                UpdateAvailableButtonBottomMargin -
+                UpdateAvailableButtonHeight;
+
+            int laterButtonLeft =
+                form.ClientSize.Width -
+                UpdateAvailableButtonRightMargin -
+                UpdateAvailableButtonWidth;
+
+            int downloadButtonLeft =
+                laterButtonLeft -
+                UpdateAvailableButtonSpacing -
+                UpdateAvailableButtonWidth;
+
+            downloadButton.Location = new Point(
+                downloadButtonLeft,
+                buttonTop);
+            downloadButton.Size = new Size(
+                UpdateAvailableButtonWidth,
+                UpdateAvailableButtonHeight);
+            downloadButton.Anchor =
+                AnchorStyles.Bottom |
+                AnchorStyles.Right;
+            downloadButton.Type = AntdUI.TTypeMini.Primary;
+
+            laterButton.Location = new Point(
+                laterButtonLeft,
+                buttonTop);
+            laterButton.Size = new Size(
+                UpdateAvailableButtonWidth,
+                UpdateAvailableButtonHeight);
+            laterButton.Anchor =
+                AnchorStyles.Bottom |
+                AnchorStyles.Right;
+            laterButton.Type = AntdUI.TTypeMini.Default;
+
+            Apply(form, layout);
         }
 
         private static void ApplyWindowsTheme(Form form, AppLayout layout)
