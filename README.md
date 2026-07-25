@@ -20,7 +20,7 @@ It is a refactored continuation of [WTF – Where's the Filespace](https://githu
 - Light and dark themes
 - Multilingual (30 languages)
 
-> **c² flux – Tree Scanner — faster, cleaner, further.**
+> **c² flux – Tree Scanner**
 
 <img width="1508" height="855" alt="c² flux – Tree Scanner" src="https://github.com/user-attachments/assets/47b00346-3bf8-4a43-ad54-8a0e970da33a" />
 
