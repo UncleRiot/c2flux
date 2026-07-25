@@ -9,7 +9,6 @@ It is a refactored continuation of [WTF – Where's the Filespace](https://githu
 
 ## Highlights
 
-- Complete UI overhaul
 - Faster performance
 - Fast drive and folder scanning
 - Global file and folder search
@@ -19,7 +18,7 @@ It is a refactored continuation of [WTF – Where's the Filespace](https://githu
 - CSV export
 - Windows Explorer integration
 - Light and dark themes
-- German and English interface
+- Multilingual (30 languages)
 
 > **c² flux – Tree Scanner — faster, cleaner, further.**
 
