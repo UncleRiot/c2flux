@@ -571,7 +571,7 @@ namespace c2flux
             toolStripButtonAnalysis = AntdThemeService.CreateMainToggleButton("toolStripButtonAnalysis", LocalizationService.GetText("Menu.Analysis"));
             toolStripButtonAnalysis.Click += menuItemAdvancedFeatures_Click;
 
-            toolStripButtonStorageHistory = AntdThemeService.CreateMainToggleButton("toolStripButtonStorageHistory", "Space History");
+            toolStripButtonStorageHistory = AntdThemeService.CreateMainToggleButton("toolStripButtonStorageHistory", LocalizationService.GetText("Menu.SpaceHistory"));
             toolStripButtonStorageHistory.Click += menuItemStorageHistory_Click;
 
             RefreshMainViewButtonIcons();
@@ -859,7 +859,7 @@ namespace c2flux
             toolStripButtonExportCsv.Text = LocalizationService.GetText("Toolbar.Export");
             AntdThemeService.SetToolTip(toolStripButtonExportCsv, LocalizationService.GetText("Toolbar.ExportCsv"));
             toolStripButtonAnalysis.Text = LocalizationService.GetText("Menu.Analysis");
-            toolStripButtonStorageHistory.Text = "Space History";
+            toolStripButtonStorageHistory.Text = LocalizationService.GetText("Menu.SpaceHistory");
             toolStripButtonScanHistory.Text = "Compare Scans";
 
             contextMenuItemOpenInExplorer.Text = LocalizationService.GetText("Context.OpenInExplorer");

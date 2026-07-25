@@ -11,7 +11,13 @@ namespace c2flux
         private static readonly object SyncRoot = new object();
 
         private static readonly string HistoryFilePath = System.IO.Path.Combine(
-            LocalizationService.GetSettingsDirectoryPath(),
+            AppContext.BaseDirectory,
+            "ScanHistory",
+            "storage_history.json");
+
+        private static readonly string LegacyHistoryFilePath = System.IO.Path.Combine(
+            AppContext.BaseDirectory,
+            "Languages",
             "storage_history.json");
 
         public static void AddRecord(string path, long sizeBytes)
@@ -136,6 +142,8 @@ namespace c2flux
         {
             try
             {
+                MigrateLegacyHistoryFile();
+
                 if (!File.Exists(HistoryFilePath))
                     return new List<StorageHistoryRecord>();
 
@@ -146,6 +154,22 @@ namespace c2flux
             {
                 return new List<StorageHistoryRecord>();
             }
+        }
+
+        private static void MigrateLegacyHistoryFile()
+        {
+            if (File.Exists(HistoryFilePath) ||
+                !File.Exists(LegacyHistoryFilePath))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(
+                System.IO.Path.GetDirectoryName(HistoryFilePath));
+
+            File.Move(
+                LegacyHistoryFilePath,
+                HistoryFilePath);
         }
 
         private static void SaveInternal(List<StorageHistoryRecord> records)

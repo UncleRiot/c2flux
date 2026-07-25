@@ -113,20 +113,41 @@ namespace c2flux
 
             try
             {
-                return Directory
-                    .GetFiles(GetSettingsDirectoryPath(), "lang_*.json", SearchOption.TopDirectoryOnly)
-                    .Select(Path.GetFileNameWithoutExtension)
-                    .Where(fileName =>
-                        !string.IsNullOrWhiteSpace(fileName) &&
-                        fileName.StartsWith("lang_", StringComparison.OrdinalIgnoreCase))
-                    .Select(fileName => NormalizeLanguageCode(fileName.Substring(5)))
+                return new[]
+                    {
+                        GermanLanguageCode,
+                        EnglishLanguageCode
+                    }
+                    .Concat(
+                        Directory
+                            .GetFiles(
+                                GetSettingsDirectoryPath(),
+                                "lang_*.json",
+                                SearchOption.TopDirectoryOnly)
+                            .Select(Path.GetFileNameWithoutExtension)
+                            .Where(fileName =>
+                                !string.IsNullOrWhiteSpace(fileName) &&
+                                fileName.StartsWith(
+                                    "lang_",
+                                    StringComparison.OrdinalIgnoreCase))
+                            .Select(fileName =>
+                                NormalizeLanguageCode(
+                                    fileName.Substring(5)))
+                            .Where(languageCode =>
+                                !IsBuiltInLanguage(languageCode)))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(languageCode => languageCode, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(
+                        languageCode => languageCode,
+                        StringComparer.OrdinalIgnoreCase)
                     .ToArray();
             }
             catch
             {
-                return new[] { GermanLanguageCode, EnglishLanguageCode };
+                return new[]
+                {
+                    GermanLanguageCode,
+                    EnglishLanguageCode
+                };
             }
         }
 
@@ -178,29 +199,23 @@ namespace c2flux
             try
             {
                 Directory.CreateDirectory(GetSettingsDirectoryPath());
-                EnsureLanguageFile(GermanLanguageCode, CreateGermanTexts());
-                EnsureLanguageFile(EnglishLanguageCode, CreateEnglishTexts());
+                DeleteLegacyBuiltInLanguageFile(GermanLanguageCode);
+                DeleteLegacyBuiltInLanguageFile(EnglishLanguageCode);
             }
             catch
             {
             }
         }
 
-        private static void EnsureLanguageFile(string languageCode, Dictionary<string, string> defaultTexts)
+        private static void DeleteLegacyBuiltInLanguageFile(
+            string languageCode)
         {
             string languageFilePath = GetLanguageFilePath(languageCode);
 
-            if (!IsBuiltInLanguage(languageCode) && File.Exists(languageFilePath))
-                return;
-
-            JsonSerializerOptions options = new JsonSerializerOptions
+            if (File.Exists(languageFilePath))
             {
-                WriteIndented = true
-            };
-
-            File.WriteAllText(
-                languageFilePath,
-                JsonSerializer.Serialize(defaultTexts, options));
+                File.Delete(languageFilePath);
+            }
         }
 
         private static bool ReplaceLegacyTranslation(
@@ -219,18 +234,43 @@ namespace c2flux
             return true;
         }
 
-        private static Dictionary<string, string> LoadLanguageFile(string languageCode)
+        private static Dictionary<string, string> LoadLanguageFile(
+            string languageCode)
         {
-            string languageFilePath = GetLanguageFilePath(languageCode);
+            string normalizedLanguageCode =
+                NormalizeLanguageCode(languageCode);
+
+            if (string.Equals(
+                    normalizedLanguageCode,
+                    GermanLanguageCode,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return CreateGermanTexts();
+            }
+
+            if (string.Equals(
+                    normalizedLanguageCode,
+                    EnglishLanguageCode,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return CreateEnglishTexts();
+            }
+
+            string languageFilePath =
+                GetLanguageFilePath(normalizedLanguageCode);
 
             try
             {
                 string json = File.ReadAllText(languageFilePath);
-                Dictionary<string, string> loadedTexts = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                Dictionary<string, string> loadedTexts =
+                    JsonSerializer.Deserialize<Dictionary<string, string>>(
+                        json);
 
                 if (loadedTexts != null)
                 {
-                    return new Dictionary<string, string>(loadedTexts, StringComparer.OrdinalIgnoreCase);
+                    return new Dictionary<string, string>(
+                        loadedTexts,
+                        StringComparer.OrdinalIgnoreCase);
                 }
             }
             catch
@@ -320,7 +360,7 @@ namespace c2flux
                 ["Menu.SaveScanResult"] = "Scan speichern...",
                 ["Menu.LoadScanResult"] = "Scan laden...",
                 ["Menu.Analysis"] = "Analyse",
-                ["Menu.SpaceHistory"] = "Space History",
+                ["Menu.SpaceHistory"] = "Speicherverlauf",
                 ["Menu.Settings"] = "Einstellungen",
                 ["Menu.Exit"] = "Beenden",
                 ["Menu.Help"] = "Hilfe",
@@ -670,7 +710,7 @@ namespace c2flux
                 ["Menu.SaveScanResult"] = "Save scan...",
                 ["Menu.LoadScanResult"] = "Load scan...",
                 ["Menu.Analysis"] = "Analysis",
-                ["Menu.SpaceHistory"] = "Space History",
+                ["Menu.SpaceHistory"] = "Storage History",
                 ["Menu.Settings"] = "Settings",
                 ["Menu.Exit"] = "Exit",
                 ["Menu.Help"] = "Help",
