@@ -1,6 +1,5 @@
 using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -51,7 +50,7 @@ namespace c2flux
                 UnregisterSearchEntry();
             }
 
-            UpdateDriveVerbOrder(scanEnabled, searchEnabled);
+            RestoreDriveDefaultVerb();
         }
 
         private static void RegisterScanEntries()
@@ -133,98 +132,65 @@ namespace c2flux
             commandKey.SetValue(string.Empty, commandText);
         }
 
-        private static void UpdateDriveVerbOrder(
-            bool scanEnabled,
-            bool searchEnabled)
+        private static void RestoreDriveDefaultVerb()
         {
             using RegistryKey driveShellKey =
                 Registry.CurrentUser.CreateSubKey(DriveShellParentKeyPath);
 
-            if (!scanEnabled && !searchEnabled)
+            object originalValueExists =
+                driveShellKey.GetValue(
+                    OriginalDriveVerbOrderExistsValueName);
+
+            if (originalValueExists != null)
             {
                 RestoreOriginalDriveVerbOrder(driveShellKey);
                 return;
             }
 
-            SaveOriginalDriveVerbOrder(driveShellKey);
-
-            string originalVerbOrder =
+            string currentDefaultVerb =
                 driveShellKey.GetValue(
-                    OriginalDriveVerbOrderValueName,
+                    string.Empty,
                     string.Empty) as string ?? string.Empty;
 
-            List<string> orderedVerbs =
-                ParseVerbOrder(originalVerbOrder);
-
-            orderedVerbs.RemoveAll(
-                verb =>
-                    string.Equals(
-                        verb,
-                        DriveScanVerbName,
-                        StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(
-                        verb,
-                        DriveSearchVerbName,
-                        StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(
-                        verb,
-                        "WTF",
-                        StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(
-                        verb,
-                        "WTF.Search",
-                        StringComparison.OrdinalIgnoreCase));
-
-            if (orderedVerbs.Count == 0)
+            if (ContainsC2FluxDriveVerb(currentDefaultVerb))
             {
-                orderedVerbs.Add("open");
+                driveShellKey.SetValue(
+                    string.Empty,
+                    "open",
+                    RegistryValueKind.String);
             }
-
-            int insertIndex = Math.Min(1, orderedVerbs.Count);
-
-            if (scanEnabled)
-            {
-                orderedVerbs.Insert(
-                    insertIndex,
-                    DriveScanVerbName);
-
-                insertIndex++;
-            }
-
-            if (searchEnabled)
-            {
-                orderedVerbs.Insert(
-                    insertIndex,
-                    DriveSearchVerbName);
-            }
-
-            driveShellKey.SetValue(
-                string.Empty,
-                string.Join(",", orderedVerbs),
-                RegistryValueKind.String);
         }
 
-        private static void SaveOriginalDriveVerbOrder(
-            RegistryKey driveShellKey)
+        private static bool ContainsC2FluxDriveVerb(
+            string verbValue)
         {
-            if (driveShellKey.GetValue(
-                    OriginalDriveVerbOrderExistsValueName) != null)
+            if (string.IsNullOrWhiteSpace(verbValue))
             {
-                return;
+                return false;
             }
 
-            object originalValue =
-                driveShellKey.GetValue(string.Empty);
-
-            driveShellKey.SetValue(
-                OriginalDriveVerbOrderExistsValueName,
-                originalValue != null ? 1 : 0,
-                RegistryValueKind.DWord);
-
-            driveShellKey.SetValue(
-                OriginalDriveVerbOrderValueName,
-                originalValue as string ?? string.Empty,
-                RegistryValueKind.String);
+            return verbValue
+                .Split(
+                    new[] { ',', ' ' },
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Any(
+                    verb =>
+                        string.Equals(
+                            verb.Trim(),
+                            DriveScanVerbName,
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            verb.Trim(),
+                            DriveSearchVerbName,
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            verb.Trim(),
+                            "WTF",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            verb.Trim(),
+                            "WTF.Search",
+                            StringComparison.OrdinalIgnoreCase));
         }
 
         private static void RestoreOriginalDriveVerbOrder(
@@ -270,17 +236,6 @@ namespace c2flux
                 false);
         }
 
-        private static List<string> ParseVerbOrder(
-            string verbOrder)
-        {
-            return verbOrder
-                .Split(
-                    new[] { ',', ' ' },
-                    StringSplitOptions.RemoveEmptyEntries)
-                .Select(verb => verb.Trim())
-                .Where(verb => verb.Length > 0)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
+
     }
 }
