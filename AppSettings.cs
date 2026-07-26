@@ -294,15 +294,61 @@ namespace c2flux
                 return;
             }
 
-            System.IO.Directory.CreateDirectory(SettingsDirectoryPath);
-
-            System.Text.Json.JsonSerializerOptions options = new System.Text.Json.JsonSerializerOptions
+            try
             {
-                WriteIndented = true
-            };
+                System.IO.Directory.CreateDirectory(SettingsDirectoryPath);
 
-            string json = System.Text.Json.JsonSerializer.Serialize(this, options);
-            System.IO.File.WriteAllText(SettingsFilePath, json);
+                System.Text.Json.JsonSerializerOptions options =
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    };
+
+                string json =
+                    System.Text.Json.JsonSerializer.Serialize(this, options);
+
+                System.IO.File.WriteAllText(SettingsFilePath, json);
+            }
+            catch (System.UnauthorizedAccessException exception)
+            {
+                IsSaveBlocked = true;
+
+                string message =
+                    "Access to the settings file was denied. Settings will not be saved during this session.";
+
+                AppAlertLog.AddError(
+                    "Settings",
+                    message,
+                    "Path: " + SettingsFilePath +
+                    Environment.NewLine +
+                    exception);
+
+                AppDialogs.ShowWarningOk(
+                    this,
+                    message,
+                    AppConstants.ApplicationName,
+                    LocalizationService.GetText("Common.OK"));
+            }
+            catch (System.IO.IOException exception)
+            {
+                IsSaveBlocked = true;
+
+                string message =
+                    "The settings file could not be written. Settings will not be saved during this session.";
+
+                AppAlertLog.AddError(
+                    "Settings",
+                    message,
+                    "Path: " + SettingsFilePath +
+                    Environment.NewLine +
+                    exception);
+
+                AppDialogs.ShowWarningOk(
+                    this,
+                    message,
+                    AppConstants.ApplicationName,
+                    LocalizationService.GetText("Common.OK"));
+            }
         }
     }
 }
