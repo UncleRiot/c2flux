@@ -50,6 +50,7 @@ Only continue if you downloaded c² flux from the official GitHub repository.
 <img width="1508" height="855" alt="c² flux – Tree Scanner" src="https://github.com/user-attachments/assets/47b00346-3bf8-4a43-ad54-8a0e970da33a" />
 
 <br>
+<br>
 
 📖 **Documentation:** See the [GitHub Wiki](https://github.com/UncleRiot/c2flux/wiki) for instructions and usage guides.
 <br>
