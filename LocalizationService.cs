@@ -1,4 +1,4 @@
-using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,13 +13,25 @@ namespace c2flux
 
         private static readonly object SyncRoot = new object();
         private static Dictionary<string, string> _texts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static bool _isInitializing;
 
-        public static string CurrentLanguageCode { get; private set; } = GermanLanguageCode;
+        public static string CurrentLanguageCode { get; private set; } = EnglishLanguageCode;
+
+        public static string StartupWarningMessage { get; private set; }
 
         public static void Initialize(string languageCode)
         {
-            EnsureLanguageFiles();
-            Load(languageCode);
+            StartupWarningMessage = null;
+            _isInitializing = true;
+
+            try
+            {
+                Load(languageCode);
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
         }
 
         public static void Load(string languageCode)
@@ -27,8 +39,11 @@ namespace c2flux
             EnsureLanguageFiles();
 
             string normalizedLanguageCode = NormalizeLanguageCode(languageCode);
-            Dictionary<string, string> fallbackTexts = CreateGermanTexts();
-            Dictionary<string, string> loadedTexts = LoadLanguageFile(normalizedLanguageCode);
+            Dictionary<string, string> fallbackTexts = CreateEnglishTexts();
+            Dictionary<string, string> loadedTexts =
+                LoadLanguageFile(
+                    normalizedLanguageCode,
+                    out bool usedFallback);
 
             foreach (KeyValuePair<string, string> fallbackText in fallbackTexts)
             {
@@ -40,7 +55,9 @@ namespace c2flux
 
             lock (SyncRoot)
             {
-                CurrentLanguageCode = normalizedLanguageCode;
+                CurrentLanguageCode = usedFallback
+                    ? EnglishLanguageCode
+                    : normalizedLanguageCode;
                 _texts = loadedTexts;
             }
         }
@@ -58,9 +75,9 @@ namespace c2flux
                 }
             }
 
-            Dictionary<string, string> germanTexts = CreateGermanTexts();
+            Dictionary<string, string> englishTexts = CreateEnglishTexts();
 
-            if (germanTexts.TryGetValue(key, out string fallbackValue))
+            if (englishTexts.TryGetValue(key, out string fallbackValue))
             {
                 return fallbackValue ?? string.Empty;
             }
@@ -76,7 +93,7 @@ namespace c2flux
         public static string NormalizeLanguageCode(string languageCode)
         {
             if (string.IsNullOrWhiteSpace(languageCode))
-                return GermanLanguageCode;
+                return EnglishLanguageCode;
 
             string normalizedLanguageCode = languageCode.Trim().ToLowerInvariant();
 
@@ -86,7 +103,7 @@ namespace c2flux
                     character != '-' &&
                     character != '_')
                 {
-                    return GermanLanguageCode;
+                    return EnglishLanguageCode;
                 }
             }
 
@@ -141,13 +158,59 @@ namespace c2flux
                         StringComparer.OrdinalIgnoreCase)
                     .ToArray();
             }
-            catch
+            catch (Exception exception)
             {
+                AppAlertLog.AddError(
+                    "Localization",
+                    "The available language files could not be enumerated.",
+                    "Path: " + GetSettingsDirectoryPath() +
+                    Environment.NewLine +
+                    exception);
+
+                AddStartupWarning(
+                    "The available language files could not be read. Built-in languages will remain available.");
+
                 return new[]
                 {
                     GermanLanguageCode,
                     EnglishLanguageCode
                 };
+            }
+        }
+
+        public static bool CanLoadLanguage(string languageCode)
+        {
+            string normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
+            if (IsBuiltInLanguage(normalizedLanguageCode))
+            {
+                return true;
+            }
+
+            string languageFilePath = GetLanguageFilePath(normalizedLanguageCode);
+
+            try
+            {
+                string json = File.ReadAllText(languageFilePath);
+                Dictionary<string, string> loadedTexts =
+                    JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+
+                return loadedTexts != null && loadedTexts.Count > 0;
+            }
+            catch (Exception exception)
+                when (exception is IOException ||
+                      exception is UnauthorizedAccessException ||
+                      exception is JsonException ||
+                      exception is NotSupportedException)
+            {
+                AppAlertLog.AddError(
+                    "Localization",
+                    "The external language file could not be loaded.",
+                    "Path: " + languageFilePath +
+                    Environment.NewLine +
+                    exception);
+
+                return false;
             }
         }
 
@@ -196,15 +259,31 @@ namespace c2flux
 
         public static void EnsureLanguageFiles()
         {
+            string languageDirectoryPath = GetSettingsDirectoryPath();
+
             try
             {
-                Directory.CreateDirectory(GetSettingsDirectoryPath());
-                DeleteLegacyBuiltInLanguageFile(GermanLanguageCode);
-                DeleteLegacyBuiltInLanguageFile(EnglishLanguageCode);
+                Directory.CreateDirectory(languageDirectoryPath);
             }
-            catch
+            catch (Exception exception)
+                when (exception is IOException ||
+                      exception is UnauthorizedAccessException)
             {
+                AppAlertLog.AddError(
+                    "Localization",
+                    "The language directory could not be created or accessed.",
+                    "Path: " + languageDirectoryPath +
+                    Environment.NewLine +
+                    exception);
+
+                AddStartupWarning(
+                    "The language directory could not be accessed. Built-in languages will be used.");
+
+                return;
             }
+
+            DeleteLegacyBuiltInLanguageFile(GermanLanguageCode);
+            DeleteLegacyBuiltInLanguageFile(EnglishLanguageCode);
         }
 
         private static void DeleteLegacyBuiltInLanguageFile(
@@ -212,9 +291,26 @@ namespace c2flux
         {
             string languageFilePath = GetLanguageFilePath(languageCode);
 
-            if (File.Exists(languageFilePath))
+            try
             {
-                File.Delete(languageFilePath);
+                if (File.Exists(languageFilePath))
+                {
+                    File.Delete(languageFilePath);
+                }
+            }
+            catch (Exception exception)
+                when (exception is IOException ||
+                      exception is UnauthorizedAccessException)
+            {
+                AppAlertLog.AddError(
+                    "Localization",
+                    "An outdated built-in language file could not be deleted.",
+                    "Path: " + languageFilePath +
+                    Environment.NewLine +
+                    exception);
+
+                AddStartupWarning(
+                    "An outdated language file could not be removed. The application will continue with the built-in language data.");
             }
         }
 
@@ -237,6 +333,17 @@ namespace c2flux
         private static Dictionary<string, string> LoadLanguageFile(
             string languageCode)
         {
+            return LoadLanguageFile(
+                languageCode,
+                out _);
+        }
+
+        private static Dictionary<string, string> LoadLanguageFile(
+            string languageCode,
+            out bool usedFallback)
+        {
+            usedFallback = false;
+
             string normalizedLanguageCode =
                 NormalizeLanguageCode(languageCode);
 
@@ -266,18 +373,63 @@ namespace c2flux
                     JsonSerializer.Deserialize<Dictionary<string, string>>(
                         json);
 
-                if (loadedTexts != null)
+                if (loadedTexts == null)
                 {
-                    return new Dictionary<string, string>(
-                        loadedTexts,
-                        StringComparer.OrdinalIgnoreCase);
+                    throw new JsonException(
+                        "The language file did not contain a JSON object.");
                 }
+
+                return new Dictionary<string, string>(
+                    loadedTexts,
+                    StringComparer.OrdinalIgnoreCase);
             }
-            catch
+            catch (Exception exception)
+                when (exception is IOException ||
+                      exception is UnauthorizedAccessException ||
+                      exception is JsonException ||
+                      exception is NotSupportedException)
             {
+                usedFallback = true;
+
+                AppAlertLog.AddError(
+                    "Localization",
+                    "The external language file could not be loaded.",
+                    "Path: " + languageFilePath +
+                    Environment.NewLine +
+                    exception);
+
+                AddStartupWarning(
+                    "The selected language file could not be loaded. English will be used instead.");
             }
 
-            return CreateGermanTexts();
+            return CreateEnglishTexts();
+        }
+
+        private static void AddStartupWarning(string message)
+        {
+            if (!_isInitializing ||
+                string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(StartupWarningMessage))
+            {
+                StartupWarningMessage = message;
+                return;
+            }
+
+            if (StartupWarningMessage.IndexOf(
+                    message,
+                    StringComparison.Ordinal) >= 0)
+            {
+                return;
+            }
+
+            StartupWarningMessage +=
+                Environment.NewLine +
+                Environment.NewLine +
+                message;
         }
 
         private static Dictionary<string, string> CreateGermanTexts()

@@ -18,6 +18,11 @@ namespace c2flux
 
             AppSettings settings = AppSettings.Load();
 
+            AppAlertLog.Configure(
+                settings.LogLevel,
+                settings.AutoSaveLog,
+                settings.MaximumLogFileSizeMb);
+
             if (!string.IsNullOrWhiteSpace(AppSettings.StartupWarningMessage))
             {
                 AppDialogs.ShowWarningOk(
@@ -27,12 +32,18 @@ namespace c2flux
                     "OK");
             }
 
-            AppAlertLog.Configure(
-                settings.LogLevel,
-                settings.AutoSaveLog,
-                settings.MaximumLogFileSizeMb);
             LocalizationService.Initialize(settings.LanguageCode);
             AntdThemeService.ConfigureLocalization();
+
+            if (!string.IsNullOrWhiteSpace(LocalizationService.StartupWarningMessage))
+            {
+                AppDialogs.ShowWarningOk(
+                    settings,
+                    LocalizationService.StartupWarningMessage,
+                    AppConstants.ApplicationName,
+                    LocalizationService.GetText("Common.OK"));
+            }
+
             ShellContextMenuService.Apply(
                 settings.ShellContextMenuEnabled,
                 settings.ShellSearchContextMenuEnabled);

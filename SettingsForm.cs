@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -12,6 +12,7 @@ namespace c2flux
     public sealed class SettingsForm : Form
     {
         private readonly AppSettings _settings;
+        private bool _isLoadingLanguageItems;
 
         private AntdUI.Button buttonGeneralTab;
         private AntdUI.Button buttonExportTab;
@@ -942,6 +943,21 @@ namespace c2flux
             buttonDeleteLanguage.Enabled =
                 comboBoxLanguage.SelectedValue is LanguageItem selectedLanguageItem &&
                 !LocalizationService.IsBuiltInLanguage(selectedLanguageItem.LanguageCode);
+
+            if (_isLoadingLanguageItems ||
+                comboBoxLanguage.SelectedValue is not LanguageItem selectedItem ||
+                LocalizationService.CanLoadLanguage(selectedItem.LanguageCode))
+            {
+                return;
+            }
+
+            AppDialogs.ShowWarningOk(
+                _settings,
+                "The selected language file could not be loaded. English will be used instead.",
+                LocalizationService.GetText("Common.Warning"),
+                LocalizationService.GetText("Common.OK"));
+
+            ReloadLanguageItems(LocalizationService.EnglishLanguageCode);
         }
 
         private void buttonAddLanguage_Click(object sender, EventArgs e)
@@ -1072,29 +1088,50 @@ namespace c2flux
             string normalizedSelectedLanguageCode =
                 LocalizationService.NormalizeLanguageCode(selectedLanguageCode);
 
-            comboBoxLanguage.Items.Clear();
+            _isLoadingLanguageItems = true;
 
-            foreach (string languageCode in LocalizationService.GetAvailableLanguageCodes())
+            try
             {
-                comboBoxLanguage.Items.Add(new LanguageItem(
-                    LocalizationService.GetLanguageDisplayName(languageCode),
-                    languageCode));
-            }
+                comboBoxLanguage.Items.Clear();
 
-            for (int index = 0; index < comboBoxLanguage.Items.Count; index++)
-            {
-                if (comboBoxLanguage.Items[index] is LanguageItem languageItem &&
-                    string.Equals(
-                        languageItem.LanguageCode,
-                        normalizedSelectedLanguageCode,
-                        StringComparison.OrdinalIgnoreCase))
+                List<LanguageItem> languageItems = new List<LanguageItem>();
+
+                foreach (string languageCode in LocalizationService.GetAvailableLanguageCodes())
                 {
-                    comboBoxLanguage.SelectedIndex = index;
-                    return;
+                    languageItems.Add(new LanguageItem(
+                        LocalizationService.GetLanguageDisplayName(languageCode),
+                        languageCode));
                 }
-            }
 
-            comboBoxLanguage.SelectedIndex = comboBoxLanguage.Items.Count > 0 ? 0 : -1;
+                languageItems.Sort(
+                    (left, right) => StringComparer.CurrentCultureIgnoreCase.Compare(
+                        left.Text,
+                        right.Text));
+
+                foreach (LanguageItem languageItem in languageItems)
+                {
+                    comboBoxLanguage.Items.Add(languageItem);
+                }
+
+                for (int index = 0; index < comboBoxLanguage.Items.Count; index++)
+                {
+                    if (comboBoxLanguage.Items[index] is LanguageItem languageItem &&
+                        string.Equals(
+                            languageItem.LanguageCode,
+                            normalizedSelectedLanguageCode,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        comboBoxLanguage.SelectedIndex = index;
+                        return;
+                    }
+                }
+
+                comboBoxLanguage.SelectedIndex = comboBoxLanguage.Items.Count > 0 ? 0 : -1;
+            }
+            finally
+            {
+                _isLoadingLanguageItems = false;
+            }
         }
 
         private static string GetLanguageCodeFromFileName(string fileName)
