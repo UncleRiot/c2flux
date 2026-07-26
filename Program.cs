@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -8,6 +8,7 @@ namespace c2flux
     {
 
        
+        
         [STAThread]
         private static void Main(string[] args)
         {
@@ -16,6 +17,16 @@ namespace c2flux
             Application.SetCompatibleTextRenderingDefault(false);
 
             AppSettings settings = AppSettings.Load();
+
+            if (!string.IsNullOrWhiteSpace(AppSettings.StartupWarningMessage))
+            {
+                AppDialogs.ShowWarningOk(
+                    settings,
+                    AppSettings.StartupWarningMessage,
+                    AppConstants.ApplicationName,
+                    "OK");
+            }
+
             AppAlertLog.Configure(
                 settings.LogLevel,
                 settings.AutoSaveLog,

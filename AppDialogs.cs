@@ -24,6 +24,22 @@ namespace c2flux
             IntPtr hbrFlickerFreeDraw,
             int diFlags);
 
+        public static DialogResult ShowWarningOk(
+            AppSettings settings,
+            string messageText,
+            string title,
+            string okButtonText)
+        {
+            using WarningOkDialogForm dialogForm =
+                new WarningOkDialogForm(
+                    settings,
+                    title,
+                    messageText,
+                    okButtonText);
+
+            return dialogForm.ShowDialog();
+        }
+
         public static DialogResult ShowWarningYesNo(
             IWin32Window owner,
             AppSettings settings,
@@ -72,6 +88,81 @@ namespace c2flux
 
             public bool ShouldRestartElevated { get; }
             public bool DoNotShowAgain { get; }
+        }
+
+        private sealed class WarningOkDialogForm : Form
+        {
+            private readonly AppSettings _settings;
+            private readonly string _messageText;
+            private readonly string _okButtonText;
+
+            private NativeWarningIconControl nativeWarningIconControl;
+            private AntdUI.Label labelMessage;
+            private AntdUI.Button buttonOk;
+
+            public WarningOkDialogForm(
+                AppSettings settings,
+                string title,
+                string messageText,
+                string okButtonText)
+            {
+                _settings = settings;
+                _messageText = messageText;
+                _okButtonText = okButtonText;
+
+                Text = title;
+
+                InitializeComponent();
+                AntdThemeService.Apply(this, _settings.Layout);
+            }
+
+            private void InitializeComponent()
+            {
+                StartPosition = FormStartPosition.CenterScreen;
+                ClientSize = new System.Drawing.Size(430, 178);
+                MinimumSize = Size;
+                MaximumSize = Size;
+                MaximizeBox = false;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+                FormBorderStyle = FormBorderStyle.FixedDialog;
+                BackColor = AntdThemeService.BackgroundPrimary;
+                ForeColor = AntdThemeService.TextPrimary;
+
+                nativeWarningIconControl = new NativeWarningIconControl
+                {
+                    Name = "nativeWarningIconControl",
+                    Location = new System.Drawing.Point(28, 42),
+                    Size = new System.Drawing.Size(32, 32)
+                };
+
+                labelMessage = new AntdUI.Label
+                {
+                    Name = "labelMessage",
+                    Text = _messageText,
+                    Location = new System.Drawing.Point(82, 28),
+                    Size = new System.Drawing.Size(324, 60),
+                    ForeColor = AntdThemeService.TextPrimary,
+                    TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+                };
+
+                buttonOk = new AntdUI.Button
+                {
+                    Name = "buttonOk",
+                    Text = _okButtonText,
+                    Location = new System.Drawing.Point(326, 122),
+                    Size = new System.Drawing.Size(84, 32),
+                    Type = AntdUI.TTypeMini.Primary,
+                    DialogResult = DialogResult.OK
+                };
+
+                Controls.Add(nativeWarningIconControl);
+                Controls.Add(labelMessage);
+                Controls.Add(buttonOk);
+
+                AcceptButton = buttonOk;
+                CancelButton = buttonOk;
+            }
         }
 
         private sealed class WarningYesNoDialogForm : Form

@@ -51,6 +51,10 @@ namespace c2flux
                 System.AppContext.BaseDirectory,
                 "settings.json");
 
+        public static string StartupWarningMessage { get; private set; }
+
+        public static bool IsSaveBlocked { get; private set; }
+
         public bool ShowFilesInTree { get; set; }
         public bool SkipReparsePoints { get; set; } = true;
         public bool ShowPartitionPanel { get; set; } = true;
@@ -157,6 +161,9 @@ namespace c2flux
 
         public static AppSettings Load()
         {
+            StartupWarningMessage = null;
+            IsSaveBlocked = false;
+
             MigrateLegacySettingsFile();
 
             if (!System.IO.File.Exists(SettingsFilePath))
@@ -201,10 +208,63 @@ namespace c2flux
 
                 return settings;
             }
-            catch
+            catch (System.Text.Json.JsonException)
             {
+                return HandleInvalidSettingsFile();
+            }
+            catch (System.NotSupportedException)
+            {
+                return HandleInvalidSettingsFile();
+            }
+            catch (System.IO.IOException)
+            {
+                IsSaveBlocked = true;
+                StartupWarningMessage =
+                    "The settings file could not be read. Settings will not be saved during this session to prevent data loss.";
+
                 return new AppSettings();
             }
+            catch (System.UnauthorizedAccessException)
+            {
+                IsSaveBlocked = true;
+                StartupWarningMessage =
+                    "Access to the settings file was denied. Settings will not be saved during this session to prevent data loss.";
+
+                return new AppSettings();
+            }
+        }
+
+        private static AppSettings HandleInvalidSettingsFile()
+        {
+            string backupFilePath = System.IO.Path.Combine(
+                SettingsDirectoryPath,
+                "settings.corrupt." +
+                DateTime.Now.ToString("yyyyMMdd-HHmmss") +
+                ".json");
+
+            try
+            {
+                System.IO.File.Move(
+                    SettingsFilePath,
+                    backupFilePath);
+
+                StartupWarningMessage =
+                    "The settings file was invalid and has been backed up. Default settings will be used.";
+            }
+            catch (System.IO.IOException)
+            {
+                IsSaveBlocked = true;
+                StartupWarningMessage =
+                    "The settings file is invalid and could not be backed up. Settings will not be saved during this session to prevent data loss.";
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                IsSaveBlocked = true;
+                StartupWarningMessage =
+                    "The settings file is invalid and could not be backed up because access was denied. Settings will not be saved during this session to prevent data loss.";
+            }
+
+            return new AppSettings();
         }
 
         private static void MigrateLegacySettingsFile()
@@ -229,6 +289,11 @@ namespace c2flux
 
         public void Save()
         {
+            if (IsSaveBlocked)
+            {
+                return;
+            }
+
             System.IO.Directory.CreateDirectory(SettingsDirectoryPath);
 
             System.Text.Json.JsonSerializerOptions options = new System.Text.Json.JsonSerializerOptions
