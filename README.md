@@ -7,10 +7,31 @@ c² flux – Tree Scanner introduces a completely redesigned user interface and 
 
 It is a refactored continuation of [WTF – Where's the Filespace](https://github.com/UncleRiot/WTF), now developed independently as a separate project and repository.
 
-<br><br>
+<br>
 > **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
 <br><br>
 
+
+## Windows SmartScreen warning
+
+<img width="438" height="173" alt="grafik" src="https://github.com/user-attachments/assets/429951bb-ab24-49a3-89a8-ecb4b0a7fec1" />
+
+Windows SmartScreen may block c² flux because the application is not yet widely recognized.
+
+This warning does not automatically mean that the application is malicious.
+
+Only continue if you downloaded c² flux from the official GitHub repository.
+
+### How to start c² flux
+
+1. Click **More info**.
+2. Click **Run anyway**.
+3. Confirm the Windows security prompt, if one appears.
+4. c² flux will start.
+
+> **Important:** Do not run the application if you downloaded it from an unknown or untrusted source.
+
+<br><br>
 ## Highlights
 
 - Faster performance
