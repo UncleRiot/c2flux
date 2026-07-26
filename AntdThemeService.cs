@@ -2229,20 +2229,6 @@ namespace c2flux
             return toolStrip;
         }
 
-        public static AntdUI.Checkbox CreateMainToolbarCheckBox(
-            string name,
-            string text)
-        {
-            return new AntdUI.Checkbox
-            {
-                Name = name,
-                AutoSize = true,
-                Text = text,
-                Margin = Padding.Empty,
-                Padding = Padding.Empty
-            };
-        }
-
         public static AntdUI.Panel CreateMainPane(
             string name,
             DockStyle dock)
@@ -2306,7 +2292,6 @@ namespace c2flux
             MenuStrip menuStrip,
             FlowLayoutPanel toolStripPanel,
             AntdUI.Select driveComboBox,
-            AntdUI.Checkbox showFilesCheckBox,
             ContextMenuStrip contextMenuStrip,
             SplitContainer splitContainerMain,
             SplitContainer splitContainerLeft,
@@ -2334,7 +2319,6 @@ namespace c2flux
             }
 
             ConfigureMainSelect(driveComboBox);
-            ConfigureCheckBox(showFilesCheckBox);
             ConfigureContextMenu(contextMenuStrip);
             ConfigureSplitContainer(splitContainerMain);
             ConfigureSplitContainer(splitContainerLeft);

@@ -64,8 +64,6 @@ namespace c2flux
         private AntdUI.Button toolStripButtonTable;
         private AntdUI.Button toolStripButtonPieChart;
         private AntdUI.Button toolStripButtonBarChart;
-        private AntdUI.Checkbox checkBoxShowFiles;
-        private ToolStripControlHost checkBoxShowFilesHost;
         private AntdUI.Button toolStripButtonExportCsv;
         private AntdUI.Button toolStripButtonAnalysis;
         private AntdUI.Button toolStripButtonStorageHistory;
@@ -228,6 +226,7 @@ namespace c2flux
             _driveComboBoxController.Configure();
             _partitionGridController.Configure();
             ConfigureOpenFolderButtonImage();
+            dataGridViewEntries.SetShowFiles(_settings.ShowFilesInTree);
             _layoutMainFormController.ApplyMainWindowSettings();
             _layoutMainFormController.ApplyDefaultToolStripLayout();
             _layoutMainFormController.ApplyToolStripLayout();
@@ -251,7 +250,6 @@ namespace c2flux
                 menuStripMain,
                 toolStripPanelMain,
                 toolStripComboBoxDrives,
-                checkBoxShowFiles,
                 contextMenuStripTreeEntries,
                 splitContainerMain,
                 splitContainerLeft,
@@ -272,7 +270,6 @@ namespace c2flux
             _partitionGridController.AdjustColumns();
             _partitionGridController.UpdatePartitionPanelVisibility();
             _layoutMainFormController.SetViewMode(_settings.SelectedViewMode, _suspendPersistentSettingsSave);
-            checkBoxShowFilesHost.Visible = _settings.SelectedViewMode == ViewMode.Table;
             _layoutMainFormController.UpdateRightViewBounds();
             SetScanningState(false);
 
@@ -540,18 +537,11 @@ namespace c2flux
                 "toolStripButtonBarChart",
                 AntdThemeService.GetMainViewButtonText(
                     LocalizationService.GetText("Toolbar.BarChart")));
-            checkBoxShowFiles = AntdThemeService.CreateMainToolbarCheckBox(
-                "checkBoxShowFiles",
-                LocalizationService.GetText("Common.Files"));
-            checkBoxShowFiles.CheckedChanged += checkBoxShowFiles_CheckedChanged;
-            checkBoxShowFilesHost = AntdThemeService.CreateToolStripHost(
-                checkBoxShowFiles);
             toolStripButtonTable.Click += toolStripButtonTable_Click;
             toolStripButtonPieChart.Click += toolStripButtonPieChart_Click;
             toolStripButtonBarChart.Click += toolStripButtonBarChart_Click;
 
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonTable));
-            toolStripViewMode.Items.Add(checkBoxShowFilesHost);
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonPieChart));
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonBarChart));
 
@@ -845,31 +835,73 @@ namespace c2flux
 
             toolStripLabelDrive.Text = LocalizationService.GetText("Toolbar.Drive");
             toolStripButtonOpenFolder.Text = LocalizationService.GetText("Toolbar.Open");
-            string selectedScanPath = NormalizeScanPath(_driveComboBoxController.GetSelectedScanPath());
-            bool selectedScanIsRunning = _scanSessions.TryGetValue(selectedScanPath, out ScanSession selectedScanSession) &&
-                selectedScanSession.IsRunning;
-            AntdThemeService.SetToolTip(toolStripButtonScan, selectedScanIsRunning
-                ? LocalizationService.GetText("Toolbar.ScanCancel")
-                : LocalizationService.GetText("Toolbar.ScanStart"));
-            AntdThemeService.SetToolTip(toolStripButtonOpenFolder, LocalizationService.GetText("Toolbar.SelectFolderAndScan"));
-            AntdThemeService.SetToolTip(toolStripButtonPause, LocalizationService.GetText("Toolbar.PauseResume"));
-            toolStripButtonTable.Text = LocalizationService.GetText("Toolbar.Table");
-            toolStripButtonPieChart.Text = LocalizationService.GetText("Toolbar.PieChart");
-            toolStripButtonBarChart.Text = LocalizationService.GetText("Toolbar.BarChart");
-            toolStripButtonExportCsv.Text = LocalizationService.GetText("Toolbar.Export");
-            AntdThemeService.SetToolTip(toolStripButtonExportCsv, LocalizationService.GetText("Toolbar.ExportCsv"));
-            toolStripButtonAnalysis.Text = LocalizationService.GetText("Menu.Analysis");
-            toolStripButtonStorageHistory.Text = LocalizationService.GetText("Menu.SpaceHistory");
-            toolStripButtonScanHistory.Text = LocalizationService.GetText("Menu.CompareScans");
 
-            contextMenuItemOpenInExplorer.Text = LocalizationService.GetText("Context.OpenInExplorer");
-            contextMenuItemExport.Text = LocalizationService.GetText("Context.Export");
+            string selectedScanPath =
+                NormalizeScanPath(
+                    _driveComboBoxController.GetSelectedScanPath());
+
+            bool selectedScanIsRunning =
+                _scanSessions.TryGetValue(
+                    selectedScanPath,
+                    out ScanSession selectedScanSession) &&
+                selectedScanSession.IsRunning;
+
+            AntdThemeService.SetToolTip(
+                toolStripButtonScan,
+                selectedScanIsRunning
+                    ? LocalizationService.GetText("Toolbar.ScanCancel")
+                    : LocalizationService.GetText("Toolbar.ScanStart"));
+
+            AntdThemeService.SetToolTip(
+                toolStripButtonOpenFolder,
+                LocalizationService.GetText("Toolbar.SelectFolderAndScan"));
+
+            AntdThemeService.SetToolTip(
+                toolStripButtonPause,
+                LocalizationService.GetText("Toolbar.PauseResume"));
+
+            toolStripButtonTable.Text =
+                LocalizationService.GetText("Toolbar.Table");
+
+            toolStripButtonPieChart.Text =
+                LocalizationService.GetText("Toolbar.PieChart");
+
+            toolStripButtonBarChart.Text =
+                LocalizationService.GetText("Toolbar.BarChart");
+
+            toolStripButtonExportCsv.Text =
+                LocalizationService.GetText("Toolbar.Export");
+
+            AntdThemeService.SetToolTip(
+                toolStripButtonExportCsv,
+                LocalizationService.GetText("Toolbar.ExportCsv"));
+
+            toolStripButtonAnalysis.Text =
+                LocalizationService.GetText("Menu.Analysis");
+
+            toolStripButtonStorageHistory.Text =
+                LocalizationService.GetText("Menu.SpaceHistory");
+
+            toolStripButtonScanHistory.Text =
+                LocalizationService.GetText("Menu.CompareScans");
+
+            toolStripButtonSearch.Text =
+                LocalizationService.GetText("Search.Title");
+
+            contextMenuItemOpenInExplorer.Text =
+                LocalizationService.GetText("Context.OpenInExplorer");
+
+            contextMenuItemExport.Text =
+                LocalizationService.GetText("Context.Export");
+
             contextMenuItemCopyPath.Text = "Copy: Selected item";
-            contextMenuItemCopyTreeText.Text = GetTreeCopyMenuText("Text");
-            contextMenuItemCopyToClipboard.Text = GetTreeCopyMenuText(".CSV");
+            contextMenuItemCopyTreeText.Text =
+                GetTreeCopyMenuText("Text");
+
+            contextMenuItemCopyToClipboard.Text =
+                GetTreeCopyMenuText(".CSV");
 
             _statusMainFormController?.ApplyLocalizedTexts();
-
             _partitionGridController?.ApplyLocalizedTexts();
 
             dataGridViewEntries.ApplyLocalizedTexts();
@@ -1493,7 +1525,6 @@ namespace c2flux
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.Table, _suspendPersistentSettingsSave);
             RefreshMainViewButtonIcons();
-            checkBoxShowFilesHost.Visible = true;
         }
 
         private void toolStripButtonPieChart_Click(object sender, EventArgs e)
@@ -1502,7 +1533,6 @@ namespace c2flux
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.PieChart, _suspendPersistentSettingsSave);
             RefreshMainViewButtonIcons();
-            checkBoxShowFilesHost.Visible = false;
         }
 
         private void toolStripButtonBarChart_Click(object sender, EventArgs e)
@@ -1511,17 +1541,6 @@ namespace c2flux
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.BarChart, _suspendPersistentSettingsSave);
             RefreshMainViewButtonIcons();
-            checkBoxShowFilesHost.Visible = false;
-        }
-
-        private void checkBoxShowFiles_CheckedChanged(object sender, EventArgs e)
-        {
-            dataGridViewEntries.SetShowFiles(checkBoxShowFiles.Checked);
-
-            if (_selectedEntry != null)
-            {
-                dataGridViewEntries.SetEntry(_selectedEntry);
-            }
         }
 
         private void SelectedEntryChanged(FileSystemEntry entry)
@@ -1634,7 +1653,6 @@ namespace c2flux
             toolStripButtonBarChart.Toggle = false;
             toolStripButtonAnalysis.Toggle = true;
             RefreshMainViewButtonIcons();
-            checkBoxShowFilesHost.Visible = false;
         }
 
         private void HideStorageHistoryView()
@@ -1661,7 +1679,6 @@ namespace c2flux
             toolStripButtonBarChart.Toggle = false;
             toolStripButtonStorageHistory.Toggle = true;
             RefreshMainViewButtonIcons();
-            checkBoxShowFilesHost.Visible = false;
         }
 
         private void toolStripButtonExportCsv_Click(object sender, EventArgs e)
@@ -1899,7 +1916,7 @@ namespace c2flux
                     }
                 }
 
-                checkBoxShowFiles.Checked = showFilesInTree;
+                dataGridViewEntries.SetShowFiles(showFilesInTree);
             }
 
             _settings.Save();
@@ -1913,7 +1930,6 @@ namespace c2flux
                 menuStripMain,
                 toolStripPanelMain,
                 toolStripComboBoxDrives,
-                checkBoxShowFiles,
                 contextMenuStripTreeEntries,
                 splitContainerMain,
                 splitContainerLeft,
