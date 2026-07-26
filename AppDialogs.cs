@@ -88,6 +88,7 @@ namespace c2flux
                 LocalizationService.Format(
                     "Elevation.Message",
                     AppConstants.ApplicationName),
+                LocalizationService.GetText("Elevation.Important"),
                 LocalizationService.GetText("Elevation.DoNotShowAgain"),
                 LocalizationService.GetText("Common.Yes"),
                 LocalizationService.GetText("Common.No"));
@@ -280,6 +281,7 @@ namespace c2flux
         {
             private readonly AppSettings _settings;
             private readonly string _messageText;
+            private readonly string _importantText;
             private readonly string _checkBoxText;
             private readonly string _yesButtonText;
             private readonly string _noButtonText;
@@ -300,12 +302,14 @@ namespace c2flux
                 AppSettings settings,
                 string title,
                 string messageText,
+                string importantText,
                 string checkBoxText,
                 string yesButtonText,
                 string noButtonText)
             {
                 _settings = settings;
                 _messageText = messageText;
+                _importantText = importantText;
                 _checkBoxText = checkBoxText;
                 _yesButtonText = yesButtonText;
                 _noButtonText = noButtonText;
@@ -320,7 +324,7 @@ namespace c2flux
             private void InitializeComponent()
             {
                 StartPosition = FormStartPosition.CenterScreen;
-                ClientSize = new System.Drawing.Size(480, 220);
+                ClientSize = new System.Drawing.Size(480, 250);
                 MinimumSize = Size;
                 MaximumSize = Size;
                 MaximizeBox = false;
@@ -350,12 +354,9 @@ namespace c2flux
                 labelImportant = new AntdUI.Label
                 {
                     Name = "labelImportant",
-                    Text =
-                        "Important: MFT scanning is much faster but requires" +
-                        Environment.NewLine +
-                        "administrator rights.",
-                    Location = new System.Drawing.Point(78, 82),
-                    Size = new System.Drawing.Size(378, 52),
+                    Text = _importantText,
+                    Location = new System.Drawing.Point(78, 94),
+                    Size = new System.Drawing.Size(378, 64),
                     TextAlign = System.Drawing.ContentAlignment.MiddleLeft
                 };
 
@@ -363,7 +364,7 @@ namespace c2flux
                 {
                     Name = "checkBoxOption",
                     Text = _checkBoxText,
-                    Location = new System.Drawing.Point(24, 142),
+                    Location = new System.Drawing.Point(24, 170),
                     Size = new System.Drawing.Size(300, 28),
                     BackColor = AntdThemeService.BackgroundPrimary,
                     ForeColor = AntdThemeService.TextPrimary
@@ -373,7 +374,7 @@ namespace c2flux
                 {
                     Name = "buttonYes",
                     Text = _yesButtonText,
-                    Location = new System.Drawing.Point(294, 178),
+                    Location = new System.Drawing.Point(294, 208),
                     Size = new System.Drawing.Size(84, 32),
                     Type = AntdUI.TTypeMini.Default,
                     DialogResult = DialogResult.Yes
@@ -383,7 +384,7 @@ namespace c2flux
                 {
                     Name = "buttonNo",
                     Text = _noButtonText,
-                    Location = new System.Drawing.Point(386, 178),
+                    Location = new System.Drawing.Point(386, 208),
                     Size = new System.Drawing.Size(84, 32),
                     Type = AntdUI.TTypeMini.Primary,
                     DialogResult = DialogResult.No

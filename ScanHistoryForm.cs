@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -637,16 +637,16 @@ namespace c2flux
         {
             return new List<SummaryRow>
             {
-                new SummaryRow("Baseline scan", result.BaselineScan.DisplayName),
-                new SummaryRow("Compare scan", result.CompareScan.DisplayName),
-                new SummaryRow("Baseline size", SizeFormatter.Format(result.BaselineSizeBytes)),
-                new SummaryRow("Compare size", SizeFormatter.Format(result.CompareSizeBytes)),
-                new SummaryRow("Size delta", FormatSignedSize(result.SizeDeltaBytes)),
-                new SummaryRow("Baseline files", result.BaselineFileCount.ToString()),
-                new SummaryRow("Compare files", result.CompareFileCount.ToString()),
-                new SummaryRow("New files", result.NewFileCount.ToString()),
-                new SummaryRow("Deleted files", result.DeletedFileCount.ToString()),
-                new SummaryRow("Changed files", result.ChangedFileCount.ToString())
+                new SummaryRow(LocalizationService.GetText("ScanHistory.BaselineScan").TrimEnd(':'), result.BaselineScan.DisplayName),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.CompareScan").TrimEnd(':'), result.CompareScan.DisplayName),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.BaselineSize"), SizeFormatter.Format(result.BaselineSizeBytes)),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.CompareSize"), SizeFormatter.Format(result.CompareSizeBytes)),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.Delta"), FormatSignedSize(result.SizeDeltaBytes)),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.BaselineFiles"), result.BaselineFileCount.ToString()),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.CompareFiles"), result.CompareFileCount.ToString()),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.NewFiles"), result.NewFileCount.ToString()),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.DeletedFiles"), result.DeletedFileCount.ToString()),
+                new SummaryRow(LocalizationService.GetText("ScanHistory.ChangedFiles"), result.ChangedFileCount.ToString())
             };
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -576,7 +576,7 @@ namespace c2flux
 
             RefreshMainViewButtonIcons();
 
-            toolStripButtonScanHistory = AntdThemeService.CreateMainButton("toolStripButtonScanHistory", "Compare Scans");
+            toolStripButtonScanHistory = AntdThemeService.CreateMainButton("toolStripButtonScanHistory", LocalizationService.GetText("Menu.CompareScans"));
             AntdThemeService.ApplyMainCompareScansButtonIcon(toolStripButtonScanHistory);
             toolStripButtonScanHistory.Click += menuItemCompareScans_Click;
 
@@ -860,7 +860,7 @@ namespace c2flux
             AntdThemeService.SetToolTip(toolStripButtonExportCsv, LocalizationService.GetText("Toolbar.ExportCsv"));
             toolStripButtonAnalysis.Text = LocalizationService.GetText("Menu.Analysis");
             toolStripButtonStorageHistory.Text = LocalizationService.GetText("Menu.SpaceHistory");
-            toolStripButtonScanHistory.Text = "Compare Scans";
+            toolStripButtonScanHistory.Text = LocalizationService.GetText("Menu.CompareScans");
 
             contextMenuItemOpenInExplorer.Text = LocalizationService.GetText("Context.OpenInExplorer");
             contextMenuItemExport.Text = LocalizationService.GetText("Context.Export");
@@ -873,6 +873,7 @@ namespace c2flux
             _partitionGridController?.ApplyLocalizedTexts();
 
             dataGridViewEntries.ApplyLocalizedTexts();
+            storageHistoryView?.ApplyLocalizedTexts();
         }
 
         private System.Drawing.Bitmap CreateScanHistoryButtonImage()

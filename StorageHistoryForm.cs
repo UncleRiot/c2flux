@@ -15,8 +15,12 @@ namespace c2flux
     {
         private readonly AppSettings _settings;
         private readonly bool _embeddedMode;
+        private readonly AntdUI.Label labelPath;
         private readonly AntdUI.Select comboBoxPaths;
+        private readonly AntdUI.Label labelDisplayMode;
         private readonly AntdUI.Select comboBoxDisplayMode;
+        private readonly AntdUI.Label labelGradientIntensity;
+        private readonly TableLayoutPanel pathLayout;
         private readonly DataGridView dataGridViewRecords;
         private readonly StorageHistoryChart storageHistoryChart;
         private readonly AntdUI.Slider trackBarGradientIntensity;
@@ -73,10 +77,10 @@ namespace c2flux
                 }
             }
 
-            AntdUI.Label labelPath =
+            labelPath =
                 AntdThemeService.CreateStorageHistoryLabel(
                     "labelPath",
-                    LocalizationService.GetText("Toolbar.Drive"),
+                    LocalizationService.GetText("StorageHistory.Drive"),
                     AntdThemeService.StorageHistoryPathLabelWidth,
                     AntdThemeService.StorageHistoryPathLabelHeight);
 
@@ -86,7 +90,7 @@ namespace c2flux
             comboBoxPaths.SelectedIndexChanged +=
                 comboBoxPaths_SelectedIndexChanged;
 
-            AntdUI.Label labelDisplayMode =
+            labelDisplayMode =
                 AntdThemeService.CreateStorageHistoryLabel(
                     "labelDisplayMode",
                     LocalizationService.GetText(
@@ -105,12 +109,16 @@ namespace c2flux
             comboBoxDisplayMode.Items.Add(new StorageHistoryDisplayModeItem(
                 StorageHistoryDisplayMode.FreeSpace,
                 LocalizationService.GetText("StorageHistory.Free")));
+            AntdThemeService.AdjustStorageHistorySelectWidth(
+                comboBoxDisplayMode,
+                AntdThemeService.StorageHistoryDisplaySelectWidth,
+                240);
             comboBoxDisplayMode.SelectedIndexChanged += comboBoxDisplayMode_SelectedIndexChanged;
 
-            AntdUI.Label labelGradientIntensity =
+            labelGradientIntensity =
                 AntdThemeService.CreateStorageHistoryLabel(
                     "labelGradientIntensity",
-                    "Intensity:",
+                    LocalizationService.GetText("StorageHistory.Intensity"),
                     AntdThemeService.StorageHistoryIntensityLabelWidth,
                     AntdThemeService.StorageHistoryIntensityLabelHeight);
 
@@ -127,43 +135,14 @@ namespace c2flux
             {
                 Name = "labelGradientIntensityValue",
                 AutoSize = false,
-                Size = new Size(
+                MinimumSize = new Size(
                     AntdThemeService.StorageHistoryIntensityValueLabelWidth,
                     AntdThemeService.StorageHistoryIntensityValueLabelHeight),
                 Text = trackBarGradientIntensity.Value.ToString() + "%",
                 TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Fill
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 2, 0, 2)
             };
-
-            TableLayoutPanel gradientIntensityPanel = new TableLayoutPanel
-            {
-                AutoSize = false,
-                BackColor = windowBackColor,
-                ForeColor = textColor,
-                Width =
-                    AntdThemeService.StorageHistoryIntensitySliderWidth +
-                    AntdThemeService.StorageHistoryIntensityValueLabelWidth,
-                Height =
-                    AntdThemeService.StorageHistoryIntensitySliderHeight,
-                ColumnCount = 2,
-                RowCount = 1,
-                Margin = Padding.Empty,
-                Anchor = AnchorStyles.Left
-            };
-            gradientIntensityPanel.ColumnStyles.Add(
-                new ColumnStyle(
-                    SizeType.Absolute,
-                    AntdThemeService.StorageHistoryIntensitySliderWidth));
-            gradientIntensityPanel.ColumnStyles.Add(
-                new ColumnStyle(
-                    SizeType.Absolute,
-                    AntdThemeService.StorageHistoryIntensityValueLabelWidth));
-            gradientIntensityPanel.RowStyles.Add(
-                new RowStyle(
-                    SizeType.Absolute,
-                    AntdThemeService.StorageHistoryIntensitySliderHeight));
-            gradientIntensityPanel.Controls.Add(trackBarGradientIntensity, 0, 0);
-            gradientIntensityPanel.Controls.Add(labelGradientIntensityValue, 1, 0);
 
             buttonDelete =
                 AntdThemeService.CreateStorageHistoryButton(
@@ -185,57 +164,59 @@ namespace c2flux
                     AntdUI.TTypeMini.Primary);
             buttonClose.DialogResult = DialogResult.OK;
 
-            TableLayoutPanel pathLayout = new TableLayoutPanel
+            int storageHistoryHeaderHeight =
+                AntdThemeService.StorageHistoryHeaderRowHeight +
+                (AntdThemeService.StorageHistoryHeaderPadding * 2);
+
+            pathLayout = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Top,
+                Height = storageHistoryHeaderHeight,
                 BackColor = windowBackColor,
                 ForeColor = textColor,
-                AutoSize = true,
-                ColumnCount = 7,
+                AutoSize = false,
+                ColumnCount = 8,
                 RowCount = 1,
                 Padding = new Padding(
-                    AntdThemeService.StorageHistoryHeaderPadding)
+                    AntdThemeService.StorageHistoryHeaderPadding),
+                Margin = Padding.Empty
             };
             pathLayout.RowStyles.Add(
                 new RowStyle(
                     SizeType.Absolute,
                     AntdThemeService.StorageHistoryHeaderRowHeight));
             pathLayout.ColumnStyles.Add(
-                new ColumnStyle(
-                    SizeType.Absolute,
-                    AntdThemeService.StorageHistoryPathLabelWidth));
+                new ColumnStyle(SizeType.AutoSize));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(
                     SizeType.Absolute,
-                    AntdThemeService.StorageHistoryPathSelectWidth));
+                    AntdThemeService.StorageHistoryPathSelectWidth + 8));
+            pathLayout.ColumnStyles.Add(
+                new ColumnStyle(SizeType.AutoSize));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(
                     SizeType.Absolute,
-                    AntdThemeService.StorageHistoryDisplayLabelWidth));
+                    comboBoxDisplayMode.Width + 8));
+            pathLayout.ColumnStyles.Add(
+                new ColumnStyle(SizeType.AutoSize));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(
                     SizeType.Absolute,
-                    AntdThemeService.StorageHistoryDisplaySelectWidth));
+                    AntdThemeService.StorageHistoryIntensitySliderWidth + 8));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(
                     SizeType.Absolute,
-                    AntdThemeService.StorageHistoryIntensityLabelWidth));
-            pathLayout.ColumnStyles.Add(
-                new ColumnStyle(
-                    SizeType.Absolute,
-                    AntdThemeService.StorageHistoryIntensitySliderWidth +
                     AntdThemeService.StorageHistoryIntensityValueLabelWidth));
             pathLayout.ColumnStyles.Add(
-                new ColumnStyle(
-                    SizeType.Absolute,
-                    AntdThemeService.StorageHistoryDeleteButtonWidth));
+                new ColumnStyle(SizeType.AutoSize));
             pathLayout.Controls.Add(labelPath, 0, 0);
             pathLayout.Controls.Add(comboBoxPaths, 1, 0);
             pathLayout.Controls.Add(labelDisplayMode, 2, 0);
             pathLayout.Controls.Add(comboBoxDisplayMode, 3, 0);
             pathLayout.Controls.Add(labelGradientIntensity, 4, 0);
-            pathLayout.Controls.Add(gradientIntensityPanel, 5, 0);
-            pathLayout.Controls.Add(buttonDelete, 6, 0);
+            pathLayout.Controls.Add(trackBarGradientIntensity, 5, 0);
+            pathLayout.Controls.Add(labelGradientIntensityValue, 6, 0);
+            pathLayout.Controls.Add(buttonDelete, 7, 0);
 
             dataGridViewRecords = new StorageHistoryDataGridView
             {
@@ -349,8 +330,14 @@ namespace c2flux
                 RowCount = 2,
                 ColumnCount = 1
             };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            mainLayout.RowStyles.Add(
+                new RowStyle(
+                    SizeType.Absolute,
+                    storageHistoryHeaderHeight));
+            mainLayout.RowStyles.Add(
+                new RowStyle(
+                    SizeType.Percent,
+                    100F));
             mainLayout.Controls.Add(pathLayout, 0, 0);
             mainLayout.Controls.Add(splitContainer, 0, 1);
 
@@ -476,6 +463,79 @@ namespace c2flux
 
             comboBoxPaths.SelectedIndex = selectedIndex;
             buttonDelete.Enabled = true;
+        }
+
+        public void ApplyLocalizedTexts()
+        {
+            StorageHistoryDisplayMode selectedDisplayMode =
+                GetDisplayMode();
+
+            Text = LocalizationService.GetText(
+                "StorageHistory.Title");
+            labelPath.Text = LocalizationService.GetText(
+                "StorageHistory.Drive");
+            labelDisplayMode.Text = LocalizationService.GetText(
+                "StorageHistory.Display");
+            labelGradientIntensity.Text = LocalizationService.GetText(
+                "StorageHistory.Intensity");
+            buttonDelete.Text = LocalizationService.GetText(
+                "StorageHistory.Delete");
+            buttonClose.Text = LocalizationService.GetText(
+                "Common.Close");
+
+            labelPath.AutoSize = true;
+            labelDisplayMode.AutoSize = true;
+            labelGradientIntensity.AutoSize = true;
+
+            comboBoxDisplayMode.SelectedIndexChanged -=
+                comboBoxDisplayMode_SelectedIndexChanged;
+
+            try
+            {
+                comboBoxDisplayMode.Items.Clear();
+                comboBoxDisplayMode.Items.Add(
+                    new StorageHistoryDisplayModeItem(
+                        StorageHistoryDisplayMode.UsedSpace,
+                        LocalizationService.GetText(
+                            "StorageHistory.Used")));
+                comboBoxDisplayMode.Items.Add(
+                    new StorageHistoryDisplayModeItem(
+                        StorageHistoryDisplayMode.FreeSpace,
+                        LocalizationService.GetText(
+                            "StorageHistory.Free")));
+
+                comboBoxDisplayMode.SelectedIndex =
+                    selectedDisplayMode ==
+                    StorageHistoryDisplayMode.FreeSpace
+                        ? 1
+                        : 0;
+
+                AntdThemeService.AdjustStorageHistorySelectWidth(
+                    comboBoxDisplayMode,
+                    AntdThemeService.StorageHistoryDisplaySelectWidth,
+                    240);
+
+                pathLayout.ColumnStyles[3].Width =
+                    comboBoxDisplayMode.Width + 8;
+            }
+            finally
+            {
+                comboBoxDisplayMode.SelectedIndexChanged +=
+                    comboBoxDisplayMode_SelectedIndexChanged;
+            }
+
+            dataGridViewRecords.Columns["ColumnDate"].HeaderText =
+                LocalizationService.GetText(
+                    "StorageHistory.Date");
+            dataGridViewRecords.Columns["ColumnChange"].HeaderText =
+                LocalizationService.GetText(
+                    "StorageHistory.Change");
+
+            ApplyRecordSortHeaderState();
+            BindRecords(_currentRecords);
+
+            pathLayout.PerformLayout();
+            pathLayout.Invalidate(true);
         }
 
         private void comboBoxPaths_SelectedIndexChanged(object sender, EventArgs e)

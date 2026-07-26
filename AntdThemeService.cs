@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
@@ -1185,16 +1185,17 @@ namespace c2flux
             {
                 Name = name,
                 Text = text,
-                Size = new Size(width, height),
+                AutoSize = false,
+                MinimumSize = new Size(width, height),
                 TextAlign = ContentAlignment.MiddleLeft,
-                Anchor = AnchorStyles.Left,
-                Margin = name == "labelPath"
-                    ? new Padding(
-                        0,
-                        0,
-                        StorageHistoryPathLabelMarginRight,
-                        0)
-                    : Padding.Empty
+                Dock = DockStyle.Fill,
+                Margin = new Padding(
+                    0,
+                    2,
+                    name == "labelPath"
+                        ? StorageHistoryPathLabelMarginRight
+                        : 0,
+                    2)
             };
         }
 
@@ -1209,10 +1210,46 @@ namespace c2flux
                 new Size(width, height));
 
             select.Anchor = AnchorStyles.Left;
-            select.ListAutoWidth = false;
+            select.Margin = new Padding(4, 2, 4, 2);
+            select.MinimumSize = new Size(width, height);
+            select.Size = new Size(width, height);
+            select.ListAutoWidth = true;
             select.MaxCount = 8;
 
             return select;
+        }
+
+        public static void AdjustStorageHistorySelectWidth(
+            AntdUI.Select select,
+            int minimumWidth,
+            int maximumWidth)
+        {
+            if (select == null)
+            {
+                throw new ArgumentNullException(nameof(select));
+            }
+
+            int requiredWidth = minimumWidth;
+
+            foreach (object item in select.Items)
+            {
+                string itemText = item?.ToString() ?? string.Empty;
+
+                requiredWidth = Math.Max(
+                    requiredWidth,
+                    TextRenderer.MeasureText(
+                        itemText,
+                        select.Font).Width + 48);
+            }
+
+            int adjustedWidth = Math.Max(
+                minimumWidth,
+                Math.Min(maximumWidth, requiredWidth));
+
+            select.MinimumSize = new Size(
+                adjustedWidth,
+                select.MinimumSize.Height);
+            select.Width = adjustedWidth;
         }
 
         public static AntdUI.Slider CreateStorageHistoryIntensitySlider(
@@ -1240,22 +1277,25 @@ namespace c2flux
                 FillHover = Accent,
                 FillActive = Accent,
                 TrackColor = Border,
-                Anchor = AnchorStyles.Left | AnchorStyles.Right
+                Dock = DockStyle.Fill,
+                Margin = new Padding(4, 2, 4, 2)
             };
         }
 
         public static AntdUI.Button CreateStorageHistoryButton(
-            string name,
-            string text,
-            int width,
-            int height,
-            AntdUI.TTypeMini type)
+    string name,
+    string text,
+    int width,
+    int height,
+    AntdUI.TTypeMini type)
         {
             return new AntdUI.Button
             {
                 Name = name,
                 Text = text,
-                Size = new Size(width, height),
+                AutoSize = true,
+                MinimumSize = new Size(width, height),
+                Height = height,
                 Type = type,
                 Radius = 6,
                 BorderWidth = 1F,
@@ -1263,7 +1303,9 @@ namespace c2flux
                 BackColor = BackgroundSecondary,
                 ForeColor = TextPrimary,
                 BackHover = HoverBackground,
-                BackActive = PressedBackground
+                BackActive = PressedBackground,
+                Anchor = AnchorStyles.None,
+                Margin = new Padding(4, 0, 4, 4)
             };
         }
 
@@ -1278,13 +1320,19 @@ namespace c2flux
                     StorageHistoryPathSelectHeight));
 
             select.Anchor = AnchorStyles.Left;
+            select.Size = new Size(
+                StorageHistoryPathSelectWidth,
+                StorageHistoryPathSelectHeight);
+            select.MinimumSize = new Size(
+                StorageHistoryPathSelectWidth,
+                StorageHistoryPathSelectHeight);
             select.ListAutoWidth = false;
             select.MaxCount = 8;
             select.Margin = new Padding(
-                StorageHistoryPathSelectMarginLeft,
-                0,
-                0,
-                0);
+                StorageHistoryPathSelectMarginLeft + 4,
+                2,
+                4,
+                2);
 
             return select;
         }
@@ -2142,8 +2190,7 @@ namespace c2flux
             ToolStripControlHost host = new ToolStripControlHost(control)
             {
                 Name = control.Name + "Host",
-                AutoSize = false,
-                Size = control.Size,
+                AutoSize = true,
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 Overflow = ToolStripItemOverflow.Never
