@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,16 +20,24 @@ namespace c2flux
             "Languages",
             "storage_history.json");
 
+        private static bool IsWriteBlocked;
+        private static bool HasShownWarning;
+
         public static void AddRecord(string path, long sizeBytes)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path) ||
+                IsWriteBlocked)
+            {
                 return;
+            }
 
             GetDriveSpace(path, out long totalCapacityBytes, out long freeSpaceBytes);
 
             lock (SyncRoot)
             {
-                List<StorageHistoryRecord> records = LoadInternal();
+                if (!TryLoadInternal(out List<StorageHistoryRecord> records))
+                    return;
+
                 records.Add(new StorageHistoryRecord
                 {
                     Path = NormalizePath(path),
@@ -47,7 +55,10 @@ namespace c2flux
         {
             lock (SyncRoot)
             {
-                return LoadInternal()
+                if (!TryLoadInternal(out List<StorageHistoryRecord> records))
+                    return Array.Empty<string>();
+
+                return records
                     .Select(record => record.Path)
                     .Where(path => !string.IsNullOrWhiteSpace(path))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -65,7 +76,10 @@ namespace c2flux
 
             lock (SyncRoot)
             {
-                List<StorageHistoryRecord> records = LoadInternal()
+                if (!TryLoadInternal(out List<StorageHistoryRecord> loadedRecords))
+                    return Array.Empty<StorageHistoryRecord>();
+
+                List<StorageHistoryRecord> records = loadedRecords
                     .Where(record => string.Equals(record.Path, normalizedPath, StringComparison.OrdinalIgnoreCase))
                     .OrderBy(record => record.RecordedAtUtc)
                     .ToList();
@@ -77,14 +91,20 @@ namespace c2flux
 
         public static void DeleteRecords(string path)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path) ||
+                IsWriteBlocked)
+            {
                 return;
+            }
 
             string normalizedPath = NormalizePath(path);
 
             lock (SyncRoot)
             {
-                List<StorageHistoryRecord> records = LoadInternal()
+                if (!TryLoadInternal(out List<StorageHistoryRecord> loadedRecords))
+                    return;
+
+                List<StorageHistoryRecord> records = loadedRecords
                     .Where(record => !string.Equals(record.Path, normalizedPath, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
@@ -138,22 +158,118 @@ namespace c2flux
             }
         }
 
-        private static List<StorageHistoryRecord> LoadInternal()
+        private static bool TryLoadInternal(out List<StorageHistoryRecord> records)
         {
+            records = new List<StorageHistoryRecord>();
+
             try
             {
                 MigrateLegacyHistoryFile();
 
                 if (!File.Exists(HistoryFilePath))
-                    return new List<StorageHistoryRecord>();
+                    return true;
 
                 string json = File.ReadAllText(HistoryFilePath);
-                return JsonSerializer.Deserialize<List<StorageHistoryRecord>>(json) ?? new List<StorageHistoryRecord>();
+                records =
+                    JsonSerializer.Deserialize<List<StorageHistoryRecord>>(json) ??
+                    new List<StorageHistoryRecord>();
+
+                return true;
             }
-            catch
+            catch (JsonException exception)
             {
-                return new List<StorageHistoryRecord>();
+                return HandleInvalidHistoryFile(exception, out records);
             }
+            catch (NotSupportedException exception)
+            {
+                return HandleInvalidHistoryFile(exception, out records);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                BlockWritesAndReport(
+                    "Access to the storage history file was denied. Storage history changes are disabled for this session to prevent data loss.",
+                    exception);
+
+                return false;
+            }
+            catch (IOException exception)
+            {
+                BlockWritesAndReport(
+                    "The storage history file could not be read. Storage history changes are disabled for this session to prevent data loss.",
+                    exception);
+
+                return false;
+            }
+        }
+
+        private static bool HandleInvalidHistoryFile(
+            Exception exception,
+            out List<StorageHistoryRecord> records)
+        {
+            records = new List<StorageHistoryRecord>();
+
+            try
+            {
+                string backupFilePath = CreateCorruptBackupFilePath();
+
+                File.Move(
+                    HistoryFilePath,
+                    backupFilePath);
+
+                AppAlertLog.AddError(
+                    "Storage history",
+                    "The storage history file was invalid and has been backed up.",
+                    "Path: " + HistoryFilePath +
+                    Environment.NewLine +
+                    "Backup: " + backupFilePath +
+                    Environment.NewLine +
+                    exception);
+
+                ShowWarningOnce(
+                    "The storage history file was invalid and has been backed up. A new history will be created.");
+
+                return true;
+            }
+            catch (UnauthorizedAccessException backupException)
+            {
+                BlockWritesAndReport(
+                    "The storage history file is invalid and could not be backed up because access was denied. Storage history changes are disabled for this session to prevent data loss.",
+                    backupException,
+                    exception);
+
+                return false;
+            }
+            catch (IOException backupException)
+            {
+                BlockWritesAndReport(
+                    "The storage history file is invalid and could not be backed up. Storage history changes are disabled for this session to prevent data loss.",
+                    backupException,
+                    exception);
+
+                return false;
+            }
+        }
+
+        private static string CreateCorruptBackupFilePath()
+        {
+            string directoryPath = System.IO.Path.GetDirectoryName(HistoryFilePath);
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            string backupFilePath = System.IO.Path.Combine(
+                directoryPath,
+                "storage_history.corrupt." + timestamp + ".json");
+
+            int suffix = 1;
+
+            while (File.Exists(backupFilePath))
+            {
+                backupFilePath = System.IO.Path.Combine(
+                    directoryPath,
+                    "storage_history.corrupt." + timestamp + "." + suffix + ".json");
+
+                suffix++;
+            }
+
+            return backupFilePath;
         }
 
         private static void MigrateLegacyHistoryFile()
@@ -174,22 +290,96 @@ namespace c2flux
 
         private static void SaveInternal(List<StorageHistoryRecord> records)
         {
+            if (IsWriteBlocked)
+                return;
+
+            string temporaryFilePath = HistoryFilePath + ".tmp";
+
             try
             {
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(HistoryFilePath));
+                Directory.CreateDirectory(
+                    System.IO.Path.GetDirectoryName(HistoryFilePath));
 
                 JsonSerializerOptions options = new JsonSerializerOptions
                 {
                     WriteIndented = true
                 };
 
-                string temporaryFilePath = HistoryFilePath + ".tmp";
-                File.WriteAllText(temporaryFilePath, JsonSerializer.Serialize(records, options));
-                File.Move(temporaryFilePath, HistoryFilePath, true);
+                File.WriteAllText(
+                    temporaryFilePath,
+                    JsonSerializer.Serialize(records, options));
+
+                File.Move(
+                    temporaryFilePath,
+                    HistoryFilePath,
+                    true);
             }
-            catch
+            catch (UnauthorizedAccessException exception)
             {
+                BlockWritesAndReport(
+                    "Access to the storage history file was denied. Storage history changes are disabled for this session.",
+                    exception);
             }
+            catch (IOException exception)
+            {
+                BlockWritesAndReport(
+                    "The storage history file could not be written. Storage history changes are disabled for this session.",
+                    exception);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(temporaryFilePath))
+                        File.Delete(temporaryFilePath);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        private static void BlockWritesAndReport(
+            string message,
+            Exception exception,
+            Exception originalException = null)
+        {
+            IsWriteBlocked = true;
+
+            string details =
+                "Path: " + HistoryFilePath +
+                Environment.NewLine +
+                exception;
+
+            if (originalException != null)
+            {
+                details +=
+                    Environment.NewLine +
+                    Environment.NewLine +
+                    "Original load error:" +
+                    Environment.NewLine +
+                    originalException;
+            }
+
+            AppAlertLog.AddError(
+                "Storage history",
+                message,
+                details);
+
+            ShowWarningOnce(message);
+        }
+
+        private static void ShowWarningOnce(string message)
+        {
+            if (HasShownWarning)
+                return;
+
+            HasShownWarning = true;
+
+            AppDialogs.ShowWarningOk(
+                message,
+                AppConstants.ApplicationName,
+                LocalizationService.GetText("Common.OK"));
         }
 
         private static string NormalizePath(string path)

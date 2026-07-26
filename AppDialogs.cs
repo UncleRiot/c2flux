@@ -24,6 +24,27 @@ namespace c2flux
             IntPtr hbrFlickerFreeDraw,
             int diFlags);
 
+
+        public static DialogResult ShowWarningOk(
+            string messageText,
+            string title,
+            string okButtonText)
+        {
+            AppSettings settings = new AppSettings
+            {
+                Layout =
+                    AntdUI.Config.Mode == AntdUI.TMode.Dark
+                        ? AppLayout.WindowsDarkMode
+                        : AppLayout.WindowsLightMode
+            };
+
+            return ShowWarningOk(
+                settings,
+                messageText,
+                title,
+                okButtonText);
+        }
+
         public static DialogResult ShowWarningOk(
             AppSettings settings,
             string messageText,
