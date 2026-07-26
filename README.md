@@ -7,6 +7,10 @@ c² flux – Tree Scanner introduces a completely redesigned user interface and 
 
 It is a refactored continuation of [WTF – Where's the Filespace](https://github.com/UncleRiot/WTF), now developed independently as a separate project and repository.
 
+<br><br>
+> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
+<br><br>
+
 ## Highlights
 
 - Faster performance
