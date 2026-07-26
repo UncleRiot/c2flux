@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -236,11 +236,8 @@ namespace c2flux
 
         private static AppSettings HandleInvalidSettingsFile()
         {
-            string backupFilePath = System.IO.Path.Combine(
-                SettingsDirectoryPath,
-                "settings.corrupt." +
-                DateTime.Now.ToString("yyyyMMdd-HHmmss") +
-                ".json");
+            string backupFilePath =
+                CreateInvalidSettingsBackupFilePath();
 
             try
             {
@@ -265,6 +262,33 @@ namespace c2flux
             }
 
             return new AppSettings();
+        }
+
+        private static string CreateInvalidSettingsBackupFilePath()
+        {
+            string backupFileNameWithoutExtension =
+                "settings.corrupt." +
+                DateTime.Now.ToString("yyyyMMdd-HHmmss");
+
+            string backupFilePath = System.IO.Path.Combine(
+                SettingsDirectoryPath,
+                backupFileNameWithoutExtension + ".json");
+
+            int suffix = 1;
+
+            while (System.IO.File.Exists(backupFilePath))
+            {
+                backupFilePath = System.IO.Path.Combine(
+                    SettingsDirectoryPath,
+                    backupFileNameWithoutExtension +
+                    "." +
+                    suffix +
+                    ".json");
+
+                suffix++;
+            }
+
+            return backupFilePath;
         }
 
         private static void MigrateLegacySettingsFile()
@@ -294,6 +318,8 @@ namespace c2flux
                 return;
             }
 
+            string temporaryFilePath = null;
+
             try
             {
                 System.IO.Directory.CreateDirectory(SettingsDirectoryPath);
@@ -307,7 +333,31 @@ namespace c2flux
                 string json =
                     System.Text.Json.JsonSerializer.Serialize(this, options);
 
-                System.IO.File.WriteAllText(SettingsFilePath, json);
+                temporaryFilePath = System.IO.Path.Combine(
+                    SettingsDirectoryPath,
+                    "settings." +
+                    Guid.NewGuid().ToString("N") +
+                    ".tmp");
+
+                System.IO.File.WriteAllText(
+                    temporaryFilePath,
+                    json);
+
+                if (System.IO.File.Exists(SettingsFilePath))
+                {
+                    System.IO.File.Replace(
+                        temporaryFilePath,
+                        SettingsFilePath,
+                        null);
+                }
+                else
+                {
+                    System.IO.File.Move(
+                        temporaryFilePath,
+                        SettingsFilePath);
+                }
+
+                temporaryFilePath = null;
             }
             catch (System.UnauthorizedAccessException exception)
             {
@@ -348,6 +398,19 @@ namespace c2flux
                     message,
                     AppConstants.ApplicationName,
                     LocalizationService.GetText("Common.OK"));
+            }
+            finally
+            {
+                if (!string.IsNullOrWhiteSpace(temporaryFilePath))
+                {
+                    try
+                    {
+                        System.IO.File.Delete(temporaryFilePath);
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
     }

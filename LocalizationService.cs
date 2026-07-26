@@ -87,7 +87,35 @@ namespace c2flux
 
         public static string Format(string key, params object[] args)
         {
-            return string.Format(GetText(key), args);
+            string formatText = GetText(key);
+
+            try
+            {
+                return string.Format(formatText, args);
+            }
+            catch (FormatException)
+            {
+                Dictionary<string, string> englishTexts =
+                    CreateEnglishTexts();
+
+                if (englishTexts.TryGetValue(
+                        key,
+                        out string englishFormatText))
+                {
+                    try
+                    {
+                        return string.Format(
+                            englishFormatText,
+                            args);
+                    }
+                    catch (FormatException)
+                    {
+                        return englishFormatText;
+                    }
+                }
+
+                return formatText;
+            }
         }
 
         public static string NormalizeLanguageCode(string languageCode)
@@ -740,6 +768,7 @@ namespace c2flux
                 ["Chart.Directory"] = "Directory",
                 ["Chart.FilePrefix"] = "File:",
                 ["Status.ScanPaused"] = "Scan pausiert",
+                ["Status.Scanning"] = "Scan läuft...",
                 ["Advanced.Title"] = "Analyse",
                 ["Advanced.FileTypes"] = "Dateitypen",
                 ["Advanced.LargestFiles"] = "Größte Dateien",
@@ -1085,6 +1114,7 @@ namespace c2flux
                 ["Chart.Directory"] = "Directory",
                 ["Chart.FilePrefix"] = "File:",
                 ["Status.ScanPaused"] = "Scan paused",
+                ["Status.Scanning"] = "Scanning...",
                 ["Advanced.Title"] = "Analysis",
                 ["Advanced.FileTypes"] = "File types",
                 ["Advanced.LargestFiles"] = "Largest files",
