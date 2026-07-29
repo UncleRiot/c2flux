@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -58,6 +58,11 @@ namespace c2flux
         private AntdUI.Label labelBarChartBarHeight;
         private AntdUI.Input textBoxBarChartBarHeight;
         private AntdUI.Label labelBarChartBarHeightDefault;
+        private AntdUI.Label labelSunburstDepth;
+        private AntdUI.Input textBoxSunburstDepth;
+        private AntdUI.Label labelSunburstDepthHint;
+        private AntdUI.Label labelSunburstMaxItems;
+        private AntdUI.Input textBoxSunburstMaxItems;
         private AntdUI.Checkbox checkBoxSaveScanHistory;
         private AntdUI.Button buttonSaveScanHistoryHelp;
         private AntdUI.Label labelScanHistoryDatabasePath;
@@ -521,6 +526,51 @@ namespace c2flux
                             "Settings.BarChartBarHeightDefault"),
                         14));
 
+            labelSunburstDepth = new AntdUI.Label
+            {
+                Name = "labelSunburstDepth",
+                Text = LocalizationService.GetText("Settings.SunburstDepth"),
+                Location = new Point(34, 118),
+                Size = new Size(120, 28),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            textBoxSunburstDepth = new AntdUI.Input
+            {
+                Name = "textBoxSunburstDepth",
+                Location = new Point(150, 116),
+                Size = new Size(56, 34),
+                TextAlign = HorizontalAlignment.Right,
+                MaxLength = 2
+            };
+
+            labelSunburstDepthHint = new AntdUI.Label
+            {
+                Name = "labelSunburstDepthHint",
+                Text = LocalizationService.GetText("Settings.SunburstDepthHint"),
+                Location = new Point(210, 118),
+                Size = new Size(220, 28),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            labelSunburstMaxItems = new AntdUI.Label
+            {
+                Name = "labelSunburstMaxItems",
+                Text = LocalizationService.GetText("Settings.SunburstMaxItems"),
+                Location = new Point(34, 160),
+                Size = new Size(120, 28),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            textBoxSunburstMaxItems = new AntdUI.Input
+            {
+                Name = "textBoxSunburstMaxItems",
+                Location = new Point(150, 158),
+                Size = new Size(80, 34),
+                TextAlign = HorizontalAlignment.Right,
+                MaxLength = 5
+            };
+
             checkBoxSaveScanHistory = AntdThemeService.CreateSettingsCheckBox(
                 "checkBoxSaveScanHistory",
                 LocalizationService.GetText("Settings.SaveScanHistory"),
@@ -739,6 +789,11 @@ namespace c2flux
             panelLayout.Controls.Add(labelBarChartBarHeight);
             panelLayout.Controls.Add(textBoxBarChartBarHeight);
             panelLayout.Controls.Add(labelBarChartBarHeightDefault);
+            panelLayout.Controls.Add(labelSunburstDepth);
+            panelLayout.Controls.Add(textBoxSunburstDepth);
+            panelLayout.Controls.Add(labelSunburstDepthHint);
+            panelLayout.Controls.Add(labelSunburstMaxItems);
+            panelLayout.Controls.Add(textBoxSunburstMaxItems);
 
             panelStatistics.Controls.Add(checkBoxSaveScanHistory);
             panelStatistics.Controls.Add(buttonSaveScanHistoryHelp);
@@ -1259,6 +1314,8 @@ namespace c2flux
                 ? _settings.ExportMaxDepth.Value.ToString()
                 : string.Empty;
             textBoxBarChartBarHeight.Text = _settings.BarChartBarHeight.ToString();
+            textBoxSunburstDepth.Text = _settings.SunburstDepth.ToString();
+            textBoxSunburstMaxItems.Text = _settings.SunburstMaxItems.ToString();
             textBoxScanHistoryDatabasePath.Text = ScanHistoryService.NormalizeDatabasePath(
                 _settings.ScanHistoryDatabasePath);
             textBoxScanHistoryMaximumScansPerPath.Text =
@@ -1374,6 +1431,42 @@ namespace c2flux
                 return false;
             }
 
+            if (!int.TryParse(
+                    textBoxSunburstDepth.Text.Trim(),
+                    out int sunburstDepth) ||
+                sunburstDepth < 0 ||
+                sunburstDepth > 50)
+            {
+                MessageBox.Show(
+                    this,
+                    LocalizationService.GetText("Settings.SunburstDepthInvalid"),
+                    Text,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                ShowPage(panelLayout);
+                textBoxSunburstDepth.Focus();
+                textBoxSunburstDepth.SelectAll();
+                return false;
+            }
+
+            if (!int.TryParse(
+                    textBoxSunburstMaxItems.Text.Trim(),
+                    out int sunburstMaxItems) ||
+                sunburstMaxItems < 100 ||
+                sunburstMaxItems > 10000)
+            {
+                MessageBox.Show(
+                    this,
+                    LocalizationService.GetText("Settings.SunburstMaxItemsInvalid"),
+                    Text,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                ShowPage(panelLayout);
+                textBoxSunburstMaxItems.Focus();
+                textBoxSunburstMaxItems.SelectAll();
+                return false;
+            }
+
             if (!string.IsNullOrWhiteSpace(textBoxExportMaxDepth.Text))
             {
                 if (!int.TryParse(
@@ -1421,6 +1514,8 @@ namespace c2flux
             }
 
             _settings.BarChartBarHeight = barChartBarHeight;
+            _settings.SunburstDepth = sunburstDepth;
+            _settings.SunburstMaxItems = sunburstMaxItems;
             _settings.SaveScanHistory = checkBoxSaveScanHistory.Checked;
             _settings.ScanHistoryDatabasePath = selectedScanHistoryDatabasePath;
             _settings.ScanHistoryMaximumScansPerPath = scanHistoryMaximumScansPerPath;

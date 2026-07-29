@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -63,6 +63,8 @@ namespace c2flux
         public int PartitionFillColorDarkArgb { get; set; } = unchecked((int)0xFF32CD32);
         public int PartitionFillBrightnessDarkPercent { get; set; } = 100;
         public int BarChartBarHeight { get; set; } = 14;
+        public int SunburstDepth { get; set; } = 3;
+        public int SunburstMaxItems { get; set; } = 1000;
         public Dictionary<string, SettingsUiControlLayout> SettingsUiControlLayouts { get; set; } =
             new Dictionary<string, SettingsUiControlLayout>(StringComparer.Ordinal);
         public bool ShowElevationPromptOnStartup { get; set; } = true;
@@ -190,6 +192,12 @@ namespace c2flux
                 settings.BarChartBarHeight = Math.Max(
                     5,
                     Math.Min(30, settings.BarChartBarHeight));
+                settings.SunburstDepth = Math.Max(
+                    0,
+                    Math.Min(50, settings.SunburstDepth));
+                settings.SunburstMaxItems = Math.Max(
+                    100,
+                    Math.Min(10000, settings.SunburstMaxItems));
                 settings.SettingsUiControlLayouts =
                     settings.SettingsUiControlLayouts ??
                     new Dictionary<string, SettingsUiControlLayout>(

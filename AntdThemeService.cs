@@ -1847,6 +1847,7 @@ namespace c2flux
             AntdUI.Button tableButton,
             AntdUI.Button pieChartButton,
             AntdUI.Button barChartButton,
+            AntdUI.Button sunburstButton,
             AntdUI.Button analysisButton,
             AntdUI.Button storageHistoryButton)
         {
@@ -1864,6 +1865,11 @@ namespace c2flux
                 barChartButton,
                 CreateMainBarChartButtonIcon(false),
                 CreateMainBarChartButtonIcon(true));
+
+            ApplyMainViewButtonIcons(
+                sunburstButton,
+                CreateMainSunburstButtonIcon(false),
+                CreateMainSunburstButtonIcon(true));
 
             ApplyMainViewButtonIcons(
                 analysisButton,
@@ -1965,6 +1971,27 @@ namespace c2flux
             return bitmap;
         }
 
+        private static Bitmap CreateMainSunburstButtonIcon(
+            bool active)
+        {
+            Bitmap bitmap = CreateMainViewButtonBitmap();
+            Color iconColor = GetMainViewButtonIconColor(active);
+
+            using Graphics graphics = Graphics.FromImage(bitmap);
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            using Pen iconPen = new Pen(
+                iconColor,
+                MainViewButtonIconLineWidth);
+
+            graphics.DrawArc(iconPen, 2, 2, 12, 12, -90, 285);
+            graphics.DrawArc(iconPen, 5, 5, 6, 6, -90, 240);
+            graphics.DrawLine(iconPen, 8, 2, 8, 5);
+            graphics.DrawLine(iconPen, 11, 8, 14, 8);
+
+            return bitmap;
+        }
+
         private static Bitmap CreateMainAnalysisButtonIcon(
             bool active)
         {
@@ -2041,6 +2068,7 @@ namespace c2flux
             ToolStripMenuItem tableMenuItem,
             ToolStripMenuItem pieChartMenuItem,
             ToolStripMenuItem barChartMenuItem,
+            ToolStripMenuItem sunburstMenuItem,
             ToolStripMenuItem analysisMenuItem,
             ToolStripMenuItem storageHistoryMenuItem,
             ToolStripMenuItem searchMenuItem,
@@ -2048,6 +2076,7 @@ namespace c2flux
             AntdUI.Button tableButton,
             AntdUI.Button pieChartButton,
             AntdUI.Button barChartButton,
+            AntdUI.Button sunburstButton,
             AntdUI.Button analysisButton,
             AntdUI.Button storageHistoryButton,
             AntdUI.Button searchButton,
@@ -2056,6 +2085,7 @@ namespace c2flux
             tableMenuItem.Image = CloneMainMenuIcon(tableButton.Icon);
             pieChartMenuItem.Image = CloneMainMenuIcon(pieChartButton.Icon);
             barChartMenuItem.Image = CloneMainMenuIcon(barChartButton.Icon);
+            sunburstMenuItem.Image = CloneMainMenuIcon(sunburstButton.Icon);
             analysisMenuItem.Image = CloneMainMenuIcon(analysisButton.Icon);
             storageHistoryMenuItem.Image = CloneMainMenuIcon(storageHistoryButton.Icon);
             searchMenuItem.Image = CloneMainMenuIcon(searchButton.Icon);

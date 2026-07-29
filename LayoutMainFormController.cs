@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -20,9 +20,11 @@ namespace c2flux
         private readonly Chart_TableGridChart _dataGridViewEntries;
         private readonly Chart_PieChart _pieChartView;
         private readonly Chart_BarChart _barChartView;
+        private readonly Chart_Sunburst _sunburstView;
         private readonly AntdUI.Button _toolStripButtonTable;
         private readonly AntdUI.Button _toolStripButtonPieChart;
         private readonly AntdUI.Button _toolStripButtonBarChart;
+        private readonly AntdUI.Button _toolStripButtonSunburst;
         private ToolStrip _draggedToolStrip;
         private Point _dragStartPoint;
         private ViewMode _viewMode;
@@ -41,9 +43,11 @@ namespace c2flux
             Chart_TableGridChart dataGridViewEntries,
             Chart_PieChart pieChartView,
             Chart_BarChart barChartView,
+            Chart_Sunburst sunburstView,
             AntdUI.Button toolStripButtonTable,
             AntdUI.Button toolStripButtonPieChart,
             AntdUI.Button toolStripButtonBarChart,
+            AntdUI.Button toolStripButtonSunburst,
             ViewMode viewMode)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -59,9 +63,11 @@ namespace c2flux
             _dataGridViewEntries = dataGridViewEntries ?? throw new ArgumentNullException(nameof(dataGridViewEntries));
             _pieChartView = pieChartView ?? throw new ArgumentNullException(nameof(pieChartView));
             _barChartView = barChartView ?? throw new ArgumentNullException(nameof(barChartView));
+            _sunburstView = sunburstView ?? throw new ArgumentNullException(nameof(sunburstView));
             _toolStripButtonTable = toolStripButtonTable ?? throw new ArgumentNullException(nameof(toolStripButtonTable));
             _toolStripButtonPieChart = toolStripButtonPieChart ?? throw new ArgumentNullException(nameof(toolStripButtonPieChart));
             _toolStripButtonBarChart = toolStripButtonBarChart ?? throw new ArgumentNullException(nameof(toolStripButtonBarChart));
+            _toolStripButtonSunburst = toolStripButtonSunburst ?? throw new ArgumentNullException(nameof(toolStripButtonSunburst));
             _viewMode = viewMode;
 
             ConfigureToolStripGroupDragAndDrop();
@@ -413,6 +419,10 @@ namespace c2flux
             _dataGridViewEntries.SetEntry(entry);
             _pieChartView.SetEntry(entry);
             _barChartView.SetEntry(entry);
+            _sunburstView.SetDisplayOptions(
+                _settings.SunburstDepth,
+                _settings.SunburstMaxItems);
+            _sunburstView.SetEntry(entry);
             UpdateRightView();
         }
 
@@ -447,6 +457,12 @@ namespace c2flux
                 _barChartView.Dock = DockStyle.Fill;
                 _barChartView.Invalidate();
             }
+
+            if (_sunburstView != null)
+            {
+                _sunburstView.Dock = DockStyle.Fill;
+                _sunburstView.Invalidate();
+            }
         }
 
         private void UpdateViewModeButtons()
@@ -454,6 +470,7 @@ namespace c2flux
             _toolStripButtonTable.Toggle = _viewMode == ViewMode.Table;
             _toolStripButtonPieChart.Toggle = _viewMode == ViewMode.PieChart;
             _toolStripButtonBarChart.Toggle = _viewMode == ViewMode.BarChart;
+            _toolStripButtonSunburst.Toggle = _viewMode == ViewMode.Sunburst;
         }
 
         private void UpdateRightView()
@@ -463,6 +480,7 @@ namespace c2flux
             _dataGridViewEntries.Visible = _viewMode == ViewMode.Table;
             _pieChartView.Visible = _viewMode == ViewMode.PieChart;
             _barChartView.Visible = _viewMode == ViewMode.BarChart;
+            _sunburstView.Visible = _viewMode == ViewMode.Sunburst;
 
             if (_dataGridViewEntries.Visible)
             {
@@ -477,6 +495,11 @@ namespace c2flux
             {
                 _barChartView.BringToFront();
                 _barChartView.Invalidate();
+            }
+            else if (_sunburstView.Visible)
+            {
+                _sunburstView.BringToFront();
+                _sunburstView.Invalidate();
             }
         }
 
