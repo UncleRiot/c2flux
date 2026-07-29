@@ -5,6 +5,13 @@
 
 c² flux – Tree Scanner introduces a completely redesigned user interface and significantly improved performance.
 
+<br>
+❤️ If you’d like to support my work with a small contribution, I’d really appreciate it. ❤️
+<br><br>
+[<img width="290" height="73" alt="Support me on Ko-fi" src="https://github.com/user-attachments/assets/57680fed-c0b7-44fa-ac74-076903bd7eec">](https://ko-fi.com/uncleriot)
+
+
+<br><br>
 It is a refactored continuation of [WTF – Where's the Filespace](https://github.com/UncleRiot/WTF), now developed independently as a separate project and repository.
 
 <br>
