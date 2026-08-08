@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -78,7 +78,7 @@ namespace c2flux
         public bool EntryColumnPercentVisible { get; set; } = true;
         public bool EntryColumnPathVisible { get; set; } = true;
         public TreeSortMode TreeSortMode { get; set; } = TreeSortMode.SizeDescending;
-        public AppLayout Layout { get; set; } = AppLayout.WindowsDefault;
+        public AppLayout Layout { get; set; } = AppLayout.WindowsDarkMode;
         public ViewMode SelectedViewMode { get; set; } = ViewMode.Table;
         public string LanguageCode { get; set; } = LocalizationService.EnglishLanguageCode;
         public bool SaveScanHistory { get; set; }
