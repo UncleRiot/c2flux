@@ -1,28 +1,105 @@
+![Windows](https://img.shields.io/badge/Windows-7%2B-0078D6?logo=windows&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
 
 # c² flux – Tree Scanner
 
 **A fast and lightweight disk space analyzer for Windows.**
 
-c² flux – Tree Scanner introduces a completely redesigned user interface and significantly improved performance.
-<br><br>
+<br>
 
-
-
----
-
-❤️ If you’d like to support my work with a small contribution, I’d really appreciate it. ❤️
-<br><br>
-<a href="https://ko-fi.com/uncleriot"><img src="https://github.com/user-attachments/assets/57680fed-c0b7-44fa-ac74-076903bd7eec" alt="Support me on Ko-fi" width="174"></a>
-
----
-
-<br><br>
-It is a refactored continuation of [WTF – Where's the Filespace](https://github.com/UncleRiot/WTF), now developed independently as a separate project and repository.
+<img width="1508" height="855" alt="c² flux – Tree Scanner" src="https://github.com/user-attachments/assets/47b00346-3bf8-4a43-ad54-8a0e970da33a" />
 
 <br>
-> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
-<br><br>
 
+## Highlights
+
+- ⚡ **Fast drive and folder scanning with strong caching mechanisms**
+- 🚀 **Regular and MFT-based scanning**
+  - **MFT scan:** Fastest possible scan mode when running as Administrator
+  - **Regular scan:** Fast first scan, super-fast subsequent scans through caching
+- 🔎 **Super-fast global search**
+  - 🔴 Find files and folders instantly
+  - 🔴 Integrated context menu actions
+- Multiple visualization and display styles
+- Export functions for scan and analysis data
+- Scan history and storage timeline
+- Optional SQLite database for persistent scan storage
+  - Store previous scans
+  - Compare scans
+  - Inspect detailed differences between scan states
+- Windows Explorer integration
+- Light and dark themes
+- Multilingual interface with 30 languages
+
+<br>
+
+## Scan Modes
+
+### 🚀 MFT Scan
+
+Fastest possible scan mode.
+
+> **Requires administrator privileges.**
+
+### ⚡ Regular Scan
+
+- Fast initial scan
+- Super-fast subsequent scans through caching
+
+<br>
+
+## Search
+
+### 🔎 Super-fast global search
+
+- 🔴 Find files and folders instantly
+- 🔴 Integrated context menu actions
+
+<br>
+
+## Scan History & Comparison
+
+An optional SQLite database can be activated to persist scan results.
+
+- Store previous scans
+- Compare scans
+- Inspect detailed differences between scan states
+- Track storage usage over time
+
+<br>
+
+## Visualization & Analysis
+
+- Multiple visualization and display styles
+- Scan and storage analysis
+- Export functions for scan and analysis data
+
+<br>
+
+## Documentation
+
+📖 **Documentation:** See the [GitHub Wiki](https://github.com/UncleRiot/c2flux/wiki) for instructions and usage guides.
+
+<br>
+
+## Requirements
+
+- Windows 7 or newer
+- Windows x64
+- .NET 8 Desktop Runtime
+
+> NTFS MFT scanning requires administrator privileges.
+
+<br>
+
+## Support
+
+❤️ If you’d like to support my work with a small contribution, I’d really appreciate it. ❤️
+
+<br>
+
+<a href="https://ko-fi.com/uncleriot"><img src="https://github.com/user-attachments/assets/57680fed-c0b7-44fa-ac74-076903bd7eec" alt="Support me on Ko-fi" width="174"></a>
+
+<br>
 
 ## Windows SmartScreen warning
 
@@ -43,37 +120,13 @@ Only continue if you downloaded c² flux from the official GitHub repository.
 
 > **Important:** Do not run the application if you downloaded it from an unknown or untrusted source.
 
-<br><br>
-## Highlights
-
-- Faster performance
-- Fast drive and folder scanning
-- Global file and folder search
-- Scan history and comparison
-- Storage usage history
-- Multiple analysis views
-- CSV export
-- Windows Explorer integration
-- Light and dark themes
-- Multilingual (30 languages)
-
-> **c² flux – Tree Scanner**
-
-<img width="1508" height="855" alt="c² flux – Tree Scanner" src="https://github.com/user-attachments/assets/47b00346-3bf8-4a43-ad54-8a0e970da33a" />
-
-<br>
 <br>
 
-📖 **Documentation:** See the [GitHub Wiki](https://github.com/UncleRiot/c2flux/wiki) for instructions and usage guides.
+## Security and Packaging
+
+> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
+
 <br>
-
-## Requirements
-
-- Windows 7 or newer
-- Windows x64
-- .NET 8 Desktop Runtime
-
-> NTFS MFT scanning requires administrator privileges.
 
 ## License
 
