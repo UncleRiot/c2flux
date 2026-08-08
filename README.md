@@ -1,3 +1,4 @@
+![Windows](https://img.shields.io/badge/Windows-7%2B-0078D6?logo=windows&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
 
 # c² flux – Tree Scanner
 
@@ -15,9 +16,6 @@ c² flux – Tree Scanner introduces a completely redesigned user interface and 
 <a href="https://ko-fi.com/uncleriot"><img src="https://github.com/user-attachments/assets/57680fed-c0b7-44fa-ac74-076903bd7eec" alt="Support me on Ko-fi" width="174"></a>
 
 ---
-
-<br><br>
-It is a refactored continuation of [WTF – Where's the Filespace](https://github.com/UncleRiot/WTF), now developed independently as a separate project and repository.
 
 <br>
 > **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
@@ -46,16 +44,23 @@ Only continue if you downloaded c² flux from the official GitHub repository.
 <br><br>
 ## Highlights
 
-- Faster performance
-- Fast drive and folder scanning
-- Global file and folder search
-- Scan history and comparison
-- Storage usage history
-- Multiple analysis views
-- CSV export
+- Strong caching mechanisms for faster repeated scans
+- Regular and MFT-based scanning
+  - **MFT scan:** Fastest possible scan mode when running as Administrator
+  - **Regular scan:** Fast first scan, super-fast subsequent scans through caching
+- Multiple visualization and display styles
+- Export functions for scan and analysis data
+- Scan history and storage timeline
+- Optional SQLite database for persistent scan storage
+  - Store previous scans
+  - Compare scans
+  - Inspect detailed differences between scan states
+- Super-fast global search
+  - Find files and folders instantly
+  - Integrated context menu actions
 - Windows Explorer integration
 - Light and dark themes
-- Multilingual (30 languages)
+- Multilingual interface with 30 languages
 
 > **c² flux – Tree Scanner**
 
