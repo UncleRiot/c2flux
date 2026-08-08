@@ -4,7 +4,6 @@
 
 **A fast and lightweight disk space analyzer for Windows.**
 
-c² flux – Tree Scanner introduces a completely redesigned user interface and significantly improved performance.
 <br><br>
 
 
@@ -55,9 +54,9 @@ Only continue if you downloaded c² flux from the official GitHub repository.
   - Store previous scans
   - Compare scans
   - Inspect detailed differences between scan states
-- Super-fast global search
-  - Find files and folders instantly
-  - Integrated context menu actions
+- ⚡ **Super-fast global search**
+  - 🔴 Find files and folders instantly
+  - 🔴 Integrated context menu actions
 - Windows Explorer integration
 - Light and dark themes
 - Multilingual interface with 30 languages
