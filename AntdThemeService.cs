@@ -226,13 +226,13 @@ namespace c2flux
         public const int DataGridViewRowHeight = 36;
 
         // Zusätzlicher vertikaler Abstand in der Laufwerkstabelle
-        public const int PartitionGridRowVerticalSpacing = 2;
+        public const int PartitionGridRowVerticalSpacing = 4;
 
         // Mindesthöhe der Zeilen in der Laufwerkstabelle
         public const int PartitionGridMinimumRowHeight = 18;
 
         // Zusätzlicher vertikaler Abstand im Kopf der Laufwerkstabelle
-        public const int PartitionGridHeaderVerticalSpacing = 6;
+        public const int PartitionGridHeaderVerticalSpacing = 8;
 
         // Mindesthöhe des Tabellenkopfs der Laufwerkstabelle
         public const int PartitionGridMinimumHeaderHeight = 20;
@@ -1018,7 +1018,7 @@ namespace c2flux
         public const int SettingsLoggingMaximumFileSizeUnitLabelTop = 96;
         public const int SettingsLoggingMaximumFileSizeUnitLabelWidth = 50;
         public const int SettingsLoggingMaximumFileSizeUnitLabelHeight = 28;
-        public static readonly Size MainDriveSelectSize = new Size(280, 44);
+        public static readonly Size MainDriveSelectSize = new Size(280, 32);
         public static readonly Padding MainDriveSelectDropDownPadding = new Padding(10, 2, 10, 2);
 
         public static Color BackgroundPrimary =>
@@ -1373,10 +1373,28 @@ namespace c2flux
             grid.EnableHeadersVisualStyles = false;
             grid.ColumnHeadersHeightSizeMode =
                 DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            int headerHeight = ScaleForDpi(
+                grid,
+                StorageHistoryGridHeaderHeight);
+            int rowHeight = ScaleForDpi(
+                grid,
+                StorageHistoryGridRowHeight);
+
             grid.ColumnHeadersHeight =
-                StorageHistoryGridHeaderHeight;
+                headerHeight;
+            grid.RowTemplate.MinimumHeight =
+                rowHeight;
             grid.RowTemplate.Height =
-                StorageHistoryGridRowHeight;
+                rowHeight;
+
+            foreach (DataGridViewRow row in grid.Rows)
+            {
+                if (!row.IsNewRow)
+                {
+                    row.MinimumHeight = rowHeight;
+                    row.Height = rowHeight;
+                }
+            }
 
             grid.ColumnHeadersDefaultCellStyle.BackColor =
                 BackgroundSecondary;
@@ -1811,6 +1829,32 @@ namespace c2flux
                 statusPanel.BackColor = BackgroundSecondary;
                 statusPanel.ForeColor = TextPrimary;
                 statusPanel.BorderColor = Border;
+
+                int statusPaddingHorizontal =
+                    ScaleForDpi(
+                        statusPanel,
+                        8);
+                int statusPaddingVertical =
+                    ScaleForDpi(
+                        statusPanel,
+                        4);
+
+                statusPanel.Padding = new Padding(
+                    statusPaddingHorizontal,
+                    statusPaddingVertical,
+                    statusPaddingHorizontal,
+                    statusPaddingVertical);
+
+                int minimumStatusHeight =
+                    Math.Max(
+                        ScaleForDpi(statusPanel, 34),
+                        statusLabel == null
+                            ? 0
+                            : statusLabel.Font.Height +
+                              statusPanel.Padding.Vertical +
+                              ScaleForDpi(statusPanel, 4));
+
+                statusPanel.Height = minimumStatusHeight;
                 statusPanel.Invalidate();
             }
 
@@ -1820,7 +1864,10 @@ namespace c2flux
 
                 statusLabel.ForeColor = TextPrimary;
                 statusLabel.Padding = new Padding(
-                    alertWidth + MainStatusTextSpacing,
+                    alertWidth +
+                    ScaleForDpi(
+                        statusLabel,
+                        MainStatusTextSpacing),
                     0,
                     0,
                     0);
@@ -1829,9 +1876,18 @@ namespace c2flux
 
             if (scanProgress != null)
             {
+                scanProgress.Width =
+                    ScaleForDpi(
+                        scanProgress,
+                        200);
                 scanProgress.ForeColor = TextPrimary;
                 scanProgress.Back = BackgroundTertiary;
                 scanProgress.Fill = Accent;
+                scanProgress.Radius =
+                    ScaleForDpi(
+                        scanProgress,
+                        4);
+                scanProgress.ValueRatio = 0.72F;
                 scanProgress.Invalidate();
             }
         }
@@ -2465,6 +2521,27 @@ namespace c2flux
             comboBox.Invalidate();
         }
 
+        public static void AlignMainSelectHeight(
+            AntdUI.Select comboBox,
+            AntdUI.Button referenceButton)
+        {
+            if (comboBox == null ||
+                referenceButton == null)
+            {
+                return;
+            }
+
+            int targetHeight = Math.Max(
+                referenceButton.Height,
+                referenceButton.PreferredSize.Height);
+
+            if (targetHeight <= 0)
+                return;
+
+            comboBox.Height = targetHeight;
+            comboBox.Invalidate();
+        }
+
         private static void ConfigureCheckBox(AntdUI.Checkbox checkBox)
         {
             checkBox.BackColor = BackgroundSecondary;
@@ -2566,11 +2643,19 @@ namespace c2flux
             AntdUI.Button buttonCancel)
         {
             form.MinimumSize = new Size(
-                SearchWindowMinimumWidth,
-                SearchWindowMinimumHeight);
+                ScaleForDpi(
+                    form,
+                    SearchWindowMinimumWidth),
+                ScaleForDpi(
+                    form,
+                    SearchWindowMinimumHeight));
             form.Size = new Size(
-                SearchWindowWidth,
-                SearchWindowHeight);
+                ScaleForDpi(
+                    form,
+                    SearchWindowWidth),
+                ScaleForDpi(
+                    form,
+                    SearchWindowHeight));
 
             ConfigureSearchSelect(
                 comboBoxSource,
@@ -2657,7 +2742,9 @@ namespace c2flux
                 SearchResetFiltersButtonRadius,
                 AntdUI.TTypeMini.Default);
 
-            progressBarSearch.Height = SearchProgressHeight;
+            progressBarSearch.Height = ScaleForDpi(
+                progressBarSearch,
+                SearchProgressHeight);
         }
 
         // Search-Auswahlfeld - zentrale AntdUI-Darstellung
@@ -2667,8 +2754,14 @@ namespace c2flux
             int itemHeight,
             int radius)
         {
-            select.MinimumSize = new Size(0, height);
-            select.Height = height;
+            int scaledHeight = ScaleForDpi(
+                select,
+                height);
+
+            select.MinimumSize = new Size(
+                0,
+                scaledHeight);
+            select.Height = scaledHeight;
             select.Font = DefaultFont;
             select.BackColor = InputBackground;
             select.ForeColor = TextPrimary;
@@ -2694,8 +2787,14 @@ namespace c2flux
             int height,
             int radius)
         {
-            input.MinimumSize = new Size(0, height);
-            input.Height = height;
+            int scaledHeight = ScaleForDpi(
+                input,
+                height);
+
+            input.MinimumSize = new Size(
+                0,
+                scaledHeight);
+            input.Height = scaledHeight;
             input.Font = DefaultFont;
             input.BackColor = InputBackground;
             input.ForeColor = TextPrimary;
@@ -2719,8 +2818,14 @@ namespace c2flux
             int height,
             int radius)
         {
-            input.MinimumSize = new Size(0, height);
-            input.Height = height;
+            int scaledHeight = ScaleForDpi(
+                input,
+                height);
+
+            input.MinimumSize = new Size(
+                0,
+                scaledHeight);
+            input.Height = scaledHeight;
             input.Font = DefaultFont;
             input.BackColor = InputBackground;
             input.ForeColor = TextPrimary;
@@ -2735,8 +2840,14 @@ namespace c2flux
             int height,
             int radius)
         {
-            datePicker.MinimumSize = new Size(0, height);
-            datePicker.Height = height;
+            int scaledHeight = ScaleForDpi(
+                datePicker,
+                height);
+
+            datePicker.MinimumSize = new Size(
+                0,
+                scaledHeight);
+            datePicker.Height = scaledHeight;
             datePicker.Font = DefaultFont;
             datePicker.BackColor = InputBackground;
             datePicker.ForeColor = TextPrimary;
@@ -2758,8 +2869,19 @@ namespace c2flux
             int radius,
             AntdUI.TTypeMini type)
         {
-            button.MinimumSize = new Size(width, height);
-            button.Size = new Size(width, height);
+            int scaledWidth = ScaleForDpi(
+                button,
+                width);
+            int scaledHeight = ScaleForDpi(
+                button,
+                height);
+
+            button.MinimumSize = new Size(
+                scaledWidth,
+                scaledHeight);
+            button.Size = new Size(
+                scaledWidth,
+                scaledHeight);
             button.Font = DefaultFont;
             button.Type = type;
             button.Radius = radius;
@@ -3736,6 +3858,161 @@ namespace c2flux
             table.Invalidate();
         }
 
+        public static void ApplyTreeEntryView(
+            TreeEntrySizeBarView treeView)
+        {
+            if (treeView == null)
+                return;
+
+            treeView.BackColor = BackgroundPrimary;
+            treeView.ForeColor = TextPrimary;
+            treeView.Font = DefaultFont;
+            treeView.RowHeight = ScaleForDpi(
+                treeView,
+                22);
+            treeView.Invalidate();
+        }
+
+        public static int ScaleForDpi(
+            Control control,
+            int logicalPixels)
+        {
+            if (control == null)
+                return logicalPixels;
+
+            int deviceDpi = control.DeviceDpi;
+
+            if (deviceDpi <= 0)
+                deviceDpi = 96;
+
+            return Math.Max(
+                1,
+                (int)Math.Round(
+                    logicalPixels *
+                    deviceDpi /
+                    96D));
+        }
+
+
+        public static void ApplySettingsHighDpiLayout(
+            Form form)
+        {
+            if (form == null ||
+                form.DeviceDpi < 144)
+            {
+                return;
+            }
+
+            float scaleFactor =
+                form.DeviceDpi / 96F;
+
+            foreach (Control control in form.Controls)
+            {
+                ScaleSettingsControlTree(
+                    control,
+                    scaleFactor);
+            }
+        }
+
+        private static void ScaleSettingsControlTree(
+            Control control,
+            float scaleFactor)
+        {
+            if (control == null)
+                return;
+
+            if (control.Dock == DockStyle.None)
+            {
+                control.Location = new Point(
+                    (int)Math.Round(
+                        control.Left *
+                        scaleFactor),
+                    (int)Math.Round(
+                        control.Top *
+                        scaleFactor));
+
+                control.Size = new Size(
+                    Math.Max(
+                        1,
+                        (int)Math.Round(
+                            control.Width *
+                            scaleFactor)),
+                    Math.Max(
+                        1,
+                        (int)Math.Round(
+                            control.Height *
+                            scaleFactor)));
+            }
+
+            if (control.MinimumSize != Size.Empty)
+            {
+                control.MinimumSize = new Size(
+                    (int)Math.Round(
+                        control.MinimumSize.Width *
+                        scaleFactor),
+                    (int)Math.Round(
+                        control.MinimumSize.Height *
+                        scaleFactor));
+            }
+
+            if (control.MaximumSize != Size.Empty)
+            {
+                control.MaximumSize = new Size(
+                    (int)Math.Round(
+                        control.MaximumSize.Width *
+                        scaleFactor),
+                    (int)Math.Round(
+                        control.MaximumSize.Height *
+                        scaleFactor));
+            }
+
+            control.Margin = ScalePadding(
+                control.Margin,
+                scaleFactor);
+            control.Padding = ScalePadding(
+                control.Padding,
+                scaleFactor);
+
+            if (control is ScrollableControl scrollableControl &&
+                scrollableControl.AutoScrollMinSize != Size.Empty)
+            {
+                scrollableControl.AutoScrollMinSize =
+                    new Size(
+                        (int)Math.Round(
+                            scrollableControl.AutoScrollMinSize.Width *
+                            scaleFactor),
+                        (int)Math.Round(
+                            scrollableControl.AutoScrollMinSize.Height *
+                            scaleFactor));
+            }
+
+            foreach (Control childControl in control.Controls)
+            {
+                ScaleSettingsControlTree(
+                    childControl,
+                    scaleFactor);
+            }
+        }
+
+        private static Padding ScalePadding(
+            Padding padding,
+            float scaleFactor)
+        {
+            return new Padding(
+                (int)Math.Round(
+                    padding.Left *
+                    scaleFactor),
+                (int)Math.Round(
+                    padding.Top *
+                    scaleFactor),
+                (int)Math.Round(
+                    padding.Right *
+                    scaleFactor),
+                (int)Math.Round(
+                    padding.Bottom *
+                    scaleFactor));
+        }
+
         public static void ApplyPartitionGrid(
             DataGridView grid)
         {
@@ -3745,11 +4022,21 @@ namespace c2flux
             ApplyTable(grid);
 
             int rowHeight = Math.Max(
-                grid.Font.Height + PartitionGridRowVerticalSpacing,
-                PartitionGridMinimumRowHeight);
+                grid.Font.Height +
+                ScaleForDpi(
+                    grid,
+                    PartitionGridRowVerticalSpacing),
+                ScaleForDpi(
+                    grid,
+                    PartitionGridMinimumRowHeight));
             int headerHeight = Math.Max(
-                grid.Font.Height + PartitionGridHeaderVerticalSpacing,
-                PartitionGridMinimumHeaderHeight);
+                grid.Font.Height +
+                ScaleForDpi(
+                    grid,
+                    PartitionGridHeaderVerticalSpacing),
+                ScaleForDpi(
+                    grid,
+                    PartitionGridMinimumHeaderHeight));
 
             grid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
             grid.RowTemplate.MinimumHeight = rowHeight;
@@ -3789,8 +4076,14 @@ namespace c2flux
             grid.EnableHeadersVisualStyles = false;
             grid.ColumnHeadersHeightSizeMode =
                 DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            grid.ColumnHeadersHeight = DataGridViewHeaderHeight;
-            grid.RowTemplate.Height = DataGridViewRowHeight;
+            grid.ColumnHeadersHeight =
+                ScaleForDpi(
+                    grid,
+                    DataGridViewHeaderHeight);
+            grid.RowTemplate.Height =
+                ScaleForDpi(
+                    grid,
+                    DataGridViewRowHeight);
             grid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
 
             grid.DefaultCellStyle.BackColor = BackgroundPrimary;
@@ -3798,8 +4091,17 @@ namespace c2flux
             grid.DefaultCellStyle.SelectionBackColor = Accent;
             grid.DefaultCellStyle.SelectionForeColor = AccentText;
             grid.DefaultCellStyle.Font = DefaultFont;
+            int tableCellHorizontalPadding =
+                ScaleForDpi(
+                    grid,
+                    TableCellHorizontalPadding);
+
             grid.DefaultCellStyle.Padding =
-                new Padding(TableCellHorizontalPadding, 0, TableCellHorizontalPadding, 0);
+                new Padding(
+                    tableCellHorizontalPadding,
+                    0,
+                    tableCellHorizontalPadding,
+                    0);
 
             grid.AlternatingRowsDefaultCellStyle.BackColor = BackgroundSecondary;
             grid.AlternatingRowsDefaultCellStyle.ForeColor = TextPrimary;
@@ -3807,7 +4109,11 @@ namespace c2flux
             grid.AlternatingRowsDefaultCellStyle.SelectionForeColor = AccentText;
             grid.AlternatingRowsDefaultCellStyle.Font = DefaultFont;
             grid.AlternatingRowsDefaultCellStyle.Padding =
-                new Padding(TableCellHorizontalPadding, 0, TableCellHorizontalPadding, 0);
+                new Padding(
+                    tableCellHorizontalPadding,
+                    0,
+                    tableCellHorizontalPadding,
+                    0);
 
             grid.ColumnHeadersDefaultCellStyle.BackColor = headerBackColor;
             grid.ColumnHeadersDefaultCellStyle.ForeColor = TextPrimary;

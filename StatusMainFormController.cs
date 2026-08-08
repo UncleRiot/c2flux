@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -144,8 +144,14 @@ namespace c2flux
 
             long clusterSize = GetClusterSize(entry.FullPath);
 
+            string entryDisplayName =
+                string.IsNullOrWhiteSpace(entry.Name)
+                    ? entry.FullPath
+                    : entry.Name;
+
             _statusLabel.Text = string.Format(
-                "Size: {0} | Files: {1:N0} | Cluster-Size: {2:N0}",
+                "{0} | Size: {1} | Files: {2:N0} | Cluster-Size: {3:N0}",
+                entryDisplayName,
                 SizeFormatter.Format(entry.SizeBytes),
                 Math.Max(0, fileCount),
                 clusterSize);

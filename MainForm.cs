@@ -272,6 +272,8 @@ namespace c2flux
                 toolStripViewMode,
                 toolStripExport,
                 toolStripFeatures);
+            AntdThemeService.ApplyTreeEntryView(
+                treeViewEntries);
             ApplyDriveComboBoxTheme();
             _partitionGridController.AdjustColumns();
             _partitionGridController.UpdatePartitionPanelVisibility();
@@ -287,6 +289,19 @@ namespace c2flux
 
             _layoutMainFormController.ApplyDefaultToolStripLayout();
             _layoutMainFormController.ApplyToolStripLayout();
+
+            AntdThemeService.AlignMainSelectHeight(
+                toolStripComboBoxDrives,
+                toolStripButtonScan);
+            AntdThemeService.ApplyTreeEntryView(
+                treeViewEntries);
+            AntdThemeService.ApplyPartitionGrid(
+                listViewPartitions);
+            AntdThemeService.ConfigureMainStatusPanel(
+                statusPanelMain,
+                statusLabelMain,
+                statusScanProgress,
+                statusStripAlerts);
 
             await Task.WhenAll(
                 _driveComboBoxController.LoadDrivesAsync(),
@@ -422,6 +437,9 @@ namespace c2flux
         }
         private void InitializeComponent()
         {
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96F, 96F);
+
             Text = AppConstants.FullApplicationName;
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new System.Drawing.Size(780, 490);
@@ -2043,6 +2061,8 @@ namespace c2flux
                 toolStripViewMode,
                 toolStripExport,
                 toolStripFeatures);
+            AntdThemeService.ApplyTreeEntryView(
+                treeViewEntries);
             ApplyDriveComboBoxTheme();
             treeViewEntries.Invalidate();
             listViewPartitions.Invalidate();

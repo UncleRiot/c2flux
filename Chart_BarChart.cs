@@ -170,16 +170,18 @@ namespace c2flux
                 return;
             }
 
-            int leftMargin = 20;
-            int rightMargin = 20;
-            int topMargin = 18;
-            int labelToBarGap = 20;
-            int barHeight = BarHeight;
-            int rowHeight = Math.Max(21, barHeight + 7);
-            int iconSize = 16;
-            int iconToTextGap = 6;
-            int textPaddingLeft = 10;
-            int textGapRightOfBar = 8;
+            int leftMargin = ScaleForDpi(20);
+            int rightMargin = ScaleForDpi(20);
+            int topMargin = ScaleForDpi(18);
+            int labelToBarGap = ScaleForDpi(20);
+            int barHeight = ScaleForDpi(BarHeight);
+            int rowHeight = Math.Max(
+                Font.Height + ScaleForDpi(6),
+                barHeight + ScaleForDpi(7));
+            int iconSize = ScaleForDpi(16);
+            int iconToTextGap = ScaleForDpi(6);
+            int textPaddingLeft = ScaleForDpi(10);
+            int textGapRightOfBar = ScaleForDpi(8);
 
             int contentLeft = visibleBounds.Left + leftMargin;
             int contentRight = visibleBounds.Right - rightMargin;
@@ -307,6 +309,21 @@ namespace c2flux
         private void Parent_SizeChanged(object sender, EventArgs e)
         {
             Invalidate();
+        }
+
+        private int ScaleForDpi(
+            int logicalPixels)
+        {
+            int deviceDpi = DeviceDpi <= 0
+                ? 96
+                : DeviceDpi;
+
+            return Math.Max(
+                1,
+                (int)Math.Round(
+                    logicalPixels *
+                    deviceDpi /
+                    96D));
         }
 
         private Rectangle GetVisibleClientRectangle()

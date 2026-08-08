@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -131,10 +131,49 @@ namespace c2flux
             UpdateSearchSourceState();
             UpdateFilterPanelState();
             UpdateSearchButtonState();
+
+            Shown += SearchForm_Shown;
+        }
+
+        private void SearchForm_Shown(
+            object sender,
+            EventArgs e)
+        {
+            AntdThemeService.ConfigureSearchDialog(
+                this,
+                comboBoxSource,
+                comboBoxSavedScan,
+                textBoxSearch,
+                comboBoxMatchMode,
+                buttonToggleFilters,
+                panelFilters,
+                checkBoxMinimumSize,
+                numericMinimumSize,
+                checkBoxMaximumSize,
+                numericMaximumSize,
+                checkBoxModifiedAfter,
+                dateTimeModifiedAfter,
+                checkBoxModifiedBefore,
+                dateTimeModifiedBefore,
+                textBoxFileTypes,
+                buttonResetFilters,
+                contextMenuResults,
+                progressBarSearch,
+                buttonSearch,
+                buttonCancel);
+
+            PerformLayout();
+            dataGridViewResults.PerformLayout();
+            Invalidate(true);
+            dataGridViewResults.Invalidate();
+            Update();
         }
 
         private void InitializeComponent()
         {
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96F, 96F);
+
             Text = LocalizationService.GetText("Search.Title");
             StartPosition = FormStartPosition.CenterParent;
             MinimumSize = new Size(
@@ -188,6 +227,8 @@ namespace c2flux
             {
                 Dock = DockStyle.Fill
             };
+            textBoxSearch.KeyDown +=
+                SearchInput_KeyDown;
 
             comboBoxMatchMode = new AntdUI.Select
             {
@@ -287,6 +328,8 @@ namespace c2flux
             {
                 Dock = DockStyle.Fill
             };
+            textBoxFileTypes.KeyDown +=
+                SearchInput_KeyDown;
 
             buttonResetFilters = new AntdUI.Button
             {
@@ -924,6 +967,60 @@ namespace c2flux
 
             UpdateSearchButtonState();
             SaveSettings();
+        }
+
+        private void SearchInput_KeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (!e.Shift ||
+                sender is not AntdUI.Input input)
+            {
+                return;
+            }
+
+            if (e.KeyCode == Keys.End)
+            {
+                int selectionStart =
+                    input.SelectionLength > 0
+                        ? input.SelectionStart
+                        : Math.Clamp(
+                            input.SelectionStart,
+                            0,
+                            input.Text?.Length ?? 0);
+
+                input.SelectionStart = selectionStart;
+                input.SelectionLength =
+                    Math.Max(
+                        0,
+                        (input.Text?.Length ?? 0) -
+                        selectionStart);
+
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.Home)
+            {
+                int selectionEnd =
+                    input.SelectionLength > 0
+                        ? input.SelectionStart +
+                          input.SelectionLength
+                        : Math.Clamp(
+                            input.SelectionStart,
+                            0,
+                            input.Text?.Length ?? 0);
+
+                input.SelectionStart = 0;
+                input.SelectionLength =
+                    Math.Max(
+                        0,
+                        selectionEnd);
+
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
         }
 
         private void UpdateSearchButtonState()

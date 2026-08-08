@@ -136,14 +136,44 @@ namespace c2flux
 
                 InitializeComponent();
                 AntdThemeService.Apply(this, _settings.Layout);
+                Shown += Dialog_Shown;
+            }
+
+            private void Dialog_Shown(
+                object sender,
+                EventArgs e)
+            {
+                SuspendLayout();
+
+                try
+                {
+                    MinimumSize = System.Drawing.Size.Empty;
+                    MaximumSize = System.Drawing.Size.Empty;
+
+                    PerformAutoScale();
+                    PerformLayout();
+
+                    MinimumSize = Size;
+                    MaximumSize = Size;
+
+                    Invalidate(true);
+                    Update();
+                }
+                finally
+                {
+                    ResumeLayout(true);
+                }
             }
 
             private void InitializeComponent()
             {
+                AutoScaleMode = AutoScaleMode.Dpi;
+                AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+
                 StartPosition = FormStartPosition.CenterScreen;
                 ClientSize = new System.Drawing.Size(430, 178);
-                MinimumSize = Size;
-                MaximumSize = Size;
+                MinimumSize = System.Drawing.Size.Empty;
+                MaximumSize = System.Drawing.Size.Empty;
                 MaximizeBox = false;
                 MinimizeBox = false;
                 ShowInTaskbar = false;
@@ -215,14 +245,44 @@ namespace c2flux
 
                 InitializeComponent();
                 AntdThemeService.Apply(this, _settings.Layout);
+                Shown += Dialog_Shown;
+            }
+
+            private void Dialog_Shown(
+                object sender,
+                EventArgs e)
+            {
+                SuspendLayout();
+
+                try
+                {
+                    MinimumSize = System.Drawing.Size.Empty;
+                    MaximumSize = System.Drawing.Size.Empty;
+
+                    PerformAutoScale();
+                    PerformLayout();
+
+                    MinimumSize = Size;
+                    MaximumSize = Size;
+
+                    Invalidate(true);
+                    Update();
+                }
+                finally
+                {
+                    ResumeLayout(true);
+                }
             }
 
             private void InitializeComponent()
             {
+                AutoScaleMode = AutoScaleMode.Dpi;
+                AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+
                 StartPosition = FormStartPosition.CenterParent;
                 ClientSize = new System.Drawing.Size(430, 178);
-                MinimumSize = Size;
-                MaximumSize = Size;
+                MinimumSize = System.Drawing.Size.Empty;
+                MaximumSize = System.Drawing.Size.Empty;
                 MaximizeBox = false;
                 MinimizeBox = false;
                 ShowInTaskbar = false;
@@ -319,14 +379,165 @@ namespace c2flux
                 InitializeComponent();
                 AntdThemeService.Apply(this, _settings.Layout);
                 ApplyImportantLabelStyle();
+                Shown += Dialog_Shown;
+            }
+
+            private void Dialog_Shown(
+                object sender,
+                EventArgs e)
+            {
+                SuspendLayout();
+
+                try
+                {
+                    MinimumSize = System.Drawing.Size.Empty;
+                    MaximumSize = System.Drawing.Size.Empty;
+
+                    if (DeviceDpi >= 144)
+                    {
+                        int rightMargin = Math.Max(
+                            12,
+                            ClientSize.Width -
+                            labelMessage.Right);
+                        int messageImportantGap = Math.Max(
+                            6,
+                            labelImportant.Top -
+                            labelMessage.Bottom);
+                        int importantCheckBoxGap = Math.Max(
+                            6,
+                            checkBoxOption.Top -
+                            labelImportant.Bottom);
+                        int checkBoxButtonGap = Math.Max(
+                            6,
+                            buttonYes.Top -
+                            checkBoxOption.Bottom);
+                        int buttonGap = Math.Max(
+                            6,
+                            buttonNo.Left -
+                            buttonYes.Right);
+                        int bottomMargin = Math.Max(
+                            10,
+                            ClientSize.Height -
+                            buttonNo.Bottom);
+
+                        int checkBoxTextWidth =
+                            TextRenderer.MeasureText(
+                                _checkBoxText ?? string.Empty,
+                                checkBoxOption.Font,
+                                System.Drawing.Size.Empty,
+                                TextFormatFlags.SingleLine |
+                                TextFormatFlags.NoPadding).Width;
+
+                        int requiredClientWidth = Math.Max(
+                            ClientSize.Width,
+                            checkBoxOption.Left +
+                            checkBoxTextWidth +
+                            rightMargin +
+                            24);
+
+                        if (requiredClientWidth >
+                            ClientSize.Width)
+                        {
+                            ClientSize =
+                                new System.Drawing.Size(
+                                    requiredClientWidth,
+                                    ClientSize.Height);
+                        }
+
+                        int textWidth = Math.Max(
+                            1,
+                            ClientSize.Width -
+                            labelMessage.Left -
+                            rightMargin);
+
+                        labelMessage.Width = textWidth;
+                        labelImportant.Width = textWidth;
+
+                        int messageHeight =
+                            TextRenderer.MeasureText(
+                                _messageText ?? string.Empty,
+                                labelMessage.Font,
+                                new System.Drawing.Size(
+                                    textWidth,
+                                    int.MaxValue),
+                                TextFormatFlags.WordBreak |
+                                TextFormatFlags.NoPadding).Height;
+
+                        labelMessage.Height = Math.Max(
+                            labelMessage.Height,
+                            messageHeight + 8);
+
+                        labelImportant.Top =
+                            labelMessage.Bottom +
+                            messageImportantGap;
+
+                        int importantHeight =
+                            TextRenderer.MeasureText(
+                                _importantText ?? string.Empty,
+                                labelImportant.Font,
+                                new System.Drawing.Size(
+                                    textWidth,
+                                    int.MaxValue),
+                                TextFormatFlags.WordBreak |
+                                TextFormatFlags.NoPadding).Height;
+
+                        labelImportant.Height = Math.Max(
+                            labelImportant.Height,
+                            importantHeight + 8);
+
+                        checkBoxOption.Top =
+                            labelImportant.Bottom +
+                            importantCheckBoxGap;
+                        checkBoxOption.Width = Math.Max(
+                            checkBoxOption.Width,
+                            ClientSize.Width -
+                            checkBoxOption.Left -
+                            rightMargin);
+
+                        buttonYes.Top =
+                            checkBoxOption.Bottom +
+                            checkBoxButtonGap;
+                        buttonNo.Top = buttonYes.Top;
+
+                        buttonNo.Left =
+                            ClientSize.Width -
+                            rightMargin -
+                            buttonNo.Width;
+                        buttonYes.Left =
+                            buttonNo.Left -
+                            buttonGap -
+                            buttonYes.Width;
+
+                        ClientSize =
+                            new System.Drawing.Size(
+                                ClientSize.Width,
+                                buttonNo.Bottom +
+                                bottomMargin);
+                    }
+
+                    PerformLayout();
+
+                    MinimumSize = Size;
+                    MaximumSize = Size;
+
+                    Invalidate(true);
+                    Update();
+                }
+                finally
+                {
+                    ResumeLayout(true);
+                }
             }
 
             private void InitializeComponent()
             {
+                AutoScaleMode = AutoScaleMode.Dpi;
+                AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+
                 StartPosition = FormStartPosition.CenterScreen;
                 ClientSize = new System.Drawing.Size(480, 250);
-                MinimumSize = Size;
-                MaximumSize = Size;
+                MinimumSize = System.Drawing.Size.Empty;
+                MaximumSize = System.Drawing.Size.Empty;
                 MaximizeBox = false;
                 MinimizeBox = false;
                 ShowInTaskbar = false;

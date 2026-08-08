@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -126,10 +126,10 @@ namespace c2flux
 
                 foreach (string allowedExtension in criteria.FileExtensions)
                 {
-                    if (string.Equals(
+                    if (MatchesWildcard(
                         extension,
                         allowedExtension,
-                        StringComparison.OrdinalIgnoreCase))
+                        false))
                     {
                         extensionMatches = true;
                         break;
@@ -152,6 +152,42 @@ namespace c2flux
                 return true;
 
             string name = entry.Name ?? string.Empty;
+            bool hasWildcard =
+                searchText.IndexOf('*') >= 0;
+
+            if (hasWildcard)
+            {
+                return criteria.MatchMode switch
+                {
+                    SearchMatchMode.StartsWith =>
+                        MatchesWildcard(
+                            name,
+                            searchText,
+                            false),
+                    SearchMatchMode.ExactName =>
+                        MatchesWildcard(
+                            name,
+                            searchText,
+                            false),
+                    SearchMatchMode.FileExtension =>
+                        !entry.IsDirectory &&
+                        MatchesWildcard(
+                            NormalizeExtension(
+                                Path.GetExtension(name)),
+                            NormalizeExtensionPattern(
+                                searchText),
+                            false),
+                    _ =>
+                        MatchesWildcard(
+                            name,
+                            searchText,
+                            true) ||
+                        MatchesWildcard(
+                            entry.FullPath ?? string.Empty,
+                            searchText,
+                            true)
+                };
+            }
 
             return criteria.MatchMode switch
             {
@@ -182,6 +218,81 @@ namespace c2flux
             return normalized.StartsWith(".", StringComparison.Ordinal)
                 ? normalized
                 : "." + normalized;
+        }
+
+        private static string NormalizeExtensionPattern(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            string normalized = value.Trim();
+
+            if (normalized.StartsWith("*.", StringComparison.Ordinal))
+            {
+                normalized = normalized.Substring(1);
+            }
+
+            return normalized.StartsWith(".", StringComparison.Ordinal)
+                ? normalized
+                : "." + normalized;
+        }
+
+        private static bool MatchesWildcard(
+            string value,
+            string pattern,
+            bool contains)
+        {
+            value ??= string.Empty;
+            pattern ??= string.Empty;
+
+            if (contains)
+            {
+                pattern = "*" + pattern + "*";
+            }
+
+            int valueIndex = 0;
+            int patternIndex = 0;
+            int starIndex = -1;
+            int retryValueIndex = -1;
+
+            while (valueIndex < value.Length)
+            {
+                if (patternIndex < pattern.Length &&
+                    pattern[patternIndex] != '*' &&
+                    char.ToUpperInvariant(pattern[patternIndex]) ==
+                    char.ToUpperInvariant(value[valueIndex]))
+                {
+                    patternIndex++;
+                    valueIndex++;
+                    continue;
+                }
+
+                if (patternIndex < pattern.Length &&
+                    pattern[patternIndex] == '*')
+                {
+                    starIndex = patternIndex++;
+                    retryValueIndex = valueIndex;
+                    continue;
+                }
+
+                if (starIndex >= 0)
+                {
+                    patternIndex = starIndex + 1;
+                    valueIndex = ++retryValueIndex;
+                    continue;
+                }
+
+                return false;
+            }
+
+            while (patternIndex < pattern.Length &&
+                   pattern[patternIndex] == '*')
+            {
+                patternIndex++;
+            }
+
+            return patternIndex == pattern.Length;
         }
 
         private static SearchResult CreateResult(FileSystemEntry entry)

@@ -190,10 +190,10 @@ namespace c2flux
                 return;
             }
 
-            const int chartLeft = 24;
-            const int chartTop = 24;
-            const int chartLegendGap = 24;
-            const int rightPadding = 8;
+            int chartLeft = ScaleForDpi(24);
+            int chartTop = ScaleForDpi(24);
+            int chartLegendGap = ScaleForDpi(24);
+            int rightPadding = ScaleForDpi(8);
 
             int legendWidth = CalculateLegendWidth(
                 chartItems,
@@ -273,7 +273,8 @@ namespace c2flux
 
                 requiredWidth = Math.Max(
                     requiredWidth,
-                    textSize.Width + 30);
+                    textSize.Width +
+                    ScaleForDpi(30));
             }
 
             int maximumWidth = Math.Max(
@@ -326,7 +327,17 @@ namespace c2flux
                 ChartItem item = chartItems[index];
 
                 using SolidBrush colorBrush = new SolidBrush(ChartColors[index % ChartColors.Length]);
-                graphics.FillRectangle(colorBrush, left, y + 3, 14, 14);
+                int legendMarkerSize =
+                    ScaleForDpi(14);
+                int legendMarkerTop =
+                    y + ScaleForDpi(3);
+
+                graphics.FillRectangle(
+                    colorBrush,
+                    left,
+                    legendMarkerTop,
+                    legendMarkerSize,
+                    legendMarkerSize);
 
                 string text = string.Format(
                     LocalizationService.GetText("Chart.ItemLabel"),
@@ -334,7 +345,19 @@ namespace c2flux
                     SizeFormatter.Format(item.SizeBytes),
                     (double)item.SizeBytes * 100D / totalSize);
 
-                Rectangle legendBounds = new Rectangle(left, y, Math.Max(0, Width - left - 8), 22);
+                int legendRowHeight = Math.Max(
+                    Font.Height + ScaleForDpi(4),
+                    ScaleForDpi(22));
+
+                Rectangle legendBounds = new Rectangle(
+                    left,
+                    y,
+                    Math.Max(
+                        0,
+                        Width -
+                        left -
+                        ScaleForDpi(8)),
+                    legendRowHeight);
 
                 if (item.Entry != null)
                 {
@@ -345,12 +368,37 @@ namespace c2flux
                     graphics,
                     text,
                     Font,
-                    new Rectangle(left + 22, y, Math.Max(0, Width - left - 30), 22),
+                    new Rectangle(
+                        left + ScaleForDpi(22),
+                        y,
+                        Math.Max(
+                            0,
+                            Width -
+                            left -
+                            ScaleForDpi(30)),
+                        legendRowHeight),
                     ForeColor,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
-                y += 24;
+                y += Math.Max(
+                    legendRowHeight + ScaleForDpi(2),
+                    ScaleForDpi(24));
             }
+        }
+
+        private int ScaleForDpi(
+            int logicalPixels)
+        {
+            int deviceDpi = DeviceDpi <= 0
+                ? 96
+                : DeviceDpi;
+
+            return Math.Max(
+                1,
+                (int)Math.Round(
+                    logicalPixels *
+                    deviceDpi /
+                    96D));
         }
 
         private string FormatFileSystemDateToolTip(FileSystemEntry entry)

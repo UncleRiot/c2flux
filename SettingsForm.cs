@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -89,14 +89,81 @@ namespace c2flux
             ScanHistoryService.ConfigureDatabasePath(_settings.ScanHistoryDatabasePath);
 
             AntdThemeService.Apply(_settings.Layout);
-            AntdThemeService.Apply(this, _settings.Layout);
             InitializeComponent();
+            AntdThemeService.Apply(this, _settings.Layout);
             LoadSettings();
             ShowPage(panelGeneral);
+
+            Shown += SettingsForm_Shown;
+        }
+
+        private void SettingsForm_Shown(
+            object sender,
+            EventArgs e)
+        {
+            SuspendLayout();
+
+            try
+            {
+                MinimumSize = System.Drawing.Size.Empty;
+                MaximumSize = System.Drawing.Size.Empty;
+
+                AntdThemeService.ApplySettingsHighDpiLayout(
+                    this);
+
+                if (DeviceDpi >= 144)
+                {
+                    int rightMargin =
+                        AntdThemeService.ScaleForDpi(
+                            this,
+                            18);
+                    int bottomMargin =
+                        AntdThemeService.ScaleForDpi(
+                            this,
+                            16);
+
+                    int requiredClientWidth =
+                        ClientSize.Width;
+                    int requiredClientHeight =
+                        ClientSize.Height;
+
+                    foreach (Control control in Controls)
+                    {
+                        requiredClientWidth = Math.Max(
+                            requiredClientWidth,
+                            control.Right +
+                            rightMargin);
+
+                        requiredClientHeight = Math.Max(
+                            requiredClientHeight,
+                            control.Bottom +
+                            bottomMargin);
+                    }
+
+                    ClientSize = new Size(
+                        requiredClientWidth,
+                        requiredClientHeight);
+                }
+
+                PerformLayout();
+
+                MinimumSize = Size;
+                MaximumSize = Size;
+
+                Invalidate(true);
+                Update();
+            }
+            finally
+            {
+                ResumeLayout(true);
+            }
         }
 
         private void InitializeComponent()
         {
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96F, 96F);
+
             Color backgroundPrimary = AntdThemeService.BackgroundPrimary;
             Color backgroundSecondary = AntdThemeService.BackgroundSecondary;
             Color borderColor = AntdThemeService.SurfaceHighlight;
@@ -107,8 +174,8 @@ namespace c2flux
             ClientSize = new Size(
                 AntdThemeService.SettingsDialogWidth,
                 AntdThemeService.SettingsDialogHeight);
-            MinimumSize = Size;
-            MaximumSize = Size;
+            MinimumSize = System.Drawing.Size.Empty;
+            MaximumSize = System.Drawing.Size.Empty;
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;

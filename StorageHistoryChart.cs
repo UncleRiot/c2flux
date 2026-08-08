@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -170,16 +170,34 @@ namespace c2flux
             base.OnPaint(e);
 
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            int leftMargin = ScaleForDpi(80);
+            int topMargin = ScaleForDpi(45);
+            int rightMargin = ScaleForDpi(25);
+            int bottomMargin = ScaleForDpi(60);
+
             Rectangle plotArea = new Rectangle(
-                80,
-                45,
-                Math.Max(1, ClientSize.Width - 105),
-                Math.Max(1, ClientSize.Height - 105));
+                leftMargin,
+                topMargin,
+                Math.Max(
+                    1,
+                    ClientSize.Width -
+                    leftMargin -
+                    rightMargin),
+                Math.Max(
+                    1,
+                    ClientSize.Height -
+                    topMargin -
+                    bottomMargin));
 
             using (Font titleFont = new Font(Font, FontStyle.Bold))
             using (Brush titleBrush = new SolidBrush(ForeColor))
             {
-                e.Graphics.DrawString(LocalizationService.GetText("StorageHistory.Graph"), titleFont, titleBrush, 12, 12);
+                e.Graphics.DrawString(
+                    LocalizationService.GetText("StorageHistory.Graph"),
+                    titleFont,
+                    titleBrush,
+                    ScaleForDpi(12),
+                    ScaleForDpi(12));
             }
 
             if (_records.Count == 0)
@@ -235,11 +253,23 @@ namespace c2flux
                         e.Graphics,
                         labelText,
                         Font,
-                        new Point(plotArea.Left - labelSize.Width - 6, (int)y - labelSize.Height / 2),
+                        new Point(
+                            plotArea.Left -
+                            labelSize.Width -
+                            ScaleForDpi(6),
+                            (int)y -
+                            labelSize.Height / 2),
                         ForeColor);
                 }
 
-                int verticalGridLineCount = Math.Max(2, Math.Min(6, plotArea.Width / 140));
+                int verticalGridLineCount = Math.Max(
+                    2,
+                    Math.Min(
+                        6,
+                        plotArea.Width /
+                        Math.Max(
+                            1,
+                            ScaleForDpi(140))));
 
                 for (int index = 0; index <= verticalGridLineCount; index++)
                 {
@@ -258,7 +288,10 @@ namespace c2flux
                         e.Graphics,
                         labelText,
                         Font,
-                        new Point(labelX, plotArea.Bottom + 8),
+                        new Point(
+                            labelX,
+                            plotArea.Bottom +
+                            ScaleForDpi(8)),
                         ForeColor);
                 }
 
@@ -282,7 +315,11 @@ namespace c2flux
                 _points[index] = new PointF(x, y);
             }
 
-            using (Pen graphPen = new Pen(SystemColors.Highlight, 2F))
+            using (Pen graphPen = new Pen(
+                SystemColors.Highlight,
+                Math.Max(
+                    1F,
+                    ScaleForDpi(2))))
             {
                 if (_points.Length > 1)
                 {
@@ -294,9 +331,34 @@ namespace c2flux
             {
                 foreach (PointF point in _points)
                 {
-                    e.Graphics.FillEllipse(pointBrush, point.X - 3F, point.Y - 3F, 6F, 6F);
+                    float pointRadius =
+                        ScaleForDpi(3);
+                    float pointDiameter =
+                        pointRadius * 2F;
+
+                    e.Graphics.FillEllipse(
+                        pointBrush,
+                        point.X - pointRadius,
+                        point.Y - pointRadius,
+                        pointDiameter,
+                        pointDiameter);
                 }
             }
+        }
+
+        private int ScaleForDpi(
+            int logicalPixels)
+        {
+            int deviceDpi = DeviceDpi <= 0
+                ? 96
+                : DeviceDpi;
+
+            return Math.Max(
+                1,
+                (int)Math.Round(
+                    logicalPixels *
+                    deviceDpi /
+                    96D));
         }
 
         private LinearGradientBrush CreateBackgroundBrush(Rectangle plotArea, long axisMaximum)

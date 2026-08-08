@@ -327,17 +327,150 @@ namespace c2flux
                 ? SystemInformation.VerticalScrollBarWidth
                 : 0;
 
-            int availableWidth = Math.Max(0, clientWidth - verticalScrollBarWidth - 2);
+            int availableWidth = Math.Max(
+                0,
+                clientWidth -
+                verticalScrollBarWidth -
+                2);
 
-            int sizeColumnWidth = Math.Max(64, Math.Min(78, availableWidth / 5));
-            int freeColumnWidth = Math.Max(64, Math.Min(78, availableWidth / 5));
-            int freePercentColumnWidth = Math.Max(68, Math.Min(82, availableWidth / 5));
-            int nameColumnWidth = Math.Max(70, availableWidth - sizeColumnWidth - freeColumnWidth - freePercentColumnWidth);
+            int sizeColumnWidth = GetRequiredColumnWidth(
+                1,
+                8);
+            int freeColumnWidth = GetRequiredColumnWidth(
+                2,
+                8);
+            int freePercentColumnWidth = Math.Max(
+                GetRequiredColumnWidth(
+                    3,
+                    8),
+                AntdThemeService.ScaleForDpi(
+                    _listViewPartitions,
+                    48));
 
-            _listViewPartitions.Columns[0].Width = nameColumnWidth;
-            _listViewPartitions.Columns[1].Width = sizeColumnWidth;
-            _listViewPartitions.Columns[2].Width = freeColumnWidth;
-            _listViewPartitions.Columns[3].Width = freePercentColumnWidth;
+            int minimumNameColumnWidth =
+                AntdThemeService.ScaleForDpi(
+                    _listViewPartitions,
+                    52);
+            int fixedColumnsWidth =
+                sizeColumnWidth +
+                freeColumnWidth +
+                freePercentColumnWidth;
+
+            if (fixedColumnsWidth >
+                Math.Max(
+                    0,
+                    availableWidth -
+                    minimumNameColumnWidth))
+            {
+                int maximumFixedColumnsWidth = Math.Max(
+                    0,
+                    availableWidth -
+                    minimumNameColumnWidth);
+
+                double factor = fixedColumnsWidth <= 0
+                    ? 1D
+                    : (double)maximumFixedColumnsWidth /
+                      fixedColumnsWidth;
+
+                sizeColumnWidth = Math.Max(
+                    AntdThemeService.ScaleForDpi(
+                        _listViewPartitions,
+                        40),
+                    (int)Math.Floor(
+                        sizeColumnWidth *
+                        factor));
+                freeColumnWidth = Math.Max(
+                    AntdThemeService.ScaleForDpi(
+                        _listViewPartitions,
+                        40),
+                    (int)Math.Floor(
+                        freeColumnWidth *
+                        factor));
+                freePercentColumnWidth = Math.Max(
+                    AntdThemeService.ScaleForDpi(
+                        _listViewPartitions,
+                        44),
+                    maximumFixedColumnsWidth -
+                    sizeColumnWidth -
+                    freeColumnWidth);
+            }
+
+            int nameColumnWidth = Math.Max(
+                minimumNameColumnWidth,
+                availableWidth -
+                sizeColumnWidth -
+                freeColumnWidth -
+                freePercentColumnWidth);
+
+            _listViewPartitions.Columns[0].Width =
+                nameColumnWidth;
+            _listViewPartitions.Columns[1].Width =
+                sizeColumnWidth;
+            _listViewPartitions.Columns[2].Width =
+                freeColumnWidth;
+            _listViewPartitions.Columns[3].Width =
+                freePercentColumnWidth;
+        }
+
+        private int GetRequiredColumnWidth(
+            int columnIndex,
+            int horizontalPadding)
+        {
+            DataGridViewColumn column =
+                _listViewPartitions.Columns[columnIndex];
+
+            DataGridViewCellStyle headerStyle =
+                column.HeaderCell.InheritedStyle;
+
+            int headerPadding =
+                headerStyle.Padding.Horizontal;
+
+            int requiredWidth =
+                TextRenderer.MeasureText(
+                    column.HeaderText ?? string.Empty,
+                    headerStyle.Font ??
+                    _listViewPartitions.Font,
+                    Size.Empty,
+                    TextFormatFlags.SingleLine |
+                    TextFormatFlags.NoPadding).Width +
+                headerPadding;
+
+            foreach (DataGridViewRow row in _listViewPartitions.Rows)
+            {
+                if (!row.Visible)
+                    continue;
+
+                DataGridViewCell cell =
+                    row.Cells[columnIndex];
+
+                string text = Convert.ToString(
+                    cell.FormattedValue);
+
+                DataGridViewCellStyle cellStyle =
+                    cell.InheritedStyle;
+
+                int textWidth =
+                    TextRenderer.MeasureText(
+                        text ?? string.Empty,
+                        cellStyle.Font ??
+                        _listViewPartitions.Font,
+                        Size.Empty,
+                        TextFormatFlags.SingleLine |
+                        TextFormatFlags.NoPadding).Width +
+                    cellStyle.Padding.Horizontal;
+
+                requiredWidth = Math.Max(
+                    requiredWidth,
+                    textWidth);
+            }
+
+            int dpiPadding =
+                AntdThemeService.ScaleForDpi(
+                    _listViewPartitions,
+                    horizontalPadding);
+
+            return requiredWidth +
+                   dpiPadding;
         }
 
         public void HandleCellPainting(DataGridViewCellPaintingEventArgs e)

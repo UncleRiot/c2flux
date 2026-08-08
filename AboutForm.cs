@@ -44,7 +44,188 @@ namespace c2flux
                     LocalizationService.GetText("About.UpdateCheckDisabled");
                 linkLabelUpdate.Enabled = false;
             }
+
+            Shown += AboutForm_Shown;
         }
+
+        private void AboutForm_Shown(
+            object sender,
+            EventArgs e)
+        {
+            if (DeviceDpi < 144)
+                return;
+
+            SuspendLayout();
+
+            try
+            {
+                MinimumSize = System.Drawing.Size.Empty;
+                MaximumSize = System.Drawing.Size.Empty;
+
+                int scale(int logicalPixels)
+                {
+                    int deviceDpi = DeviceDpi <= 0
+                        ? 96
+                        : DeviceDpi;
+
+                    return Math.Max(
+                        1,
+                        (int)Math.Round(
+                            logicalPixels *
+                            deviceDpi /
+                            96D));
+                }
+
+                int rightMargin = scale(20);
+                int textGap = scale(4);
+                int sectionGap = scale(18);
+                int bottomMargin = scale(16);
+
+                int requiredLinkWidth = Math.Max(
+                    TextRenderer.MeasureText(
+                        linkLabelGithub.Text ?? string.Empty,
+                        linkLabelGithub.Font,
+                        System.Drawing.Size.Empty,
+                        TextFormatFlags.SingleLine |
+                        TextFormatFlags.NoPadding).Width,
+                    TextRenderer.MeasureText(
+                        linkLabelHelp.Text ?? string.Empty,
+                        linkLabelHelp.Font,
+                        System.Drawing.Size.Empty,
+                        TextFormatFlags.SingleLine |
+                        TextFormatFlags.NoPadding).Width);
+
+                int requiredClientWidth = Math.Max(
+                    ClientSize.Width,
+                    linkLabelGithub.Left +
+                    requiredLinkWidth +
+                    rightMargin);
+
+                if (requiredClientWidth > ClientSize.Width)
+                {
+                    ClientSize = new System.Drawing.Size(
+                        requiredClientWidth,
+                        ClientSize.Height);
+                }
+
+                int textWidth = Math.Max(
+                    1,
+                    ClientSize.Width -
+                    labelTitle.Left -
+                    rightMargin);
+
+                labelTitle.MaximumSize =
+                    new System.Drawing.Size(
+                        textWidth,
+                        0);
+                labelCopyright.MaximumSize =
+                    new System.Drawing.Size(
+                        textWidth,
+                        0);
+                labelVersion.MaximumSize =
+                    new System.Drawing.Size(
+                        textWidth,
+                        0);
+                linkLabelUpdate.MaximumSize =
+                    new System.Drawing.Size(
+                        textWidth,
+                        0);
+                linkLabelGithub.MaximumSize =
+                    new System.Drawing.Size(
+                        textWidth,
+                        0);
+                linkLabelHelp.MaximumSize =
+                    new System.Drawing.Size(
+                        textWidth,
+                        0);
+
+                labelCopyright.Top =
+                    labelTitle.Bottom +
+                    textGap;
+
+                labelVersion.Top =
+                    labelCopyright.Bottom +
+                    textGap;
+
+                linkLabelUpdate.Top =
+                    labelVersion.Bottom +
+                    textGap;
+
+                linkLabelGithub.Top =
+                    linkLabelUpdate.Bottom +
+                    textGap;
+
+                linkLabelHelp.Top =
+                    linkLabelGithub.Bottom +
+                    textGap;
+
+                int lowerTextWidth = Math.Max(
+                    1,
+                    ClientSize.Width -
+                    labelKoFiText.Left -
+                    rightMargin);
+
+                labelKoFiText.Width =
+                    lowerTextWidth;
+
+                int requiredKoFiTextHeight =
+                    TextRenderer.MeasureText(
+                        labelKoFiText.Text ?? string.Empty,
+                        labelKoFiText.Font,
+                        new System.Drawing.Size(
+                            lowerTextWidth,
+                            int.MaxValue),
+                        TextFormatFlags.WordBreak |
+                        TextFormatFlags.NoPadding).Height;
+
+                labelKoFiText.Height = Math.Max(
+                    labelKoFiText.Height,
+                    requiredKoFiTextHeight +
+                    scale(4));
+
+                labelKoFiText.Top =
+                    linkLabelHelp.Bottom +
+                    sectionGap;
+
+                pictureBoxKoFi.Top =
+                    labelKoFiText.Bottom +
+                    scale(12);
+
+                buttonOk.Left =
+                    ClientSize.Width -
+                    rightMargin -
+                    buttonOk.Width;
+
+                buttonOk.Top =
+                    pictureBoxKoFi.Bottom -
+                    buttonOk.Height;
+
+                int requiredClientHeight =
+                    Math.Max(
+                        pictureBoxKoFi.Bottom,
+                        buttonOk.Bottom) +
+                    bottomMargin;
+
+                if (requiredClientHeight > ClientSize.Height)
+                {
+                    ClientSize = new System.Drawing.Size(
+                        ClientSize.Width,
+                        requiredClientHeight);
+                }
+
+                MinimumSize = Size;
+                MaximumSize = Size;
+
+                PerformLayout();
+                Invalidate(true);
+                Update();
+            }
+            finally
+            {
+                ResumeLayout(true);
+            }
+        }
+
         private void ConfigureImageBackgrounds()
         {
             pictureBoxMolotov.BackColor = Color.Transparent;
@@ -77,6 +258,9 @@ namespace c2flux
 
         private void InitializeComponent()
         {
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96F, 96F);
+
             Text = LocalizationService.Format(
                 "About.Title",
                 AppConstants.ApplicationName);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,9 +33,24 @@ namespace c2flux
                 .Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(extension => extension.Trim())
                 .Where(extension => extension.Length > 0)
-                .Select(extension => extension.StartsWith(".", StringComparison.Ordinal) ? extension : "." + extension)
+                .Select(NormalizeFileExtensionPattern)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
+        }
+
+        private static string NormalizeFileExtensionPattern(
+            string value)
+        {
+            string normalized = value.Trim();
+
+            if (normalized.StartsWith("*.", StringComparison.Ordinal))
+            {
+                normalized = normalized.Substring(1);
+            }
+
+            return normalized.StartsWith(".", StringComparison.Ordinal)
+                ? normalized
+                : "." + normalized;
         }
     }
 

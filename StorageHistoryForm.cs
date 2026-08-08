@@ -46,6 +46,9 @@ namespace c2flux
                 ? Color.White
                 : Color.Black;
 
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96F, 96F);
+
             Text = LocalizationService.GetText("StorageHistory.Title");
             StartPosition = FormStartPosition.CenterParent;
             AutoSize = false;
@@ -350,27 +353,70 @@ namespace c2flux
 
             Shown += (sender, e) =>
             {
-                if (_embeddedMode)
-                {
-                    splitContainer.Panel1MinSize = 0;
-                    splitContainer.Panel2MinSize = 0;
-                    splitContainer.SplitterDistance = Math.Max(
-                        0,
-                        Math.Min(
-                            AntdThemeService.StorageHistoryEmbeddedGridWidth,
-                            splitContainer.ClientSize.Width - splitContainer.SplitterWidth));
-                }
-                else
-                {
-                    splitContainer.Panel1MinSize =
-                        AntdThemeService.StorageHistoryWindowGridMinimumWidth;
-                    splitContainer.Panel2MinSize =
-                        AntdThemeService.StorageHistoryWindowChartMinimumWidth;
-                    splitContainer.SplitterDistance =
-                        AntdThemeService.StorageHistoryWindowGridWidth;
-                }
+                SuspendLayout();
 
-                ApplyHistoryGridScrollBarTheme();
+                try
+                {
+                    PerformAutoScale();
+
+                    int headerPadding =
+                        AntdThemeService.ScaleForDpi(
+                            this,
+                            AntdThemeService.StorageHistoryHeaderPadding);
+                    int headerRowHeight =
+                        AntdThemeService.ScaleForDpi(
+                            this,
+                            AntdThemeService.StorageHistoryHeaderRowHeight);
+
+                    pathLayout.Padding =
+                        new Padding(headerPadding);
+                    pathLayout.Height =
+                        headerRowHeight +
+                        (headerPadding * 2);
+                    pathLayout.RowStyles[0].Height =
+                        headerRowHeight;
+                    mainLayout.RowStyles[0].Height =
+                        pathLayout.Height;
+
+                    if (_embeddedMode)
+                    {
+                        splitContainer.Panel1MinSize = 0;
+                        splitContainer.Panel2MinSize = 0;
+                        splitContainer.SplitterDistance = Math.Max(
+                            0,
+                            Math.Min(
+                                AntdThemeService.ScaleForDpi(
+                                    this,
+                                    AntdThemeService.StorageHistoryEmbeddedGridWidth),
+                                splitContainer.ClientSize.Width -
+                                splitContainer.SplitterWidth));
+                    }
+                    else
+                    {
+                        splitContainer.Panel1MinSize =
+                            AntdThemeService.ScaleForDpi(
+                                this,
+                                AntdThemeService.StorageHistoryWindowGridMinimumWidth);
+                        splitContainer.Panel2MinSize =
+                            AntdThemeService.ScaleForDpi(
+                                this,
+                                AntdThemeService.StorageHistoryWindowChartMinimumWidth);
+                        splitContainer.SplitterDistance =
+                            AntdThemeService.ScaleForDpi(
+                                this,
+                                AntdThemeService.StorageHistoryWindowGridWidth);
+                    }
+
+                    AntdThemeService.ConfigureStorageHistoryGrid(
+                        dataGridViewRecords);
+                    PerformLayout();
+                    storageHistoryChart.Invalidate();
+                    ApplyHistoryGridScrollBarTheme();
+                }
+                finally
+                {
+                    ResumeLayout(true);
+                }
             };
 
             BackColor = windowBackColor;
