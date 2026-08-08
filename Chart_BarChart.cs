@@ -33,7 +33,9 @@ namespace c2flux
         private readonly ToolTip _toolTip;
         private readonly List<ChartHitArea> _hitAreas;
         private readonly Dictionary<string, Bitmap> _systemIconCache;
+        private readonly ContextMenuStrip _contextMenu;
         private FileSystemEntry _entry;
+        private FileSystemEntry _contextMenuEntry;
         private string _currentToolTipText;
         private int _barHeight = 14;
 
@@ -59,6 +61,22 @@ namespace c2flux
             _hitAreas = new List<ChartHitArea>();
             _systemIconCache = new Dictionary<string, Bitmap>(StringComparer.OrdinalIgnoreCase);
 
+            _contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem openInExplorerItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText(
+                        "Context.OpenInExplorer"));
+
+            openInExplorerItem.Click +=
+                OpenInExplorerItem_Click;
+
+            _contextMenu.Items.Add(
+                openInExplorerItem);
+
+            AntdThemeService.ConfigureContextMenu(
+                _contextMenu);
+
             SetStyle(
                 ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.UserPaint |
@@ -82,6 +100,7 @@ namespace c2flux
             if (disposing)
             {
                 _toolTip.Dispose();
+                _contextMenu.Dispose();
 
                 foreach (Bitmap bitmap in _systemIconCache.Values)
                 {
@@ -122,6 +141,73 @@ namespace c2flux
 
             _currentToolTipText = null;
             _toolTip.SetToolTip(this, string.Empty);
+        }
+
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            _contextMenuEntry = null;
+
+            foreach (ChartHitArea hitArea in _hitAreas)
+            {
+                if (!hitArea.Bounds.Contains(e.Location))
+                    continue;
+
+                _contextMenuEntry = hitArea.Entry;
+                break;
+            }
+
+            if (_contextMenuEntry == null)
+                return;
+
+            _contextMenu.Show(
+                this,
+                e.Location);
+        }
+
+        private void OpenInExplorerItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_contextMenuEntry == null ||
+                string.IsNullOrWhiteSpace(
+                    _contextMenuEntry.FullPath))
+            {
+                return;
+            }
+
+            string targetPath =
+                _contextMenuEntry.FullPath;
+
+            if (Directory.Exists(targetPath))
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = "\"" + targetPath + "\"",
+                        UseShellExecute = true
+                    });
+
+                return;
+            }
+
+            if (!File.Exists(targetPath))
+                return;
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments =
+                        "/select,\"" + targetPath + "\"",
+                    UseShellExecute = true
+                });
         }
 
         protected override void OnPaint(PaintEventArgs e)
