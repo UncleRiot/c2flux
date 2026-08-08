@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace c2flux
@@ -12,6 +14,8 @@ namespace c2flux
         private readonly ShellIconService _shellIconService;
         private readonly Action<string> _updateStatusStripForDrive;
         private readonly Action<string> _scanPathSelectionCommitted;
+        private const int DriveProbeTimeoutMilliseconds = 3000;
+
         private Color _backColor;
         private Color _foreColor;
         private bool _suppressSelectionCommitted;
@@ -41,23 +45,20 @@ namespace c2flux
             _toolStripComboBoxDrives.SelectedValueChanged += toolStripComboBoxDrives_SelectedValueChanged;
         }
 
-        public void LoadDrives()
+        public async Task LoadDrivesAsync()
         {
             if (_toolStripComboBoxDrives == null)
                 return;
 
-            List<DriveItem> drives = GetReadyDrives();
+            List<DriveItem> drives = await GetReadyDrivesAsync();
 
             _toolStripComboBoxDrives.Items.Clear();
 
             foreach (DriveItem driveItem in drives)
             {
-                Bitmap driveIcon = _shellIconService.GetSmallSystemIcon(
-                    driveItem.RootPath);
-
                 _toolStripComboBoxDrives.Items.Add(
                     new AntdUI.SelectItem(
-                        driveIcon,
+                        driveItem.Icon,
                         driveItem.DisplayName,
                         driveItem));
             }
@@ -176,27 +177,88 @@ namespace c2flux
             _toolStripComboBoxDrives.Update();
         }
 
-        private List<DriveItem> GetReadyDrives()
+        private async Task<List<DriveItem>> GetReadyDrivesAsync()
         {
-            List<DriveItem> drives = new List<DriveItem>();
+            DriveInfo[] driveInfos = DriveInfo.GetDrives();
 
-            foreach (DriveInfo driveInfo in DriveInfo.GetDrives())
+            Task<DriveItem>[] probeTasks = driveInfos
+                .Select(ProbeDriveAsync)
+                .ToArray();
+
+            DriveItem[] probeResults =
+                await Task.WhenAll(probeTasks);
+
+            return probeResults
+                .Where(driveItem => driveItem != null)
+                .ToList();
+        }
+
+        private async Task<DriveItem> ProbeDriveAsync(
+            DriveInfo driveInfo)
+        {
+            string rootPath = driveInfo.Name;
+
+            Task<DriveItem> probeTask = Task.Run(() =>
             {
                 if (!driveInfo.IsReady)
-                    continue;
+                    return null;
 
-                string label = string.IsNullOrWhiteSpace(driveInfo.VolumeLabel)
+                string resolvedRootPath =
+                    driveInfo.RootDirectory.FullName;
+                string volumeLabel = driveInfo.VolumeLabel;
+                string label = string.IsNullOrWhiteSpace(volumeLabel)
                     ? LocalizationService.GetText("Drive.LocalDisk")
-                    : driveInfo.VolumeLabel;
+                    : volumeLabel;
 
-                drives.Add(new DriveItem
+                return new DriveItem
                 {
-                    RootPath = driveInfo.RootDirectory.FullName,
-                    DisplayName = $"{driveInfo.RootDirectory.FullName}  {label}"
-                });
+                    RootPath = resolvedRootPath,
+                    DisplayName =
+                        $"{resolvedRootPath}  {label}",
+                    Icon = _shellIconService.GetSmallSystemIcon(
+                        resolvedRootPath)
+                };
+            });
+
+            Task completedTask = await Task.WhenAny(
+                probeTask,
+                Task.Delay(DriveProbeTimeoutMilliseconds));
+
+            if (!ReferenceEquals(completedTask, probeTask))
+            {
+                ObserveFaultedTask(probeTask);
+
+                AppAlertLog.AddWarning(
+                    "Drive",
+                    $"Drive {rootPath} did not respond within 3 seconds and was skipped.");
+
+                return null;
             }
 
-            return drives;
+            try
+            {
+                return await probeTask;
+            }
+            catch (Exception exception)
+            {
+                AppAlertLog.AddWarning(
+                    "Drive",
+                    $"Drive {rootPath} could not be read: {exception.Message}");
+
+                return null;
+            }
+        }
+
+        private static void ObserveFaultedTask(
+            Task task)
+        {
+            _ = task.ContinueWith(
+                completedTask =>
+                {
+                    _ = completedTask.Exception;
+                },
+                TaskContinuationOptions.OnlyOnFaulted |
+                TaskContinuationOptions.ExecuteSynchronously);
         }
 
         private string GetDriveComboBoxItemIconPath(object item)
@@ -219,6 +281,7 @@ namespace c2flux
         {
             public string DisplayName { get; set; }
             public string RootPath { get; set; }
+            public Bitmap Icon { get; set; }
 
             public override string ToString()
             {

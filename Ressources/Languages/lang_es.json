@@ -41,7 +41,7 @@
   "Search.Drive": "Drive",
   "Search.FullPath": "Full path",
   "Search.Modified": "Modified",
-  "Search.OpenParentFolder": "Open parent folder",
+  "Search.OpenParentFolder": "Abrir carpeta superior",
   "Search.CopyFullPath": "Copy full path",
   "Search.CopyName": "Copy name",
   "Search.ItemMissing": "The item no longer exists at this location.",
@@ -336,5 +336,6 @@
   "StorageHistory.Delete": "Eliminar historial",
   "StorageHistory.DeleteConfirm": "¿Eliminar el historial de esta ruta de análisis?",
   "Status.ScanTitlePrefix": "Análisis: ",
-  "Status.FreeSpaceWithFileCount": "Espacio libre {0}: {1} (de {2}), archivos: {3:N0}, tamaño de clúster: {4}"
+  "Status.FreeSpaceWithFileCount": "Espacio libre {0}: {1} (de {2}), archivos: {3:N0}, tamaño de clúster: {4}",
+  "Toolbar.CompareScansDisabled": "Para activar esta función: Configuración → Estadísticas → activa «Guardar historial de análisis»."
 }

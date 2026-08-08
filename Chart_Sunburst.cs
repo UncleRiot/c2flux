@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
@@ -11,22 +12,25 @@ namespace c2flux
     {
         private static readonly Color[] ChartColors =
         {
-            Color.FromArgb(102, 192, 244),
-            Color.FromArgb(244, 159, 67),
-            Color.FromArgb(120, 220, 140),
-            Color.FromArgb(190, 140, 255),
-            Color.FromArgb(255, 120, 120),
-            Color.FromArgb(120, 210, 210),
-            Color.FromArgb(255, 210, 90),
-            Color.FromArgb(170, 190, 255),
-            Color.FromArgb(210, 160, 120),
-            Color.FromArgb(150, 220, 180),
-            Color.FromArgb(220, 150, 210)
+            Color.FromArgb(86, 180, 233),
+            Color.FromArgb(230, 159, 0),
+            Color.FromArgb(0, 158, 115),
+            Color.FromArgb(204, 121, 167),
+            Color.FromArgb(240, 228, 66),
+            Color.FromArgb(0, 114, 178),
+            Color.FromArgb(213, 94, 0),
+            Color.FromArgb(128, 128, 128),
+            Color.FromArgb(102, 194, 165),
+            Color.FromArgb(252, 141, 98),
+            Color.FromArgb(141, 160, 203),
+            Color.FromArgb(231, 138, 195)
         };
 
         private readonly ToolTip _toolTip;
         private readonly List<SunburstHitArea> _hitAreas;
+        private readonly ContextMenuStrip _contextMenu;
         private FileSystemEntry _entry;
+        private FileSystemEntry _contextMenuEntry;
         private string _currentToolTipText;
         private int _depth;
         private int _maxItems;
@@ -36,6 +40,23 @@ namespace c2flux
             DoubleBuffered = true;
             _toolTip = new ToolTip();
             _hitAreas = new List<SunburstHitArea>();
+
+            _contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem openInExplorerItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText(
+                        "Context.OpenInExplorer"));
+
+            openInExplorerItem.Click +=
+                OpenInExplorerItem_Click;
+
+            _contextMenu.Items.Add(
+                openInExplorerItem);
+
+            AntdThemeService.ConfigureContextMenu(
+                _contextMenu);
+
             _depth = 3;
             _maxItems = 1000;
         }
@@ -82,6 +103,74 @@ namespace c2flux
 
             _currentToolTipText = toolTipText;
             _toolTip.SetToolTip(this, toolTipText);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            _contextMenuEntry = null;
+
+            for (int index = _hitAreas.Count - 1; index >= 0; index--)
+            {
+                SunburstHitArea hitArea = _hitAreas[index];
+
+                if (!hitArea.Contains(e.Location))
+                    continue;
+
+                _contextMenuEntry = hitArea.Entry;
+                break;
+            }
+
+            if (_contextMenuEntry == null)
+                return;
+
+            _contextMenu.Show(
+                this,
+                e.Location);
+        }
+
+        private void OpenInExplorerItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_contextMenuEntry == null ||
+                string.IsNullOrWhiteSpace(
+                    _contextMenuEntry.FullPath))
+            {
+                return;
+            }
+
+            string targetPath =
+                _contextMenuEntry.FullPath;
+
+            if (Directory.Exists(targetPath))
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = "\"" + targetPath + "\"",
+                        UseShellExecute = true
+                    });
+
+                return;
+            }
+
+            if (!File.Exists(targetPath))
+                return;
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments =
+                        "/select,\"" + targetPath + "\"",
+                    UseShellExecute = true
+                });
         }
 
         protected override void OnMouseLeave(EventArgs e)
@@ -322,13 +411,30 @@ namespace c2flux
 
         private static Color AdjustColor(Color color, int level)
         {
-            float factor = Math.Max(0.45F, 1F - level * 0.10F);
+            if (level <= 0)
+                return color;
+
+            float factor = Math.Max(
+                0.72F,
+                1F - level * 0.07F);
 
             return Color.FromArgb(
                 color.A,
-                Math.Max(0, Math.Min(255, (int)(color.R * factor))),
-                Math.Max(0, Math.Min(255, (int)(color.G * factor))),
-                Math.Max(0, Math.Min(255, (int)(color.B * factor))));
+                Math.Max(
+                    0,
+                    Math.Min(
+                        255,
+                        (int)(color.R * factor))),
+                Math.Max(
+                    0,
+                    Math.Min(
+                        255,
+                        (int)(color.G * factor))),
+                Math.Max(
+                    0,
+                    Math.Min(
+                        255,
+                        (int)(color.B * factor))));
         }
 
         private static int GetAvailableDepth(FileSystemEntry entry)
@@ -356,6 +462,7 @@ namespace c2flux
             if (disposing)
             {
                 _toolTip.Dispose();
+                _contextMenu.Dispose();
 
                 foreach (SunburstHitArea hitArea in _hitAreas)
                 {

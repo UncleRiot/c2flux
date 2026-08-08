@@ -1033,6 +1033,9 @@ namespace c2flux
         public static Color TextPrimary =>
             _useDarkMode ? Color.White : SystemColors.ControlText;
 
+        public static Color MainDisabledButtonTextColor =>
+            _useDarkMode ? Color.FromArgb(128, 128, 128) : SystemColors.GrayText;
+
         public static Color Accent =>
             SystemColors.Highlight;
 
@@ -1155,6 +1158,8 @@ namespace c2flux
             tabs.ItemSize = AnalysisTabWidth;
             tabs.Gap = AnalysisTabHorizontalPadding;
             tabs.ForeColor = AnalysisTabTextColor;
+            tabs.Fill = AccentText;
+            tabs.FillActive = AccentText;
             tabs.BackColor = BackgroundPrimary;
             tabs.Font = DefaultFont;
             tabs.TabStop = false;
@@ -1164,6 +1169,15 @@ namespace c2flux
             tabs.EnablePageCloseByMouseDoubleClick = false;
             tabs.DragOrder = false;
             tabs.TabMenuVisible = true;
+
+            if (tabs.Style is AntdUI.Tabs.StyleCard cardStyle)
+            {
+                cardStyle.Fill = AnalysisTabBackColor;
+                cardStyle.FillHover = HoverBackground;
+                cardStyle.FillActive = Accent;
+                cardStyle.BorderColor = AnalysisTabBorderColor;
+                cardStyle.BorderActive = Accent;
+            }
         }
 
 
@@ -2103,9 +2117,11 @@ namespace c2flux
 
         // Symbol Compare Scans
         public static void ApplyMainCompareScansButtonIcon(
-            AntdUI.Button compareScansButton)
+            AntdUI.Button compareScansButton,
+            bool isAvailable)
         {
-            Bitmap compareScansIcon = CreateMainCompareScansButtonIcon();
+            Bitmap compareScansIcon =
+                CreateMainCompareScansButtonIcon(isAvailable);
             Image previousIcon = compareScansButton.Icon;
 
             compareScansButton.Icon = compareScansIcon;
@@ -2121,7 +2137,8 @@ namespace c2flux
         }
 
         // Vergleichssymbol Compare Scans / Scan history
-        private static Bitmap CreateMainCompareScansButtonIcon()
+        private static Bitmap CreateMainCompareScansButtonIcon(
+            bool isAvailable)
         {
             Bitmap bitmap = CreateMainViewButtonBitmap();
 
@@ -2129,7 +2146,9 @@ namespace c2flux
             graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             using Pen iconPen = new Pen(
-                MainViewButtonIconInactiveColor,
+                isAvailable
+                    ? MainViewButtonIconInactiveColor
+                    : MainDisabledButtonTextColor,
                 MainViewButtonIconLineWidth);
 
             graphics.DrawRectangle(iconPen, 2, 3, 8, 10);
@@ -2454,7 +2473,7 @@ namespace c2flux
             checkBox.Margin = new Padding(8, 2, 8, 0);
         }
 
-        private static void ConfigureContextMenu(ContextMenuStrip contextMenuStrip)
+        public static void ConfigureContextMenu(ContextMenuStrip contextMenuStrip)
         {
             contextMenuStrip.BackColor = BackgroundSecondary;
             contextMenuStrip.ForeColor = TextPrimary;
@@ -2766,6 +2785,8 @@ namespace c2flux
         private static extern int SetWindowTheme(IntPtr hwnd, string pszSubAppName, string pszSubIdList);
 
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        private const int DWMWA_CAPTION_COLOR = 35;
+        private const int DWMWA_COLOR_DEFAULT = unchecked((int)0xFFFFFFFF);
 
         public static void Apply(Form form, AppLayout layout)
         {
@@ -2870,6 +2891,7 @@ namespace c2flux
             form.SizeGripStyle = IsResizable(form) ? SizeGripStyle.Auto : SizeGripStyle.Hide;
 
             SetImmersiveDarkMode(form, useDarkMode);
+            SetCaptionColor(form, useDarkMode);
 
             if (useDarkMode)
             {
@@ -3337,6 +3359,39 @@ namespace c2flux
 
             int useDarkMode = enabled ? 1 : 0;
             DwmSetWindowAttribute(form.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useDarkMode, sizeof(int));
+        }
+
+        private static void SetCaptionColor(
+            Form form,
+            bool useDarkMode)
+        {
+            if (!form.IsHandleCreated)
+            {
+                form.HandleCreated +=
+                    (sender, e) =>
+                        SetCaptionColor(
+                            form,
+                            useDarkMode);
+                return;
+            }
+
+            int captionColor = useDarkMode
+                ? ToColorRef(BackgroundPrimary)
+                : DWMWA_COLOR_DEFAULT;
+
+            DwmSetWindowAttribute(
+                form.Handle,
+                DWMWA_CAPTION_COLOR,
+                ref captionColor,
+                sizeof(int));
+        }
+
+        private static int ToColorRef(
+            Color color)
+        {
+            return color.R |
+                   (color.G << 8) |
+                   (color.B << 16);
         }
 
         private sealed class MainFormToolStripRenderer : ToolStripProfessionalRenderer

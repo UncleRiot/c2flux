@@ -9,8 +9,11 @@ namespace c2flux
 {
     public sealed class Chart_TableGridChart : AntdUI.Table
     {
+        private readonly ContextMenuStrip _contextMenu =
+            new ContextMenuStrip();
         private List<EntryChartItem> _rows = new List<EntryChartItem>();
         private FileSystemEntry _entry;
+        private EntryChartItem _contextMenuRow;
         private bool _showFiles;
 
         public Chart_TableGridChart()
@@ -126,8 +129,10 @@ namespace c2flux
                     LocalizationService.GetText("Chart.TableUsage"),
                     AntdUI.ColumnAlign.Center)
                 {
-                    Width = "14%",
-                    MinWidth = "110",
+                    Width =
+                        (AntdThemeService.TableProgressWidth +
+                         (AntdThemeService.TableCellHorizontalPadding * 2))
+                        .ToString(),
                     SortOrder = true,
                     Render = (value, record, rowIndex) =>
                     {
@@ -154,8 +159,75 @@ namespace c2flux
                 }
             };
 
+            MouseDown += Chart_TableGridChart_MouseDown;
+            CellClickBegin += Chart_TableGridChart_CellClickBegin;
+
+            ToolStripMenuItem openInExplorerItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText(
+                        "Context.OpenInExplorer"));
+            openInExplorerItem.Click +=
+                OpenInExplorerItem_Click;
+            _contextMenu.Items.Add(openInExplorerItem);
+            _contextMenu.Opening +=
+                (sender, e) =>
+                    e.Cancel =
+                        _contextMenuRow == null;
+            AntdThemeService.ConfigureContextMenu(
+                _contextMenu);
+            ContextMenuStrip = _contextMenu;
+
             AntdThemeService.ApplyTable(this);
             BindEntryRows();
+        }
+
+        private void Chart_TableGridChart_MouseDown(
+            object sender,
+            MouseEventArgs e)
+        {
+            _contextMenuRow = null;
+        }
+
+        private void Chart_TableGridChart_CellClickBegin(
+            object sender,
+            AntdUI.TableClickBeginEventArgs e)
+        {
+            dynamic eventArgs = e;
+
+            _contextMenuRow =
+                eventArgs.Record as EntryChartItem;
+        }
+
+        private void OpenInExplorerItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_contextMenuRow == null ||
+                string.IsNullOrWhiteSpace(
+                    _contextMenuRow.FullPath))
+            {
+                return;
+            }
+
+            string targetPath = _contextMenuRow.FullPath;
+
+            if (!File.Exists(targetPath) &&
+                !Directory.Exists(targetPath))
+            {
+                return;
+            }
+
+            string arguments = File.Exists(targetPath)
+                ? "/select,\"" + targetPath + "\""
+                : "\"" + targetPath + "\"";
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = arguments,
+                    UseShellExecute = true
+                });
         }
 
         private void BindEntryRows()

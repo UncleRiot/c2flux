@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -22,6 +22,7 @@ namespace c2flux
         private sealed class LargestFileRow
         {
             public string Name { get; set; }
+            public double UsagePercent { get; set; }
             public string FormattedSize { get; set; }
             public long SizeBytes { get; set; }
             public DateTime LastWriteTime { get; set; }
@@ -42,6 +43,9 @@ namespace c2flux
             new Analysis_ResponsiveTableGrid();
         private readonly Analysis_ResponsiveTableGrid _largestFilesGrid =
             new Analysis_ResponsiveTableGrid();
+        private readonly ContextMenuStrip _largestFilesContextMenu =
+            new ContextMenuStrip();
+        private LargestFileRow _largestFilesContextRow;
         private List<FileTypeRow> _fileTypeRows =
             new List<FileTypeRow>();
         private List<LargestFileRow> _largestFileRows =
@@ -101,6 +105,10 @@ namespace c2flux
                     LocalizationService.GetText("Advanced.Usage"),
                     AntdUI.ColumnAlign.Center)
                 {
+                    Width =
+                        (AntdThemeService.TableProgressWidth +
+                         (AntdThemeService.TableCellHorizontalPadding * 2))
+                        .ToString(),
                     SortOrder = true,
                     Render = (value, record, rowIndex) =>
                     {
@@ -118,15 +126,19 @@ namespace c2flux
                 },
                 new AntdUI.Column(
                     nameof(FileTypeRow.SizeGb),
-                    LocalizationService.GetText("Advanced.SizeGb"))
+                    LocalizationService.GetText("Advanced.SizeGb"),
+                    AntdUI.ColumnAlign.Right)
                 {
+                    Width = "auto",
                     Ellipsis = true,
                     SortOrder = true
                 },
                 new AntdUI.Column(
                     nameof(FileTypeRow.SizeMb),
-                    LocalizationService.GetText("Advanced.SizeMb"))
+                    LocalizationService.GetText("Advanced.SizeMb"),
+                    AntdUI.ColumnAlign.Right)
                 {
+                    Width = "auto",
                     Ellipsis = true,
                     SortOrder = true
                 }
@@ -136,18 +148,6 @@ namespace c2flux
                 (
                     nameof(FileTypeRow.Extension),
                     AntdThemeService.AnalysisFileTypeColumnWidthPercent
-                ),
-                (
-                    nameof(FileTypeRow.UsagePercent),
-                    AntdThemeService.AnalysisUsageColumnWidthPercent
-                ),
-                (
-                    nameof(FileTypeRow.SizeGb),
-                    AntdThemeService.AnalysisSizeGbColumnWidthPercent
-                ),
-                (
-                    nameof(FileTypeRow.SizeMb),
-                    AntdThemeService.AnalysisSizeMbColumnWidthPercent
                 ));
 
             return CreatePage(
@@ -158,31 +158,38 @@ namespace c2flux
         private AntdUI.TabPage CreateLargestFilesPage()
         {
             _largestFilesGrid.Columns = CreateLargestFilesColumns();
+            _largestFilesGrid.AutoSizeColumnsMode =
+                AntdUI.ColumnsMode.Auto;
+            _largestFilesGrid.MouseDown +=
+                LargestFilesGrid_MouseDown;
+            _largestFilesGrid.CellClickBegin +=
+                LargestFilesGrid_CellClickBegin;
             _largestFilesGrid.CellClick +=
                 LargestFilesGrid_CellClick;
             _largestFilesGrid.CellDoubleClick +=
                 LargestFilesGrid_CellDoubleClick;
 
+            ToolStripMenuItem openParentFolderItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText(
+                        "Search.OpenParentFolder"));
+            openParentFolderItem.Click +=
+                LargestFilesOpenParentFolder_Click;
+            _largestFilesContextMenu.Items.Add(
+                openParentFolderItem);
+            _largestFilesContextMenu.Opening +=
+                (sender, e) =>
+                    e.Cancel =
+                        _largestFilesContextRow == null;
+            AntdThemeService.ConfigureContextMenu(
+                _largestFilesContextMenu);
+            _largestFilesGrid.ContextMenuStrip =
+                _largestFilesContextMenu;
+
             _largestFilesGrid.SetResponsiveColumns(
                 (
                     nameof(LargestFileRow.Name),
                     AntdThemeService.AnalysisLargestFilesNameColumnWidthPercent
-                ),
-                (
-                    nameof(LargestFileRow.FormattedSize),
-                    AntdThemeService.AnalysisLargestFilesFormattedSizeColumnWidthPercent
-                ),
-                (
-                    nameof(LargestFileRow.SizeBytes),
-                    AntdThemeService.AnalysisLargestFilesSizeBytesColumnWidthPercent
-                ),
-                (
-                    nameof(LargestFileRow.LastWriteTime),
-                    AntdThemeService.AnalysisLargestFilesLastWriteTimeColumnWidthPercent
-                ),
-                (
-                    nameof(LargestFileRow.FullPath),
-                    AntdThemeService.AnalysisLargestFilesFullPathColumnWidthPercent
                 ));
 
             return CreatePage(
@@ -199,13 +206,46 @@ namespace c2flux
                     LocalizationService.GetText("Common.Name"))
                 {
                     Ellipsis = true,
-                    SortOrder = true
+                    SortOrder = true,
+                    Render = (value, record, rowIndex) =>
+                    {
+                        string name = record is LargestFileRow row
+                            ? row.Name
+                            : value?.ToString();
+
+                        return new AnalysisVisibleEllipsisCellText(name);
+                    }
+                },
+                new AntdUI.Column(
+                    nameof(LargestFileRow.UsagePercent),
+                    LocalizationService.GetText("Advanced.Usage"),
+                    AntdUI.ColumnAlign.Center)
+                {
+                    Width =
+                        (AntdThemeService.TableProgressWidth +
+                         (AntdThemeService.TableCellHorizontalPadding * 2))
+                        .ToString(),
+                    SortOrder = true,
+                    Render = (value, record, rowIndex) =>
+                    {
+                        double percent = record is LargestFileRow row
+                            ? row.UsagePercent
+                            : 0D;
+
+                        return new AnalysisPercentCellProgress(
+                            (float)Math.Clamp(
+                                percent / 100D,
+                                0D,
+                                1D),
+                            $"{percent:0.0} %");
+                    }
                 },
                 new AntdUI.Column(
                     nameof(LargestFileRow.FormattedSize),
                     LocalizationService.GetText("Advanced.SizeGb"),
                     AntdUI.ColumnAlign.Right)
                 {
+                    Width = "auto",
                     Ellipsis = true,
                     SortOrder = true
                 },
@@ -214,6 +254,7 @@ namespace c2flux
                     GetSizeUnitHeader(),
                     AntdUI.ColumnAlign.Right)
                 {
+                    Width = "auto",
                     Ellipsis = true,
                     SortOrder = true,
                     Render = (value, record, rowIndex) =>
@@ -229,25 +270,36 @@ namespace c2flux
                     nameof(LargestFileRow.LastWriteTime),
                     LocalizationService.GetText("Advanced.Modified"))
                 {
+                    Width = "auto",
                     Ellipsis = true,
                     SortOrder = true,
                     Render = (value, record, rowIndex) =>
                     {
-                        if (record is LargestFileRow row &&
-                            row.LastWriteTime != DateTime.MinValue)
-                        {
-                            return row.LastWriteTime.ToString("g");
-                        }
+                        string modified =
+                            record is LargestFileRow row &&
+                            row.LastWriteTime != DateTime.MinValue
+                                ? row.LastWriteTime.ToString("g")
+                                : string.Empty;
 
-                        return string.Empty;
+                        return new AnalysisVisibleEllipsisCellText(
+                            modified);
                     }
                 },
                 new AntdUI.Column(
                     nameof(LargestFileRow.FullPath),
                     LocalizationService.GetText("Common.Path"))
                 {
+                    Width = "fill",
                     Ellipsis = true,
-                    SortOrder = true
+                    SortOrder = true,
+                    Render = (value, record, rowIndex) =>
+                    {
+                        string path = record is LargestFileRow row
+                            ? row.FullPath
+                            : value?.ToString();
+
+                        return new AnalysisVisibleEllipsisCellText(path);
+                    }
                 }
             };
         }
@@ -280,11 +332,11 @@ namespace c2flux
                         SizeGb =
                             (sizeBytes /
                              (1024D * 1024D * 1024D))
-                            .ToString("N2"),
+                            .ToString("N2") + " GB",
                         SizeMb =
                             (sizeBytes /
                              (1024D * 1024D))
-                            .ToString("N2") + " MB",
+                            .ToString("N0") + " MB",
                         SizeBytes = sizeBytes
                     };
                 })
@@ -297,6 +349,10 @@ namespace c2flux
                 .Select(file => new LargestFileRow
                 {
                     Name = file.Name,
+                    UsagePercent = totalFileTypeBytes > 0
+                        ? file.SizeBytes * 100D /
+                            totalFileTypeBytes
+                        : 0D,
                     FormattedSize =
                         SizeFormatter.Format(file.SizeBytes),
                     SizeBytes = file.SizeBytes,
@@ -315,6 +371,23 @@ namespace c2flux
                 _largestFileRows;
         }
 
+        private void LargestFilesGrid_MouseDown(
+            object sender,
+            MouseEventArgs e)
+        {
+            _largestFilesContextRow = null;
+        }
+
+        private void LargestFilesGrid_CellClickBegin(
+            object sender,
+            AntdUI.TableClickBeginEventArgs e)
+        {
+            dynamic eventArgs = e;
+
+            _largestFilesContextRow =
+                eventArgs.Record as LargestFileRow;
+        }
+
         private void LargestFilesGrid_CellClick(
             object sender,
             AntdUI.TableClickEventArgs e)
@@ -322,6 +395,9 @@ namespace c2flux
             dynamic eventArgs = e;
             object record = eventArgs.Record;
             AntdUI.Column column = eventArgs.Column;
+
+            _largestFilesContextRow =
+                record as LargestFileRow;
 
             if (record != null ||
                 column == null ||
@@ -346,6 +422,16 @@ namespace c2flux
                 return;
 
             OpenSelectedFile(selectedRow);
+        }
+
+        private void LargestFilesOpenParentFolder_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_largestFilesContextRow == null)
+                return;
+
+            OpenSelectedFile(_largestFilesContextRow);
         }
 
         private void CycleSizeUnit()
@@ -390,9 +476,16 @@ namespace c2flux
                 _ => 1D
             };
 
-            return _sizeUnit == SizeUnit.Bytes
-                ? sizeBytes.ToString("N0")
-                : (sizeBytes / divisor).ToString("N2");
+            if (_sizeUnit == SizeUnit.Bytes)
+                return sizeBytes.ToString("N0");
+
+            if (_sizeUnit == SizeUnit.MB)
+            {
+                return (sizeBytes / divisor).ToString("N0") +
+                    " MB";
+            }
+
+            return (sizeBytes / divisor).ToString("N2");
         }
 
         private List<FileSystemEntry> GetFiles()
@@ -476,6 +569,106 @@ namespace c2flux
                     : "\"" + path + "\"",
                 UseShellExecute = true
             });
+        }
+
+        private sealed class AnalysisVisibleEllipsisCellText :
+            AntdUI.CellText
+        {
+            public AnalysisVisibleEllipsisCellText(string text)
+                : base(text)
+            {
+            }
+
+            public override void Paint(
+                AntdUI.Canvas g,
+                Font font,
+                bool enable,
+                SolidBrush fore)
+            {
+                Font renderFont = Font ?? font;
+                string text = Text ?? string.Empty;
+
+                if (text.Length == 0 || Rect.Width <= 0)
+                    return;
+
+                string visibleText = GetVisibleText(
+                    g,
+                    renderFont,
+                    text,
+                    Rect.Width);
+
+                if (Fore.HasValue)
+                {
+                    g.DrawText(
+                        visibleText,
+                        renderFont,
+                        Fore.Value,
+                        Rect,
+                        AntdUI.FormatFlags.Left |
+                        AntdUI.FormatFlags.VerticalCenter);
+                }
+                else
+                {
+                    g.DrawText(
+                        visibleText,
+                        renderFont,
+                        fore,
+                        Rect,
+                        AntdUI.FormatFlags.Left |
+                        AntdUI.FormatFlags.VerticalCenter);
+                }
+            }
+
+            private static string GetVisibleText(
+                AntdUI.Canvas g,
+                Font font,
+                string text,
+                int availableWidth)
+            {
+                if (g.MeasureText(text, font).Width <=
+                    availableWidth)
+                {
+                    return text;
+                }
+
+                const string ellipsis = "…";
+
+                if (g.MeasureText(ellipsis, font).Width >
+                    availableWidth)
+                {
+                    return text.Substring(0, 1);
+                }
+
+                int low = 0;
+                int high = text.Length;
+
+                while (low < high)
+                {
+                    int middle =
+                        low + (high - low + 1) / 2;
+                    string candidate =
+                        text.Substring(0, middle) +
+                        ellipsis;
+
+                    if (g.MeasureText(candidate, font).Width <=
+                        availableWidth)
+                    {
+                        low = middle;
+                    }
+                    else
+                    {
+                        high = middle - 1;
+                    }
+                }
+
+                if (low == 0)
+                    return ellipsis;
+
+                if (char.IsHighSurrogate(text[low - 1]))
+                    low--;
+
+                return text.Substring(0, low) + ellipsis;
+            }
         }
 
         private sealed class AnalysisPercentCellProgress :

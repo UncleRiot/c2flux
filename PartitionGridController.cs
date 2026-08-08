@@ -1,6 +1,8 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
@@ -12,6 +14,8 @@ namespace c2flux
         private readonly AppSettings _settings;
         private readonly SplitContainer _splitContainerLeft;
         private readonly DataGridView _listViewPartitions;
+        private const int DriveProbeTimeoutMilliseconds = 3000;
+
         private readonly ImageList _imageListPartitions;
         private readonly ShellIconService _shellIconService;
 
@@ -134,8 +138,21 @@ namespace c2flux
             }
         }
 
-        public void LoadPartitionList()
+        public async Task LoadPartitionListAsync(
+            bool logTimeout = true)
         {
+            DriveInfo[] driveInfos = DriveInfo.GetDrives();
+
+            Task<PartitionDriveItem>[] probeTasks = driveInfos
+                .Select(driveInfo =>
+                    ProbeDriveAsync(
+                        driveInfo,
+                        logTimeout))
+                .ToArray();
+
+            PartitionDriveItem[] probeResults =
+                await Task.WhenAll(probeTasks);
+
             _listViewPartitions.SuspendLayout();
 
             try
@@ -144,28 +161,32 @@ namespace c2flux
                 _listViewPartitions.Rows.Clear();
                 _imageListPartitions.Images.Clear();
 
-                foreach (DriveInfo driveInfo in DriveInfo.GetDrives())
+                foreach (PartitionDriveItem driveItem in
+                    probeResults.Where(driveItem => driveItem != null))
                 {
-                    if (!driveInfo.IsReady)
-                        continue;
+                    _imageListPartitions.Images.Add(
+                        driveItem.RootPath,
+                        driveItem.Icon);
 
-                    string rootPath = driveInfo.RootDirectory.FullName;
-                    _imageListPartitions.Images.Add(rootPath, _shellIconService.GetSmallSystemIcon(rootPath));
-
-                    long totalSize = driveInfo.TotalSize;
-                    long freeSpace = driveInfo.AvailableFreeSpace;
-                    int freePercent = totalSize <= 0 ? 0 : (int)Math.Round((double)freeSpace * 100D / totalSize);
+                    int freePercent = driveItem.TotalSize <= 0
+                        ? 0
+                        : (int)Math.Round(
+                            (double)driveItem.FreeSpace *
+                            100D /
+                            driveItem.TotalSize);
 
                     int rowIndex = _listViewPartitions.Rows.Add(
-                        rootPath,
-                        SizeFormatter.Format(totalSize),
-                        SizeFormatter.Format(freeSpace),
+                        driveItem.RootPath,
+                        SizeFormatter.Format(driveItem.TotalSize),
+                        SizeFormatter.Format(driveItem.FreeSpace),
                         freePercent + " %");
 
-                    DataGridViewRow row = _listViewPartitions.Rows[rowIndex];
-                    row.Height = _listViewPartitions.RowTemplate.Height;
+                    DataGridViewRow row =
+                        _listViewPartitions.Rows[rowIndex];
+                    row.Height =
+                        _listViewPartitions.RowTemplate.Height;
                     row.Tag = freePercent;
-                    row.Cells[0].Tag = rootPath;
+                    row.Cells[0].Tag = driveItem.RootPath;
                 }
 
                 AdjustColumns();
@@ -175,6 +196,85 @@ namespace c2flux
                 _listViewPartitions.ResumeLayout();
                 _listViewPartitions.Invalidate();
             }
+        }
+
+        private async Task<PartitionDriveItem> ProbeDriveAsync(
+            DriveInfo driveInfo,
+            bool logTimeout)
+        {
+            string rootPath = driveInfo.Name;
+
+            Task<PartitionDriveItem> probeTask = Task.Run(() =>
+            {
+                if (!driveInfo.IsReady)
+                    return null;
+
+                string resolvedRootPath =
+                    driveInfo.RootDirectory.FullName;
+
+                return new PartitionDriveItem
+                {
+                    RootPath = resolvedRootPath,
+                    TotalSize = driveInfo.TotalSize,
+                    FreeSpace = driveInfo.AvailableFreeSpace,
+                    Icon = _shellIconService.GetSmallSystemIcon(
+                        resolvedRootPath)
+                };
+            });
+
+            Task completedTask = await Task.WhenAny(
+                probeTask,
+                Task.Delay(DriveProbeTimeoutMilliseconds));
+
+            if (!ReferenceEquals(completedTask, probeTask))
+            {
+                ObserveFaultedTask(probeTask);
+
+                if (logTimeout)
+                {
+                    AppAlertLog.AddWarning(
+                        "Drive",
+                        $"Drive {rootPath} did not respond within 3 seconds and was skipped.");
+                }
+
+                return null;
+            }
+
+            try
+            {
+                return await probeTask;
+            }
+            catch (Exception exception)
+            {
+                if (logTimeout)
+                {
+                    AppAlertLog.AddWarning(
+                        "Drive",
+                        $"Drive {rootPath} could not be read: {exception.Message}");
+                }
+
+                return null;
+            }
+        }
+
+        private static void ObserveFaultedTask(
+            Task task)
+        {
+            _ = task.ContinueWith(
+                completedTask =>
+                {
+                    _ = completedTask.Exception;
+                },
+                TaskContinuationOptions.OnlyOnFaulted |
+                TaskContinuationOptions.ExecuteSynchronously);
+        }
+
+        private sealed class PartitionDriveItem
+        {
+            public string RootPath { get; set; }
+            public long TotalSize { get; set; }
+            public long FreeSpace { get; set; }
+            public Bitmap Icon { get; set; }
         }
 
         public void SaveColumnLayout()

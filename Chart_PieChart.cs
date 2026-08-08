@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -27,7 +27,9 @@ namespace c2flux
 
         private readonly ToolTip _toolTip;
         private readonly List<ChartHitArea> _hitAreas;
+        private readonly ContextMenuStrip _contextMenu;
         private FileSystemEntry _entry;
+        private FileSystemEntry _contextMenuEntry;
         private string _currentToolTipText;
 
         public Chart_PieChart()
@@ -35,6 +37,22 @@ namespace c2flux
             DoubleBuffered = true;
             _toolTip = new ToolTip();
             _hitAreas = new List<ChartHitArea>();
+
+            _contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem openInExplorerItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText(
+                        "Context.OpenInExplorer"));
+
+            openInExplorerItem.Click +=
+                OpenInExplorerItem_Click;
+
+            _contextMenu.Items.Add(
+                openInExplorerItem);
+
+            AntdThemeService.ConfigureContextMenu(
+                _contextMenu);
         }
 
         public void SetEntry(FileSystemEntry entry)
@@ -65,6 +83,72 @@ namespace c2flux
 
             _currentToolTipText = toolTipText;
             _toolTip.SetToolTip(this, toolTipText);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            _contextMenuEntry = null;
+
+            foreach (ChartHitArea hitArea in _hitAreas)
+            {
+                if (!hitArea.Contains(e.Location))
+                    continue;
+
+                _contextMenuEntry = hitArea.Entry;
+                break;
+            }
+
+            if (_contextMenuEntry == null)
+                return;
+
+            _contextMenu.Show(
+                this,
+                e.Location);
+        }
+
+        private void OpenInExplorerItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_contextMenuEntry == null ||
+                string.IsNullOrWhiteSpace(
+                    _contextMenuEntry.FullPath))
+            {
+                return;
+            }
+
+            string targetPath =
+                _contextMenuEntry.FullPath;
+
+            if (Directory.Exists(targetPath))
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = "\"" + targetPath + "\"",
+                        UseShellExecute = true
+                    });
+
+                return;
+            }
+
+            if (!File.Exists(targetPath))
+                return;
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments =
+                        "/select,\"" + targetPath + "\"",
+                    UseShellExecute = true
+                });
         }
 
         protected override void OnMouseLeave(EventArgs e)
@@ -98,10 +182,6 @@ namespace c2flux
                 return;
             }
 
-            Rectangle chartBounds = new Rectangle(24, 24, Math.Min(260, Width / 2), Math.Min(260, Height - 48));
-            chartBounds.Width = Math.Min(chartBounds.Width, chartBounds.Height);
-            chartBounds.Height = chartBounds.Width;
-
             long totalSize = chartItems.Sum(item => item.SizeBytes);
 
             if (totalSize <= 0)
@@ -109,6 +189,38 @@ namespace c2flux
                 DrawEmptyText(e.Graphics);
                 return;
             }
+
+            const int chartLeft = 24;
+            const int chartTop = 24;
+            const int chartLegendGap = 24;
+            const int rightPadding = 8;
+
+            int legendWidth = CalculateLegendWidth(
+                chartItems,
+                totalSize);
+
+            int availableChartWidth =
+                Width -
+                chartLeft -
+                chartLegendGap -
+                legendWidth -
+                rightPadding;
+
+            int availableChartHeight =
+                Height -
+                (chartTop * 2);
+
+            int chartSize = Math.Max(
+                0,
+                Math.Min(
+                    availableChartWidth,
+                    availableChartHeight));
+
+            Rectangle chartBounds = new Rectangle(
+                chartLeft,
+                chartTop,
+                chartSize,
+                chartSize);
 
             float startAngle = -90F;
 
@@ -131,7 +243,46 @@ namespace c2flux
             using Pen borderPen = new Pen(ForeColor, 1);
             e.Graphics.DrawEllipse(borderPen, chartBounds);
 
-            DrawLegend(e.Graphics, chartItems, totalSize, chartBounds.Right + 24, 24);
+            DrawLegend(
+                e.Graphics,
+                chartItems,
+                totalSize,
+                chartBounds.Right + chartLegendGap,
+                chartTop);
+        }
+
+        private int CalculateLegendWidth(
+            List<ChartItem> chartItems,
+            long totalSize)
+        {
+            int requiredWidth = 0;
+
+            foreach (ChartItem item in chartItems)
+            {
+                string text = string.Format(
+                    LocalizationService.GetText("Chart.ItemLabel"),
+                    item.Name,
+                    SizeFormatter.Format(item.SizeBytes),
+                    (double)item.SizeBytes * 100D / totalSize);
+
+                Size textSize = TextRenderer.MeasureText(
+                    text,
+                    Font,
+                    Size.Empty,
+                    TextFormatFlags.SingleLine);
+
+                requiredWidth = Math.Max(
+                    requiredWidth,
+                    textSize.Width + 30);
+            }
+
+            int maximumWidth = Math.Max(
+                0,
+                Width / 2);
+
+            return Math.Min(
+                requiredWidth,
+                maximumWidth);
         }
 
         private void DrawEmptyText(Graphics graphics)

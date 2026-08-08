@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -273,8 +273,6 @@ namespace c2flux
                 toolStripExport,
                 toolStripFeatures);
             ApplyDriveComboBoxTheme();
-            _driveComboBoxController.LoadDrives();
-            _partitionGridController.LoadPartitionList();
             _partitionGridController.AdjustColumns();
             _partitionGridController.UpdatePartitionPanelVisibility();
             _layoutMainFormController.SetViewMode(_settings.SelectedViewMode, _suspendPersistentSettingsSave);
@@ -289,6 +287,11 @@ namespace c2flux
 
             _layoutMainFormController.ApplyDefaultToolStripLayout();
             _layoutMainFormController.ApplyToolStripLayout();
+
+            await Task.WhenAll(
+                _driveComboBoxController.LoadDrivesAsync(),
+                _partitionGridController.LoadPartitionListAsync(
+                    false));
 
             StartStartupScanIfRequested();
             OpenStartupSearchIfRequested();
@@ -586,7 +589,9 @@ namespace c2flux
             RefreshMainViewButtonIcons();
 
             toolStripButtonScanHistory = AntdThemeService.CreateMainButton("toolStripButtonScanHistory", LocalizationService.GetText("Menu.CompareScans"));
-            AntdThemeService.ApplyMainCompareScansButtonIcon(toolStripButtonScanHistory);
+            AntdThemeService.ApplyMainCompareScansButtonIcon(
+                toolStripButtonScanHistory,
+                _settings.SaveScanHistory);
             toolStripButtonScanHistory.Click += menuItemCompareScans_Click;
 
             toolStripButtonSearch = AntdThemeService.CreateMainButton("toolStripButtonSearch", LocalizationService.GetText("Search.Title"));
@@ -839,6 +844,7 @@ namespace c2flux
             statusPanelMain.BringToFront();
 
             MainMenuStrip = menuStripMain;
+            UpdateCompareScansAvailability();
         }
 
         private void ApplyLocalizedTexts()
@@ -931,6 +937,8 @@ namespace c2flux
 
             toolStripButtonScanHistory.Text =
                 LocalizationService.GetText("Menu.CompareScans");
+
+            UpdateCompareScansAvailability();
 
             toolStripButtonSearch.Text =
                 LocalizationService.GetText("Search.Title");
@@ -1172,7 +1180,7 @@ namespace c2flux
 
                 _treeEntryController.FlushPendingLiveTreeUpdate();
                 _treeEntryController.UpdateScanResult(rootEntry);
-                _partitionGridController.LoadPartitionList();
+                await _partitionGridController.LoadPartitionListAsync();
 
                 if (IsSelectedScanPath(session.RootPath))
                 {
@@ -1909,8 +1917,44 @@ namespace c2flux
 
         private void menuItemCompareScans_Click(object sender, EventArgs e)
         {
+            if (!_settings.SaveScanHistory)
+                return;
+
             using ScanHistoryForm scanHistoryForm = new ScanHistoryForm(_settings);
             scanHistoryForm.ShowDialog(this);
+        }
+
+        private void UpdateCompareScansAvailability()
+        {
+            bool isAvailable = _settings.SaveScanHistory;
+
+            toolStripButtonScanHistory.ForeColor =
+                isAvailable
+                    ? AntdThemeService.TextPrimary
+                    : AntdThemeService.MainDisabledButtonTextColor;
+
+            AntdThemeService.ApplyMainCompareScansButtonIcon(
+                toolStripButtonScanHistory,
+                isAvailable);
+
+            AntdThemeService.SetToolTip(
+                toolStripButtonScanHistory,
+                isAvailable
+                    ? LocalizationService.GetText("Menu.CompareScans")
+                    : LocalizationService.GetText(
+                        "Toolbar.CompareScansDisabled"));
+
+            menuItemCompareScans.Enabled = isAvailable;
+
+            Image previousMenuIcon = menuItemCompareScans.Image;
+            menuItemCompareScans.Image =
+                toolStripButtonScanHistory.Icon == null
+                    ? null
+                    : new Bitmap(toolStripButtonScanHistory.Icon);
+
+            previousMenuIcon?.Dispose();
+
+            toolStripButtonScanHistory.Invalidate();
         }
 
         private void ApplyEntryColumnVisibility()
@@ -1978,7 +2022,7 @@ namespace c2flux
             LocalizationService.Load(_settings.LanguageCode);
             AntdThemeService.Apply(_settings.Layout);
             ApplyLocalizedTexts();
-            _driveComboBoxController.LoadDrives();
+            await _driveComboBoxController.LoadDrivesAsync();
             AntdThemeService.ApplyMainForm(
                 this,
                 _settings.Layout,
