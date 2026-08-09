@@ -42,6 +42,7 @@ namespace c2flux
         private ToolStripMenuItem menuItemViewPieChart;
         private ToolStripMenuItem menuItemViewBarChart;
         private ToolStripMenuItem menuItemViewSunburst;
+        private ToolStripMenuItem menuItemViewTreemap;
         private ToolStripMenuItem menuItemAdvancedFeatures;
         private ToolStripMenuItem menuItemStorageHistory;
         private ToolStripMenuItem menuItemTools;
@@ -66,6 +67,7 @@ namespace c2flux
         private AntdUI.Button toolStripButtonPieChart;
         private AntdUI.Button toolStripButtonBarChart;
         private AntdUI.Button toolStripButtonSunburst;
+        private AntdUI.Button toolStripButtonTreemap;
         private AntdUI.Button toolStripButtonExportCsv;
         private AntdUI.Button toolStripButtonAnalysis;
         private AntdUI.Button toolStripButtonStorageHistory;
@@ -94,6 +96,7 @@ namespace c2flux
         private Chart_PieChart pieChartView;
         private Chart_BarChart barChartView;
         private Chart_Sunburst sunburstView;
+        private Chart_Treemap treemapView;
         private StorageHistoryForm storageHistoryView;
         private AdvancedFeaturesForm analysisView;
         private FileSystemEntry _selectedEntry;
@@ -115,6 +118,7 @@ namespace c2flux
                     toolStripButtonPieChart,
                     toolStripButtonBarChart,
                     toolStripButtonSunburst,
+                    toolStripButtonTreemap,
                     toolStripButtonAnalysis,
                     toolStripButtonStorageHistory);
 
@@ -122,6 +126,7 @@ namespace c2flux
                 toolStripButtonPieChart.Invalidate();
                 toolStripButtonBarChart.Invalidate();
                 toolStripButtonSunburst.Invalidate();
+                toolStripButtonTreemap.Invalidate();
                 toolStripButtonAnalysis.Invalidate();
                 toolStripButtonStorageHistory.Invalidate();
             }
@@ -204,10 +209,12 @@ namespace c2flux
                 pieChartView,
                 barChartView,
                 sunburstView,
+                treemapView,
                 toolStripButtonTable,
                 toolStripButtonPieChart,
                 toolStripButtonBarChart,
                 toolStripButtonSunburst,
+                toolStripButtonTreemap,
                 _settings.SelectedViewMode);
             _driveComboBoxController = new DriveComboBoxController(
                 toolStripComboBoxDrives,
@@ -255,6 +262,7 @@ namespace c2flux
             SetDoubleBuffered(pieChartView, true);
             SetDoubleBuffered(barChartView, true);
             SetDoubleBuffered(sunburstView, true);
+            SetDoubleBuffered(treemapView, true);
 
             AntdThemeService.ApplyMainForm(
                 this,
@@ -477,6 +485,9 @@ namespace c2flux
             menuItemViewSunburst = new ToolStripMenuItem(
                 AntdThemeService.GetMainViewButtonText(
                     LocalizationService.GetText("Toolbar.Sunburst")));
+            menuItemViewTreemap = new ToolStripMenuItem(
+                AntdThemeService.GetMainViewButtonText(
+                    LocalizationService.GetText("Toolbar.Treemap")));
             menuItemAdvancedFeatures = new ToolStripMenuItem(LocalizationService.GetText("Menu.Analysis"));
             menuItemStorageHistory = new ToolStripMenuItem(LocalizationService.GetText("Menu.SpaceHistory"));
 
@@ -503,6 +514,7 @@ namespace c2flux
             menuItemView.DropDownItems.Add(menuItemViewPieChart);
             menuItemView.DropDownItems.Add(menuItemViewBarChart);
             menuItemView.DropDownItems.Add(menuItemViewSunburst);
+            menuItemView.DropDownItems.Add(menuItemViewTreemap);
             menuItemView.DropDownItems.Add(new ToolStripSeparator());
             menuItemView.DropDownItems.Add(menuItemAdvancedFeatures);
             menuItemView.DropDownItems.Add(menuItemStorageHistory);
@@ -528,6 +540,7 @@ namespace c2flux
             menuItemViewPieChart.Click += toolStripButtonPieChart_Click;
             menuItemViewBarChart.Click += toolStripButtonBarChart_Click;
             menuItemViewSunburst.Click += toolStripButtonSunburst_Click;
+            menuItemViewTreemap.Click += toolStripButtonTreemap_Click;
             menuItemAdvancedFeatures.Click += menuItemAdvancedFeatures_Click;
             menuItemStorageHistory.Click += menuItemStorageHistory_Click;
             menuItemSearch.Click += toolStripButtonSearch_Click;
@@ -585,15 +598,21 @@ namespace c2flux
                 "toolStripButtonSunburst",
                 AntdThemeService.GetMainViewButtonText(
                     LocalizationService.GetText("Toolbar.Sunburst")));
+            toolStripButtonTreemap = AntdThemeService.CreateMainToggleButton(
+                "toolStripButtonTreemap",
+                AntdThemeService.GetMainViewButtonText(
+                    LocalizationService.GetText("Toolbar.Treemap")));
             toolStripButtonTable.Click += toolStripButtonTable_Click;
             toolStripButtonPieChart.Click += toolStripButtonPieChart_Click;
             toolStripButtonBarChart.Click += toolStripButtonBarChart_Click;
             toolStripButtonSunburst.Click += toolStripButtonSunburst_Click;
+            toolStripButtonTreemap.Click += toolStripButtonTreemap_Click;
 
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonTable));
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonPieChart));
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonBarChart));
             toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonSunburst));
+            toolStripViewMode.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonTreemap));
 
             toolStripExport = AntdThemeService.CreateMainToolStrip();
 
@@ -633,6 +652,7 @@ namespace c2flux
                 menuItemViewPieChart,
                 menuItemViewBarChart,
                 menuItemViewSunburst,
+                menuItemViewTreemap,
                 menuItemAdvancedFeatures,
                 menuItemStorageHistory,
                 menuItemSearch,
@@ -641,6 +661,7 @@ namespace c2flux
                 toolStripButtonPieChart,
                 toolStripButtonBarChart,
                 toolStripButtonSunburst,
+                toolStripButtonTreemap,
                 toolStripButtonAnalysis,
                 toolStripButtonStorageHistory,
                 toolStripButtonSearch,
@@ -763,6 +784,16 @@ namespace c2flux
                 _settings.SunburstDepth,
                 _settings.SunburstMaxItems);
 
+            treemapView = new Chart_Treemap
+            {
+                Name = "treemapView",
+                Dock = DockStyle.Fill,
+                Visible = false,
+                BackColor = AntdThemeService.BackgroundPrimary
+            };
+            treemapView.EntryActivated += treemapView_EntryActivated;
+            treemapView.EntryContextMenuRequested += treemapView_EntryContextMenuRequested;
+
             panelRightViewHost = AntdThemeService.CreateMainPane(
                 "panelRightViewHost",
                 DockStyle.Fill);
@@ -779,6 +810,7 @@ namespace c2flux
             panelRightViewHost.Controls.Add(pieChartView);
             panelRightViewHost.Controls.Add(barChartView);
             panelRightViewHost.Controls.Add(sunburstView);
+            panelRightViewHost.Controls.Add(treemapView);
             panelRightViewHost.Controls.Add(storageHistoryView);
 
             panelTreeEntriesHost = AntdThemeService.CreateMainPane(
@@ -900,6 +932,8 @@ namespace c2flux
                 LocalizationService.GetText("Toolbar.BarChart"));
             menuItemViewSunburst.Text = AntdThemeService.GetMainViewButtonText(
                 LocalizationService.GetText("Toolbar.Sunburst"));
+            menuItemViewTreemap.Text = AntdThemeService.GetMainViewButtonText(
+                LocalizationService.GetText("Toolbar.Treemap"));
             menuItemAdvancedFeatures.Text = LocalizationService.GetText("Menu.Analysis");
             menuItemStorageHistory.Text = LocalizationService.GetText("Menu.SpaceHistory");
 
@@ -953,6 +987,10 @@ namespace c2flux
             toolStripButtonSunburst.Text =
                 AntdThemeService.GetMainViewButtonText(
                     LocalizationService.GetText("Toolbar.Sunburst"));
+
+            toolStripButtonTreemap.Text =
+                AntdThemeService.GetMainViewButtonText(
+                    LocalizationService.GetText("Toolbar.Treemap"));
 
             toolStripButtonExportCsv.Text =
                 LocalizationService.GetText("Toolbar.Export");
@@ -1012,6 +1050,7 @@ namespace c2flux
                 toolStripButtonPieChart,
                 toolStripButtonBarChart,
                 toolStripButtonSunburst,
+                toolStripButtonTreemap,
                 toolStripButtonExportCsv,
                 toolStripButtonAnalysis,
                 toolStripButtonStorageHistory,
@@ -1147,6 +1186,11 @@ namespace c2flux
                 _settings.ToolbarSunburstButtonVisible,
                 visible => _settings.ToolbarSunburstButtonVisible = visible);
 
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.TreemapButton"),
+                _settings.ToolbarTreemapButtonVisible,
+                visible => _settings.ToolbarTreemapButtonVisible = visible);
+
             contextMenuStripToolbars.Items.Add(new ToolStripSeparator());
 
             AddToolbarVisibilityMenuItem(
@@ -1224,6 +1268,7 @@ namespace c2flux
             _settings.ToolbarPieChartButtonVisible = true;
             _settings.ToolbarBarChartButtonVisible = true;
             _settings.ToolbarSunburstButtonVisible = true;
+            _settings.ToolbarTreemapButtonVisible = true;
             _settings.ToolbarExportCsvButtonVisible = true;
             _settings.ToolbarAnalysisButtonVisible = true;
             _settings.ToolbarStorageHistoryButtonVisible = true;
@@ -1286,6 +1331,11 @@ namespace c2flux
                     toolStripViewMode,
                     toolStripButtonSunburst,
                     _settings.ToolbarSunburstButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripViewMode,
+                    toolStripButtonTreemap,
+                    _settings.ToolbarTreemapButtonVisible);
 
                 SetHostedControlVisible(
                     toolStripExport,
@@ -1994,6 +2044,7 @@ namespace c2flux
         {
             TreeSortService.Sort(rootEntry, _settings.TreeSortMode);
             _treeEntryController.RenderScanResult(rootEntry);
+            _layoutMainFormController.SetRootEntry(rootEntry);
             _layoutMainFormController.BindGrid(rootEntry);
             ApplyEntryColumnVisibility();
         }
@@ -2028,6 +2079,36 @@ namespace c2flux
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.Sunburst, _suspendPersistentSettingsSave);
             RefreshMainViewButtonIcons();
+        }
+
+        private void toolStripButtonTreemap_Click(object sender, EventArgs e)
+        {
+            HideAnalysisView();
+            HideStorageHistoryView();
+            _layoutMainFormController.SetViewMode(ViewMode.Treemap, _suspendPersistentSettingsSave);
+            RefreshMainViewButtonIcons();
+        }
+
+        private void treemapView_EntryActivated(
+            object sender,
+            Chart_Treemap.TreemapEntryEventArgs e)
+        {
+            if (e?.Entry == null)
+                return;
+
+            _treeEntryController.SelectEntry(e.Entry);
+        }
+
+        private void treemapView_EntryContextMenuRequested(
+            object sender,
+            Chart_Treemap.TreemapEntryContextMenuEventArgs e)
+        {
+            if (e?.Entry == null)
+                return;
+
+            _treeEntryController.ShowContextMenu(
+                e.Entry,
+                e.ScreenLocation);
         }
 
         private void SelectedEntryChanged(FileSystemEntry entry)
@@ -2134,10 +2215,14 @@ namespace c2flux
             dataGridViewEntries.Visible = false;
             pieChartView.Visible = false;
             barChartView.Visible = false;
+            sunburstView.Visible = false;
+            treemapView.Visible = false;
 
             toolStripButtonTable.Toggle = false;
             toolStripButtonPieChart.Toggle = false;
             toolStripButtonBarChart.Toggle = false;
+            toolStripButtonSunburst.Toggle = false;
+            toolStripButtonTreemap.Toggle = false;
             toolStripButtonAnalysis.Toggle = true;
             RefreshMainViewButtonIcons();
         }
@@ -2160,10 +2245,14 @@ namespace c2flux
             dataGridViewEntries.Visible = false;
             pieChartView.Visible = false;
             barChartView.Visible = false;
+            sunburstView.Visible = false;
+            treemapView.Visible = false;
 
             toolStripButtonTable.Toggle = false;
             toolStripButtonPieChart.Toggle = false;
             toolStripButtonBarChart.Toggle = false;
+            toolStripButtonSunburst.Toggle = false;
+            toolStripButtonTreemap.Toggle = false;
             toolStripButtonStorageHistory.Toggle = true;
             RefreshMainViewButtonIcons();
         }

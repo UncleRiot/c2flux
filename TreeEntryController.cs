@@ -46,6 +46,42 @@ namespace c2flux
 
         public FileSystemEntry ContextMenuEntry { get; private set; }
 
+        public bool SelectEntry(
+            FileSystemEntry entry)
+        {
+            return _treeViewEntries.SelectEntry(entry);
+        }
+
+        public void ShowContextMenu(
+            FileSystemEntry entry,
+            System.Drawing.Point screenLocation)
+        {
+            if (entry == null ||
+                string.IsNullOrWhiteSpace(entry.FullPath))
+            {
+                return;
+            }
+
+            ContextMenuEntry = entry;
+            _contextMenuItemOpenInExplorer.Enabled = true;
+            _contextMenuItemExport.Enabled = true;
+            _contextMenuItemCopyToClipboard.Enabled = true;
+
+            if (_showContextMenu != null)
+            {
+                _showContextMenu(
+                    entry,
+                    screenLocation);
+            }
+            else
+            {
+                _contextMenuStripTreeEntries.Show(
+                    _treeViewEntries,
+                    _treeViewEntries.PointToClient(
+                        screenLocation));
+            }
+        }
+
         public void ClearEntries()
         {
             ContextMenuEntry = null;
@@ -173,22 +209,10 @@ namespace c2flux
 
             if (e.Entry != null && e.Entry.IsDirectory)
             {
-                ContextMenuEntry = e.Entry;
-                _contextMenuItemOpenInExplorer.Enabled = true;
-                _contextMenuItemExport.Enabled = true;
-                _contextMenuItemCopyToClipboard.Enabled = true;
-
-                if (_showContextMenu != null)
-                {
-                    _showContextMenu(
-                        e.Entry,
-                        _treeViewEntries.PointToScreen(e.Location));
-                }
-                else
-                {
-                    _contextMenuStripTreeEntries.Show(_treeViewEntries, e.Location);
-                }
-
+                ShowContextMenu(
+                    e.Entry,
+                    _treeViewEntries.PointToScreen(
+                        e.Location));
                 return;
             }
 

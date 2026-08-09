@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -151,6 +151,7 @@ namespace c2flux
         public bool ToolbarPieChartButtonVisible { get; set; } = true;
         public bool ToolbarBarChartButtonVisible { get; set; } = true;
         public bool ToolbarSunburstButtonVisible { get; set; } = true;
+        public bool ToolbarTreemapButtonVisible { get; set; } = true;
         public bool ToolbarExportCsvButtonVisible { get; set; } = true;
         public bool ToolbarAnalysisButtonVisible { get; set; } = true;
         public bool ToolbarStorageHistoryButtonVisible { get; set; } = true;
@@ -273,6 +274,7 @@ namespace c2flux
             ToolbarPieChartButtonVisible = true;
             ToolbarBarChartButtonVisible = true;
             ToolbarSunburstButtonVisible = true;
+            ToolbarTreemapButtonVisible = true;
             ToolbarExportCsvButtonVisible = true;
             ToolbarAnalysisButtonVisible = true;
             ToolbarStorageHistoryButtonVisible = true;

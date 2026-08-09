@@ -1,10 +1,11 @@
-namespace c2flux
+﻿namespace c2flux
 {
     public enum ViewMode
     {
         Table,
         PieChart,
         BarChart,
-        Sunburst
+        Sunburst,
+        Treemap
     }
 }

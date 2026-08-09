@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -84,6 +85,281 @@ namespace c2flux
         public FileSystemEntry SelectedEntry
         {
             get { return _selectedNode == null ? null : _selectedNode.Entry; }
+        }
+
+        public bool SelectEntry(
+            FileSystemEntry entry)
+        {
+            if (entry == null ||
+                string.IsNullOrWhiteSpace(entry.FullPath))
+            {
+                return false;
+            }
+
+            TreeEntrySizeBarNode rootNode =
+                FindRootNodeForEntry(entry);
+
+            if (rootNode == null)
+                return false;
+
+            string targetDirectoryPath =
+                entry.IsDirectory
+                    ? entry.FullPath
+                    : Path.GetDirectoryName(
+                        entry.FullPath);
+
+            if (string.IsNullOrWhiteSpace(
+                    targetDirectoryPath))
+            {
+                return false;
+            }
+
+            TreeEntrySizeBarNode directoryNode =
+                ExpandToDirectory(
+                    rootNode,
+                    targetDirectoryPath);
+
+            if (directoryNode == null)
+                return false;
+
+            TreeEntrySizeBarNode targetNode =
+                directoryNode;
+
+            if (!entry.IsDirectory)
+            {
+                directoryNode.Expanded = true;
+                _expandedKeys.Add(
+                    directoryNode.Key);
+
+                SynchronizeNode(
+                    directoryNode,
+                    directoryNode.Entry);
+
+                string entryKey =
+                    GetEntryKey(
+                        entry,
+                        directoryNode);
+
+                targetNode =
+                    directoryNode.Children
+                        .FirstOrDefault(
+                            child =>
+                                string.Equals(
+                                    child.Key,
+                                    entryKey,
+                                    StringComparison.OrdinalIgnoreCase));
+
+                if (targetNode == null)
+                {
+                    targetNode =
+                        new TreeEntrySizeBarNode(
+                            entry,
+                            directoryNode,
+                            directoryNode.Level + 1,
+                            entryKey);
+
+                    directoryNode.Children.Add(
+                        targetNode);
+
+                    directoryNode.Children.Sort(
+                        CompareNodes);
+                }
+            }
+
+            RebuildVisibleNodes(false);
+            SelectNode(
+                targetNode,
+                true);
+            EnsureNodeVisible(
+                targetNode);
+            Invalidate();
+
+            return true;
+        }
+
+        private TreeEntrySizeBarNode FindRootNodeForEntry(
+            FileSystemEntry entry)
+        {
+            if (entry == null ||
+                string.IsNullOrWhiteSpace(
+                    entry.FullPath))
+            {
+                return null;
+            }
+
+            foreach (TreeEntrySizeBarNode rootNode in _rootNodes)
+            {
+                if (rootNode?.Entry == null ||
+                    string.IsNullOrWhiteSpace(
+                        rootNode.Entry.FullPath))
+                {
+                    continue;
+                }
+
+                if (IsSameOrDescendantPath(
+                        entry.FullPath,
+                        rootNode.Entry.FullPath))
+                {
+                    return rootNode;
+                }
+            }
+
+            return null;
+        }
+
+        private TreeEntrySizeBarNode ExpandToDirectory(
+            TreeEntrySizeBarNode currentNode,
+            string targetDirectoryPath)
+        {
+            if (currentNode == null ||
+                currentNode.Entry == null ||
+                string.IsNullOrWhiteSpace(
+                    currentNode.Entry.FullPath))
+            {
+                return null;
+            }
+
+            if (string.Equals(
+                    NormalizeEntryPath(
+                        currentNode.Entry.FullPath),
+                    NormalizeEntryPath(
+                        targetDirectoryPath),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return currentNode;
+            }
+
+            currentNode.Expanded = true;
+            _expandedKeys.Add(
+                currentNode.Key);
+
+            SynchronizeNode(
+                currentNode,
+                currentNode.Entry);
+
+            TreeEntrySizeBarNode nextNode =
+                currentNode.Children
+                    .Where(child =>
+                        child?.Entry != null &&
+                        child.Entry.IsDirectory &&
+                        !string.IsNullOrWhiteSpace(
+                            child.Entry.FullPath))
+                    .OrderByDescending(child =>
+                        child.Entry.FullPath.Length)
+                    .FirstOrDefault(child =>
+                        IsSameOrDescendantPath(
+                            targetDirectoryPath,
+                            child.Entry.FullPath));
+
+            if (nextNode == null)
+                return null;
+
+            return ExpandToDirectory(
+                nextNode,
+                targetDirectoryPath);
+        }
+
+        private static int CompareNodes(
+            TreeEntrySizeBarNode left,
+            TreeEntrySizeBarNode right)
+        {
+            if (ReferenceEquals(left, right))
+                return 0;
+
+            if (left == null)
+                return 1;
+
+            if (right == null)
+                return -1;
+
+            bool leftDirectory =
+                left.Entry?.IsDirectory ?? false;
+            bool rightDirectory =
+                right.Entry?.IsDirectory ?? false;
+
+            if (leftDirectory != rightDirectory)
+            {
+                return leftDirectory
+                    ? -1
+                    : 1;
+            }
+
+            long leftSize =
+                left.Entry?.SizeBytes ?? 0L;
+            long rightSize =
+                right.Entry?.SizeBytes ?? 0L;
+
+            int sizeCompare =
+                rightSize.CompareTo(
+                    leftSize);
+
+            if (sizeCompare != 0)
+                return sizeCompare;
+
+            return string.Compare(
+                left.Entry?.Name,
+                right.Entry?.Name,
+                StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        private static bool IsSameOrDescendantPath(
+            string path,
+            string parentPath)
+        {
+            if (string.IsNullOrWhiteSpace(path) ||
+                string.IsNullOrWhiteSpace(parentPath))
+            {
+                return false;
+            }
+
+            string normalizedPath =
+                NormalizeEntryPath(path);
+
+            string normalizedParent =
+                NormalizeEntryPath(parentPath);
+
+            if (string.Equals(
+                    normalizedPath,
+                    normalizedParent,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            string prefix =
+                normalizedParent.TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar) +
+                Path.DirectorySeparatorChar;
+
+            return normalizedPath.StartsWith(
+                prefix,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeEntryPath(
+            string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return string.Empty;
+
+            string normalized =
+                path.Trim();
+
+            if (normalized.Length == 3 &&
+                normalized[1] == ':' &&
+                (normalized[2] == '\\' ||
+                 normalized[2] == '/'))
+            {
+                return
+                    char.ToUpperInvariant(
+                        normalized[0]) +
+                    @":\";
+            }
+
+            return normalized.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
         }
 
         public void ClearEntries()

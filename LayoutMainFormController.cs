@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -21,10 +21,12 @@ namespace c2flux
         private readonly Chart_PieChart _pieChartView;
         private readonly Chart_BarChart _barChartView;
         private readonly Chart_Sunburst _sunburstView;
+        private readonly Chart_Treemap _treemapView;
         private readonly AntdUI.Button _toolStripButtonTable;
         private readonly AntdUI.Button _toolStripButtonPieChart;
         private readonly AntdUI.Button _toolStripButtonBarChart;
         private readonly AntdUI.Button _toolStripButtonSunburst;
+        private readonly AntdUI.Button _toolStripButtonTreemap;
         private ToolStrip _draggedToolStrip;
         private Point _dragStartPoint;
         private ViewMode _viewMode;
@@ -44,10 +46,12 @@ namespace c2flux
             Chart_PieChart pieChartView,
             Chart_BarChart barChartView,
             Chart_Sunburst sunburstView,
+            Chart_Treemap treemapView,
             AntdUI.Button toolStripButtonTable,
             AntdUI.Button toolStripButtonPieChart,
             AntdUI.Button toolStripButtonBarChart,
             AntdUI.Button toolStripButtonSunburst,
+            AntdUI.Button toolStripButtonTreemap,
             ViewMode viewMode)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -64,10 +68,12 @@ namespace c2flux
             _pieChartView = pieChartView ?? throw new ArgumentNullException(nameof(pieChartView));
             _barChartView = barChartView ?? throw new ArgumentNullException(nameof(barChartView));
             _sunburstView = sunburstView ?? throw new ArgumentNullException(nameof(sunburstView));
+            _treemapView = treemapView ?? throw new ArgumentNullException(nameof(treemapView));
             _toolStripButtonTable = toolStripButtonTable ?? throw new ArgumentNullException(nameof(toolStripButtonTable));
             _toolStripButtonPieChart = toolStripButtonPieChart ?? throw new ArgumentNullException(nameof(toolStripButtonPieChart));
             _toolStripButtonBarChart = toolStripButtonBarChart ?? throw new ArgumentNullException(nameof(toolStripButtonBarChart));
             _toolStripButtonSunburst = toolStripButtonSunburst ?? throw new ArgumentNullException(nameof(toolStripButtonSunburst));
+            _toolStripButtonTreemap = toolStripButtonTreemap ?? throw new ArgumentNullException(nameof(toolStripButtonTreemap));
             _viewMode = viewMode;
 
             ConfigureToolStripGroupDragAndDrop();
@@ -424,7 +430,13 @@ namespace c2flux
                 _settings.SunburstDepth,
                 _settings.SunburstMaxItems);
             _sunburstView.SetEntry(entry);
+            _treemapView.SetEntry(entry);
             UpdateRightView();
+        }
+
+        public void SetRootEntry(FileSystemEntry rootEntry)
+        {
+            _treemapView.SetRootEntry(rootEntry);
         }
 
         public void SetViewMode(ViewMode viewMode, bool suspendPersistentSettingsSave)
@@ -464,6 +476,12 @@ namespace c2flux
                 _sunburstView.Dock = DockStyle.Fill;
                 _sunburstView.Invalidate();
             }
+
+            if (_treemapView != null)
+            {
+                _treemapView.Dock = DockStyle.Fill;
+                _treemapView.Invalidate();
+            }
         }
 
         private void UpdateViewModeButtons()
@@ -472,6 +490,7 @@ namespace c2flux
             _toolStripButtonPieChart.Toggle = _viewMode == ViewMode.PieChart;
             _toolStripButtonBarChart.Toggle = _viewMode == ViewMode.BarChart;
             _toolStripButtonSunburst.Toggle = _viewMode == ViewMode.Sunburst;
+            _toolStripButtonTreemap.Toggle = _viewMode == ViewMode.Treemap;
         }
 
         private void UpdateRightView()
@@ -482,6 +501,7 @@ namespace c2flux
             _pieChartView.Visible = _viewMode == ViewMode.PieChart;
             _barChartView.Visible = _viewMode == ViewMode.BarChart;
             _sunburstView.Visible = _viewMode == ViewMode.Sunburst;
+            _treemapView.Visible = _viewMode == ViewMode.Treemap;
 
             if (_dataGridViewEntries.Visible)
             {
@@ -501,6 +521,11 @@ namespace c2flux
             {
                 _sunburstView.BringToFront();
                 _sunburstView.Invalidate();
+            }
+            else if (_treemapView.Visible)
+            {
+                _treemapView.BringToFront();
+                _treemapView.Invalidate();
             }
         }
 
