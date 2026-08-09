@@ -15,22 +15,29 @@ namespace c2flux
         private readonly SplitContainer _splitContainerLeft;
         private readonly DataGridView _listViewPartitions;
         private const int DriveProbeTimeoutMilliseconds = 3000;
+        private const int MaximumInitialVisibleDriveRows = 10;
+        private const int PartitionGridSafetyPadding = 8;
 
         private readonly ImageList _imageListPartitions;
         private readonly ShellIconService _shellIconService;
+        private readonly Action<string> _selectedPartitionChanged;
+        private bool _applyingColumnLayout;
+        private bool _applyingPartitionPanelLayout;
 
         public PartitionGridController(
             AppSettings settings,
             SplitContainer splitContainerLeft,
             DataGridView listViewPartitions,
             ImageList imageListPartitions,
-            ShellIconService shellIconService)
+            ShellIconService shellIconService,
+            Action<string> selectedPartitionChanged)
         {
             _settings = settings;
             _splitContainerLeft = splitContainerLeft;
             _listViewPartitions = listViewPartitions;
             _imageListPartitions = imageListPartitions;
             _shellIconService = shellIconService;
+            _selectedPartitionChanged = selectedPartitionChanged;
         }
 
         public void Configure()
@@ -47,9 +54,15 @@ namespace c2flux
             _listViewPartitions.ForeColor = partitionForeColor;
 
             ConfigureColumns();
+            ApplyPartitionColumnStyles();
+
             _listViewPartitions.CellPainting += listViewPartitions_CellPainting;
             _listViewPartitions.Paint += listViewPartitions_Paint;
             _listViewPartitions.SizeChanged += listViewPartitions_SizeChanged;
+            _listViewPartitions.SelectionChanged += listViewPartitions_SelectionChanged;
+            _listViewPartitions.CellClick += listViewPartitions_CellClick;
+            _listViewPartitions.ColumnWidthChanged += listViewPartitions_ColumnWidthChanged;
+            _splitContainerLeft.SplitterMoved += splitContainerLeft_SplitterMoved;
         }
 
         public void ApplyLocalizedTexts()
@@ -120,7 +133,7 @@ namespace c2flux
                 SortMode = DataGridViewColumnSortMode.NotSortable,
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
-                    Alignment = DataGridViewContentAlignment.MiddleRight
+                    Alignment = DataGridViewContentAlignment.MiddleCenter
                 }
             });
 
@@ -136,6 +149,39 @@ namespace c2flux
                 column.HeaderCell.Style.SelectionBackColor = headerBackColor;
                 column.HeaderCell.Style.SelectionForeColor = headerForeColor;
             }
+        }
+
+        private void ApplyPartitionColumnStyles()
+        {
+            if (_listViewPartitions.Columns.Count != 4)
+                return;
+
+            _listViewPartitions.Columns[0].HeaderCell.Style.Alignment =
+                DataGridViewContentAlignment.MiddleLeft;
+            _listViewPartitions.Columns[1].HeaderCell.Style.Alignment =
+                DataGridViewContentAlignment.MiddleRight;
+            _listViewPartitions.Columns[2].HeaderCell.Style.Alignment =
+                DataGridViewContentAlignment.MiddleRight;
+            _listViewPartitions.Columns[3].HeaderCell.Style.Alignment =
+                DataGridViewContentAlignment.MiddleCenter;
+
+            _listViewPartitions.Columns[0].HeaderCell.Style.Padding =
+                Padding.Empty;
+            _listViewPartitions.Columns[1].HeaderCell.Style.Padding =
+                Padding.Empty;
+            _listViewPartitions.Columns[2].HeaderCell.Style.Padding =
+                Padding.Empty;
+            _listViewPartitions.Columns[3].HeaderCell.Style.Padding =
+                Padding.Empty;
+
+            _listViewPartitions.Columns[0].DefaultCellStyle.Alignment =
+                DataGridViewContentAlignment.MiddleLeft;
+            _listViewPartitions.Columns[1].DefaultCellStyle.Alignment =
+                DataGridViewContentAlignment.MiddleRight;
+            _listViewPartitions.Columns[2].DefaultCellStyle.Alignment =
+                DataGridViewContentAlignment.MiddleRight;
+            _listViewPartitions.Columns[3].DefaultCellStyle.Alignment =
+                DataGridViewContentAlignment.MiddleCenter;
         }
 
         public async Task LoadPartitionListAsync(
@@ -158,6 +204,8 @@ namespace c2flux
             try
             {
                 ApplyCompactPartitionGridLayout();
+                ApplyPartitionColumnStyles();
+
                 _listViewPartitions.Rows.Clear();
                 _imageListPartitions.Images.Clear();
 
@@ -189,13 +237,14 @@ namespace c2flux
                     row.Cells[0].Tag = driveItem.RootPath;
                 }
 
-                AdjustColumns();
             }
             finally
             {
                 _listViewPartitions.ResumeLayout();
                 _listViewPartitions.Invalidate();
             }
+
+            SchedulePartitionPanelLayoutUpdate();
         }
 
         private async Task<PartitionDriveItem> ProbeDriveAsync(
@@ -277,16 +326,25 @@ namespace c2flux
             public Bitmap Icon { get; set; }
         }
 
-        public void SaveColumnLayout()
+        public void SaveColumnLayout(
+            bool saveSettingsFile = false)
         {
-            _settings.HasColumnLayout = true;
+            if (_listViewPartitions.Columns.Count != 4)
+                return;
 
-            if (_listViewPartitions.Columns.Count == 4)
+            _settings.HasColumnLayout = true;
+            _settings.PartitionColumnNameWidth =
+                _listViewPartitions.Columns[0].Width;
+            _settings.PartitionColumnSizeWidth =
+                _listViewPartitions.Columns[1].Width;
+            _settings.PartitionColumnFreeWidth =
+                _listViewPartitions.Columns[2].Width;
+            _settings.PartitionColumnFreePercentWidth =
+                _listViewPartitions.Columns[3].Width;
+
+            if (saveSettingsFile)
             {
-                _settings.PartitionColumnNameWidth = _listViewPartitions.Columns[0].Width;
-                _settings.PartitionColumnSizeWidth = _listViewPartitions.Columns[1].Width;
-                _settings.PartitionColumnFreeWidth = _listViewPartitions.Columns[2].Width;
-                _settings.PartitionColumnFreePercentWidth = _listViewPartitions.Columns[3].Width;
+                _settings.Save();
             }
         }
 
@@ -306,31 +364,21 @@ namespace c2flux
             if (clientWidth <= 0 || clientHeight <= 0)
                 return;
 
-            int requiredHeight = _listViewPartitions.ColumnHeadersVisible
-                ? _listViewPartitions.ColumnHeadersHeight
-                : 0;
+            int visibleRowCount =
+                _listViewPartitions.Rows
+                    .Cast<DataGridViewRow>()
+                    .Count(row => row.Visible);
 
-            foreach (DataGridViewRow row in _listViewPartitions.Rows)
-            {
-                if (row.Visible)
-                {
-                    requiredHeight += row.Height;
-                }
-            }
+            int requiredHeight =
+                GetRequiredPartitionGridHeight(visibleRowCount);
 
-            bool verticalScrollBarRequired = requiredHeight > clientHeight;
-            _listViewPartitions.ScrollBars = verticalScrollBarRequired
-                ? ScrollBars.Vertical
-                : ScrollBars.None;
-
-            int verticalScrollBarWidth = verticalScrollBarRequired
-                ? SystemInformation.VerticalScrollBarWidth
-                : 0;
+            bool verticalScrollBarRequired =
+                requiredHeight > clientHeight;
 
             int availableWidth = Math.Max(
                 0,
                 clientWidth -
-                verticalScrollBarWidth -
+                (verticalScrollBarRequired ? SystemInformation.VerticalScrollBarWidth : 0) -
                 2);
 
             int sizeColumnWidth = GetRequiredColumnWidth(
@@ -342,74 +390,331 @@ namespace c2flux
             int freePercentColumnWidth = Math.Max(
                 GetRequiredColumnWidth(
                     3,
-                    8),
+                    10),
+                AntdThemeService.ScaleForDpi(
+                    _listViewPartitions,
+                    50));
+
+            int nameColumnWidth = Math.Max(
+                GetRequiredNameColumnWidth(),
                 AntdThemeService.ScaleForDpi(
                     _listViewPartitions,
                     48));
 
-            int minimumNameColumnWidth =
-                AntdThemeService.ScaleForDpi(
-                    _listViewPartitions,
-                    52);
-            int fixedColumnsWidth =
+            if (HasSavedColumnLayout())
+            {
+                nameColumnWidth = Math.Max(
+                    nameColumnWidth,
+                    _settings.PartitionColumnNameWidth);
+                sizeColumnWidth = Math.Max(
+                    sizeColumnWidth,
+                    _settings.PartitionColumnSizeWidth);
+                freeColumnWidth = Math.Max(
+                    freeColumnWidth,
+                    _settings.PartitionColumnFreeWidth);
+                freePercentColumnWidth = Math.Max(
+                    freePercentColumnWidth,
+                    _settings.PartitionColumnFreePercentWidth);
+            }
+
+            int totalColumnsWidth =
+                nameColumnWidth +
                 sizeColumnWidth +
                 freeColumnWidth +
                 freePercentColumnWidth;
 
-            if (fixedColumnsWidth >
-                Math.Max(
-                    0,
-                    availableWidth -
-                    minimumNameColumnWidth))
+            _listViewPartitions.ScrollBars =
+                verticalScrollBarRequired
+                    ? ScrollBars.Vertical
+                    : ScrollBars.None;
+
+            _applyingColumnLayout = true;
+
+            try
             {
-                int maximumFixedColumnsWidth = Math.Max(
-                    0,
-                    availableWidth -
-                    minimumNameColumnWidth);
+                _listViewPartitions.Columns[0].Width =
+                    nameColumnWidth;
+                _listViewPartitions.Columns[1].Width =
+                    sizeColumnWidth;
+                _listViewPartitions.Columns[2].Width =
+                    freeColumnWidth;
+                _listViewPartitions.Columns[3].Width =
+                    freePercentColumnWidth;
+            }
+            finally
+            {
+                _applyingColumnLayout = false;
+            }
+        }
 
-                double factor = fixedColumnsWidth <= 0
-                    ? 1D
-                    : (double)maximumFixedColumnsWidth /
-                      fixedColumnsWidth;
+        private void SchedulePartitionPanelLayoutUpdate()
+        {
+            if (_listViewPartitions.IsDisposed)
+                return;
 
-                sizeColumnWidth = Math.Max(
-                    AntdThemeService.ScaleForDpi(
-                        _listViewPartitions,
-                        40),
-                    (int)Math.Floor(
-                        sizeColumnWidth *
-                        factor));
-                freeColumnWidth = Math.Max(
-                    AntdThemeService.ScaleForDpi(
-                        _listViewPartitions,
-                        40),
-                    (int)Math.Floor(
-                        freeColumnWidth *
-                        factor));
-                freePercentColumnWidth = Math.Max(
-                    AntdThemeService.ScaleForDpi(
-                        _listViewPartitions,
-                        44),
-                    maximumFixedColumnsWidth -
-                    sizeColumnWidth -
-                    freeColumnWidth);
+            if (!_listViewPartitions.IsHandleCreated)
+            {
+                ApplyInitialPartitionPanelHeight();
+                AdjustColumns();
+                return;
             }
 
-            int nameColumnWidth = Math.Max(
-                minimumNameColumnWidth,
-                availableWidth -
-                sizeColumnWidth -
-                freeColumnWidth -
-                freePercentColumnWidth);
+            _listViewPartitions.BeginInvoke(
+                (Action)(() =>
+                {
+                    if (_listViewPartitions.IsDisposed)
+                        return;
 
-            _listViewPartitions.Columns[0].Width =
-                nameColumnWidth;
-            _listViewPartitions.Columns[1].Width =
-                sizeColumnWidth;
-            _listViewPartitions.Columns[2].Width =
-                freeColumnWidth;
-            _listViewPartitions.Columns[3].Width =
-                freePercentColumnWidth;
+                    ApplyInitialPartitionPanelHeight();
+                    AdjustColumns();
+                }));
+        }
+
+        private void ApplyInitialPartitionPanelHeight()
+        {
+            if (_splitContainerLeft.Panel2Collapsed)
+                return;
+
+            int visibleRowCount =
+                _listViewPartitions.Rows
+                    .Cast<DataGridViewRow>()
+                    .Count(row => row.Visible);
+
+            if (visibleRowCount <= 0)
+                return;
+
+            int targetVisibleRowCount = Math.Min(
+                visibleRowCount,
+                MaximumInitialVisibleDriveRows);
+
+            int requiredPanel2Height =
+                GetRequiredPartitionPanelHeight(targetVisibleRowCount);
+
+            int maximumPanel2Height = Math.Max(
+                _splitContainerLeft.Panel2MinSize,
+                _splitContainerLeft.Height -
+                _splitContainerLeft.Panel1MinSize -
+                _splitContainerLeft.SplitterWidth);
+
+            int targetPanel2Height = Math.Min(
+                requiredPanel2Height,
+                maximumPanel2Height);
+
+            targetPanel2Height = Math.Max(
+                targetPanel2Height,
+                _splitContainerLeft.Panel2MinSize);
+
+            bool verticalScrollBarRequired =
+                visibleRowCount > MaximumInitialVisibleDriveRows ||
+                requiredPanel2Height > maximumPanel2Height;
+
+            if (_splitContainerLeft.Panel2.Height < targetPanel2Height)
+            {
+                int splitterDistance =
+                    _splitContainerLeft.Height -
+                    targetPanel2Height -
+                    _splitContainerLeft.SplitterWidth;
+
+                splitterDistance = Math.Max(
+                    splitterDistance,
+                    _splitContainerLeft.Panel1MinSize);
+
+                splitterDistance = Math.Min(
+                    splitterDistance,
+                    _splitContainerLeft.Height -
+                    _splitContainerLeft.Panel2MinSize -
+                    _splitContainerLeft.SplitterWidth);
+
+                _applyingPartitionPanelLayout = true;
+
+                try
+                {
+                    _splitContainerLeft.SplitterDistance =
+                        splitterDistance;
+                }
+                finally
+                {
+                    _applyingPartitionPanelLayout = false;
+                }
+            }
+
+            ApplyInitialPartitionPanelWidth(
+                verticalScrollBarRequired);
+        }
+
+        private void ApplyInitialPartitionPanelWidth(
+            bool verticalScrollBarRequired)
+        {
+            SplitContainer splitContainerMain =
+                _splitContainerLeft.Parent?.Parent as SplitContainer;
+
+            if (splitContainerMain == null)
+                return;
+
+            int requiredPanelWidth =
+                GetRequiredPartitionPanelWidth(verticalScrollBarRequired);
+
+            if (requiredPanelWidth <= splitContainerMain.SplitterDistance)
+                return;
+
+            int maximumPanel1Width =
+                splitContainerMain.Width -
+                splitContainerMain.Panel2MinSize -
+                splitContainerMain.SplitterWidth;
+
+            int targetPanel1Width = Math.Min(
+                requiredPanelWidth,
+                maximumPanel1Width);
+
+            targetPanel1Width = Math.Max(
+                targetPanel1Width,
+                splitContainerMain.Panel1MinSize);
+
+            if (targetPanel1Width <= splitContainerMain.SplitterDistance)
+                return;
+
+            splitContainerMain.SplitterDistance =
+                targetPanel1Width;
+        }
+
+        private int GetRequiredPartitionPanelHeight(
+            int visibleRowCount)
+        {
+            int currentPanelToGridClientHeight =
+                _splitContainerLeft.Panel2.Height -
+                _listViewPartitions.ClientSize.Height;
+
+            return GetRequiredPartitionGridHeight(visibleRowCount) +
+                   Math.Max(0, currentPanelToGridClientHeight) +
+                   PartitionGridSafetyPadding;
+        }
+
+        private int GetRequiredPartitionPanelWidth(
+            bool verticalScrollBarRequired)
+        {
+            int requiredGridClientWidth =
+                GetRequiredNameColumnWidth() +
+                GetRequiredColumnWidth(1, 8) +
+                GetRequiredColumnWidth(2, 8) +
+                Math.Max(
+                    GetRequiredColumnWidth(3, 10),
+                    AntdThemeService.ScaleForDpi(
+                        _listViewPartitions,
+                        50));
+
+            if (verticalScrollBarRequired)
+            {
+                requiredGridClientWidth +=
+                    SystemInformation.VerticalScrollBarWidth;
+            }
+
+            return requiredGridClientWidth +
+                   (_listViewPartitions.Width - _listViewPartitions.ClientSize.Width) +
+                   _listViewPartitions.Margin.Horizontal +
+                   (_listViewPartitions.Parent?.Padding.Horizontal ?? 0) +
+                   PartitionGridSafetyPadding;
+        }
+
+        private int GetRequiredPartitionGridHeight(
+            int visibleRowCount)
+        {
+            int requiredHeight = _listViewPartitions.ColumnHeadersVisible
+                ? _listViewPartitions.ColumnHeadersHeight
+                : 0;
+
+            int measuredVisibleRows = 0;
+
+            foreach (DataGridViewRow row in _listViewPartitions.Rows)
+            {
+                if (!row.Visible)
+                    continue;
+
+                if (measuredVisibleRows >= visibleRowCount)
+                    break;
+
+                requiredHeight += Math.Max(
+                    row.Height,
+                    _listViewPartitions.RowTemplate.Height);
+
+                measuredVisibleRows++;
+            }
+
+            if (measuredVisibleRows < visibleRowCount)
+            {
+                int fallbackRowHeight = _listViewPartitions.RowTemplate.Height > 0
+                    ? _listViewPartitions.RowTemplate.Height
+                    : _listViewPartitions.RowTemplate.MinimumHeight;
+
+                if (fallbackRowHeight <= 0)
+                {
+                    fallbackRowHeight = _listViewPartitions.Font.Height +
+                                        AntdThemeService.ScaleForDpi(
+                                            _listViewPartitions,
+                                            8);
+                }
+
+                requiredHeight +=
+                    (visibleRowCount - measuredVisibleRows) *
+                    fallbackRowHeight;
+            }
+
+            return requiredHeight +
+                   AntdThemeService.ScaleForDpi(
+                       _listViewPartitions,
+                       2);
+        }
+
+        private int GetRequiredNameColumnWidth()
+        {
+            int requiredWidth = GetRequiredColumnWidth(
+                0,
+                8);
+
+            int iconAndTextSpacing =
+                AntdThemeService.ScaleForDpi(
+                    _listViewPartitions,
+                    28);
+
+            foreach (DataGridViewRow row in _listViewPartitions.Rows)
+            {
+                if (!row.Visible)
+                    continue;
+
+                DataGridViewCell cell =
+                    row.Cells[0];
+
+                string text = Convert.ToString(
+                    cell.FormattedValue);
+
+                DataGridViewCellStyle cellStyle =
+                    cell.InheritedStyle;
+
+                int textWidth =
+                    TextRenderer.MeasureText(
+                        text ?? string.Empty,
+                        cellStyle.Font ??
+                        _listViewPartitions.Font,
+                        Size.Empty,
+                        TextFormatFlags.SingleLine |
+                        TextFormatFlags.NoPadding).Width +
+                    cellStyle.Padding.Horizontal +
+                    iconAndTextSpacing;
+
+                requiredWidth = Math.Max(
+                    requiredWidth,
+                    textWidth);
+            }
+
+            return requiredWidth;
+        }
+
+        private bool HasSavedColumnLayout()
+        {
+            return _settings.HasColumnLayout &&
+                   _settings.PartitionColumnNameWidth > 0 &&
+                   _settings.PartitionColumnSizeWidth > 0 &&
+                   _settings.PartitionColumnFreeWidth > 0 &&
+                   _settings.PartitionColumnFreePercentWidth > 0;
         }
 
         private int GetRequiredColumnWidth(
@@ -475,8 +780,14 @@ namespace c2flux
 
         public void HandleCellPainting(DataGridViewCellPaintingEventArgs e)
         {
-            if (e.RowIndex < 0 || e.ColumnIndex < 0)
+            if (e.ColumnIndex < 0)
                 return;
+
+            if (e.RowIndex < 0)
+            {
+                PaintPartitionGridHeaderCell(e);
+                return;
+            }
 
             e.Handled = true;
 
@@ -610,6 +921,64 @@ namespace c2flux
                 TextFormatFlags.EndEllipsis);
         }
 
+        private void PaintPartitionGridHeaderCell(
+            DataGridViewCellPaintingEventArgs e)
+        {
+            e.Handled = true;
+
+            Color headerBackColor = IsDarkMode()
+                ? Color.FromArgb(32, 32, 32)
+                : Color.White;
+            Color headerForeColor = IsDarkMode()
+                ? Color.White
+                : Color.Black;
+
+            using (SolidBrush backBrush = new SolidBrush(headerBackColor))
+            {
+                e.Graphics.FillRectangle(
+                    backBrush,
+                    e.CellBounds);
+            }
+
+            Rectangle textBounds = new Rectangle(
+                e.CellBounds.Left + AntdThemeService.ScaleForDpi(
+                    _listViewPartitions,
+                    4),
+                e.CellBounds.Top,
+                Math.Max(
+                    0,
+                    e.CellBounds.Width -
+                    AntdThemeService.ScaleForDpi(
+                        _listViewPartitions,
+                        8)),
+                e.CellBounds.Height);
+
+            TextFormatFlags alignment =
+                e.ColumnIndex == 0
+                    ? TextFormatFlags.Left
+                    : e.ColumnIndex == 3
+                        ? TextFormatFlags.HorizontalCenter
+                        : TextFormatFlags.Right;
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                Convert.ToString(e.FormattedValue),
+                e.CellStyle.Font,
+                textBounds,
+                headerForeColor,
+                alignment |
+                TextFormatFlags.VerticalCenter |
+                TextFormatFlags.EndEllipsis);
+
+            using Pen gridPen = new Pen(_listViewPartitions.GridColor);
+            e.Graphics.DrawLine(
+                gridPen,
+                e.CellBounds.Left,
+                e.CellBounds.Bottom - 1,
+                e.CellBounds.Right,
+                e.CellBounds.Bottom - 1);
+        }
+
         private bool IsDarkMode()
         {
             if (_settings.Layout == AppLayout.WindowsDarkMode)
@@ -663,6 +1032,64 @@ namespace c2flux
                 Math.Max(0, Math.Min(255, (int)Math.Round(color.R * factor))),
                 Math.Max(0, Math.Min(255, (int)Math.Round(color.G * factor))),
                 Math.Max(0, Math.Min(255, (int)Math.Round(color.B * factor))));
+        }
+
+        private void UpdateStatusForSelectedPartition()
+        {
+            if (_selectedPartitionChanged == null)
+                return;
+
+            if (_listViewPartitions.CurrentRow == null)
+                return;
+
+            if (_listViewPartitions.CurrentRow.Index < 0)
+                return;
+
+            string rootPath = Convert.ToString(
+                _listViewPartitions.CurrentRow.Cells[0].Tag);
+
+            if (string.IsNullOrWhiteSpace(rootPath))
+                return;
+
+            _selectedPartitionChanged(rootPath);
+        }
+
+        private void listViewPartitions_SelectionChanged(object sender, EventArgs e)
+        {
+            UpdateStatusForSelectedPartition();
+        }
+
+        private void listViewPartitions_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0)
+                return;
+
+            UpdateStatusForSelectedPartition();
+        }
+
+        private void listViewPartitions_ColumnWidthChanged(
+            object sender,
+            DataGridViewColumnEventArgs e)
+        {
+            if (_applyingColumnLayout)
+                return;
+
+            SaveColumnLayout(true);
+        }
+
+        private void splitContainerLeft_SplitterMoved(
+            object sender,
+            SplitterEventArgs e)
+        {
+            if (_applyingPartitionPanelLayout)
+                return;
+
+            _settings.HasSplitterLayout = true;
+            _settings.SplitContainerLeftDistance =
+                _splitContainerLeft.Height -
+                _splitContainerLeft.SplitterDistance -
+                _splitContainerLeft.SplitterWidth;
+            _settings.Save();
         }
 
         private void listViewPartitions_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
@@ -727,6 +1154,7 @@ namespace c2flux
         private void ApplyCompactPartitionGridLayout()
         {
             AntdThemeService.ApplyPartitionGrid(_listViewPartitions);
+            ApplyPartitionColumnStyles();
         }
     }
 }

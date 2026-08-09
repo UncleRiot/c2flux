@@ -125,6 +125,7 @@ namespace c2flux
         public void SaveSplitterLayout()
         {
             _settings.HasSplitterLayout = true;
+            _settings.PartitionPanelLayoutVersion = 2;
             _settings.SplitContainerMainDistance = _splitContainerMain.SplitterDistance;
             _settings.SplitContainerLeftDistance = _splitContainerLeft.Height - _splitContainerLeft.SplitterDistance - _splitContainerLeft.SplitterWidth;
         }

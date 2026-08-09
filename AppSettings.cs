@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -144,8 +144,23 @@ namespace c2flux
         public int ToolStripExportTop { get; set; }
         public int ToolStripFeaturesLeft { get; set; }
         public int ToolStripFeaturesTop { get; set; }
+        public bool ToolbarScanButtonVisible { get; set; } = true;
+        public bool ToolbarPauseButtonVisible { get; set; } = true;
+        public bool ToolbarOpenFolderButtonVisible { get; set; } = true;
+        public bool ToolbarTableButtonVisible { get; set; } = true;
+        public bool ToolbarPieChartButtonVisible { get; set; } = true;
+        public bool ToolbarBarChartButtonVisible { get; set; } = true;
+        public bool ToolbarSunburstButtonVisible { get; set; } = true;
+        public bool ToolbarExportCsvButtonVisible { get; set; } = true;
+        public bool ToolbarAnalysisButtonVisible { get; set; } = true;
+        public bool ToolbarStorageHistoryButtonVisible { get; set; } = true;
+        public bool ToolbarScanHistoryButtonVisible { get; set; } = true;
+        public bool ToolbarSearchButtonVisible { get; set; } = true;
+        public int ToolbarButtonVisibilitySettingsVersion { get; set; }
+
 
         public bool HasSplitterLayout { get; set; }
+        public int PartitionPanelLayoutVersion { get; set; }
         public int SplitContainerMainDistance { get; set; }
         public int SplitContainerLeftDistance { get; set; }
 
@@ -170,7 +185,10 @@ namespace c2flux
 
             if (!System.IO.File.Exists(SettingsFilePath))
             {
-                return new AppSettings();
+                AppSettings settings = new AppSettings();
+                settings.EnsureToolbarButtonVisibilitySettings();
+
+                return settings;
             }
 
             try
@@ -179,6 +197,7 @@ namespace c2flux
                 AppSettings settings = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(json);
 
                 settings = settings ?? new AppSettings();
+                settings.EnsureToolbarButtonVisibilitySettings();
                 settings.LanguageCode = LocalizationService.NormalizeLanguageCode(settings.LanguageCode);
                 settings.StorageHistoryGradientIntensityPercent = Math.Max(
                     0,
@@ -240,6 +259,26 @@ namespace c2flux
 
                 return new AppSettings();
             }
+        }
+
+        public void EnsureToolbarButtonVisibilitySettings()
+        {
+            if (ToolbarButtonVisibilitySettingsVersion >= 1)
+                return;
+
+            ToolbarScanButtonVisible = true;
+            ToolbarPauseButtonVisible = true;
+            ToolbarOpenFolderButtonVisible = true;
+            ToolbarTableButtonVisible = true;
+            ToolbarPieChartButtonVisible = true;
+            ToolbarBarChartButtonVisible = true;
+            ToolbarSunburstButtonVisible = true;
+            ToolbarExportCsvButtonVisible = true;
+            ToolbarAnalysisButtonVisible = true;
+            ToolbarStorageHistoryButtonVisible = true;
+            ToolbarScanHistoryButtonVisible = true;
+            ToolbarSearchButtonVisible = true;
+            ToolbarButtonVisibilitySettingsVersion = 1;
         }
 
         private static AppSettings HandleInvalidSettingsFile()

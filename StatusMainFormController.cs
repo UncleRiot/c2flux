@@ -143,11 +143,7 @@ namespace c2flux
             }
 
             long clusterSize = GetClusterSize(entry.FullPath);
-
-            string entryDisplayName =
-                string.IsNullOrWhiteSpace(entry.Name)
-                    ? entry.FullPath
-                    : entry.Name;
+            string entryDisplayName = GetEntryStatusDisplayPath(entry);
 
             _statusLabel.Text = string.Format(
                 "{0} | Size: {1} | Files: {2:N0} | Cluster-Size: {3:N0}",
@@ -155,6 +151,19 @@ namespace c2flux
                 SizeFormatter.Format(entry.SizeBytes),
                 Math.Max(0, fileCount),
                 clusterSize);
+        }
+
+        private static string GetEntryStatusDisplayPath(FileSystemEntry entry)
+        {
+            if (entry == null)
+                return string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(entry.FullPath))
+                return entry.FullPath;
+
+            return string.IsNullOrWhiteSpace(entry.Name)
+                ? string.Empty
+                : entry.Name;
         }
 
         public void SetScanProgress(
@@ -223,21 +232,21 @@ namespace c2flux
 
                 DriveInfo driveInfo = new DriveInfo(driveRootPath);
                 long clusterSize = GetClusterSize(driveRootPath);
-                string driveName = driveInfo.Name.TrimEnd('\\');
+                string driveName = driveInfo.Name;
 
                 _statusLabel.Text = fileCount.HasValue
                     ? string.Format(
-                        LocalizationService.GetText("Status.FreeSpaceWithFileCount"),
+                        "{0} | Size: {1} | Free: {2} | Files: {3:N0} | Cluster-Size: {4:N0}",
                         driveName,
-                        SizeFormatter.Format(driveInfo.AvailableFreeSpace),
                         SizeFormatter.Format(driveInfo.TotalSize),
+                        SizeFormatter.Format(driveInfo.AvailableFreeSpace),
                         fileCount.Value,
                         clusterSize)
                     : string.Format(
-                        LocalizationService.GetText("Status.FreeSpace"),
+                        "{0} | Size: {1} | Free: {2} | Cluster-Size: {3:N0}",
                         driveName,
-                        SizeFormatter.Format(driveInfo.AvailableFreeSpace),
                         SizeFormatter.Format(driveInfo.TotalSize),
+                        SizeFormatter.Format(driveInfo.AvailableFreeSpace),
                         clusterSize);
 
                 SetStatusProgressText(null);

@@ -100,6 +100,7 @@ namespace c2flux
         private ToolStripStatusLabel toolStripAlertInformationLabel;
         private ToolStripStatusLabel toolStripAlertWarningLabel;
         private ToolStripStatusLabel toolStripAlertErrorLabel;
+        private ContextMenuStrip contextMenuStripToolbars;
         
         private bool _suspendPersistentSettingsSave;
         private SearchForm _searchForm;
@@ -217,7 +218,8 @@ namespace c2flux
                 splitContainerLeft,
                 listViewPartitions,
                 imageListPartitions,
-                _shellIconService);
+                _shellIconService,
+                _statusMainFormController.UpdateStatusStripForDrive);
             _treeEntryController = new TreeEntryController(
                 treeViewEntries,
                 imageListEntries,
@@ -237,6 +239,7 @@ namespace c2flux
             _layoutMainFormController.ApplyMainWindowSettings();
             _layoutMainFormController.ApplyDefaultToolStripLayout();
             _layoutMainFormController.ApplyToolStripLayout();
+            ApplyToolbarButtonVisibility();
             _layoutMainFormController.ApplySplitterLayout();
 
             SizeChanged += MainForm_SizeChanged;
@@ -272,6 +275,7 @@ namespace c2flux
                 toolStripViewMode,
                 toolStripExport,
                 toolStripFeatures);
+            AntdThemeService.ConfigureContextMenu(contextMenuStripToolbars);
             AntdThemeService.ApplyTreeEntryView(
                 treeViewEntries);
             ApplyDriveComboBoxTheme();
@@ -289,6 +293,7 @@ namespace c2flux
 
             _layoutMainFormController.ApplyDefaultToolStripLayout();
             _layoutMainFormController.ApplyToolStripLayout();
+            ApplyToolbarButtonVisibility();
 
             AntdThemeService.AlignMainSelectHeight(
                 toolStripComboBoxDrives,
@@ -530,6 +535,9 @@ namespace c2flux
             menuItemAbout.Click += menuItemAbout_Click;
 
             toolStripPanelMain = AntdThemeService.CreateMainToolbarPanel();
+            contextMenuStripToolbars = new ContextMenuStrip();
+            contextMenuStripToolbars.Opening += contextMenuStripToolbars_Opening;
+            toolStripPanelMain.ContextMenuStrip = contextMenuStripToolbars;
 
             toolStripMain = AntdThemeService.CreateMainToolStrip();
 
@@ -643,6 +651,8 @@ namespace c2flux
             toolStripPanelMain.Controls.Add(toolStripViewMode);
             toolStripPanelMain.Controls.Add(toolStripExport);
             toolStripPanelMain.Controls.Add(toolStripFeatures);
+
+            ConfigureToolbarContextMenuTargets();
 
             splitContainerMain = new SplitContainer();
             splitContainerMain.Dock = DockStyle.Fill;
@@ -979,6 +989,362 @@ namespace c2flux
 
             dataGridViewEntries.ApplyLocalizedTexts();
             storageHistoryView?.ApplyLocalizedTexts();
+        }
+
+        private void ConfigureToolbarContextMenuTargets()
+        {
+            Control[] controls =
+            {
+                toolStripPanelMain,
+                toolStripMain,
+                toolStripViewMode,
+                toolStripExport,
+                toolStripFeatures,
+                toolStripComboBoxDrives,
+                toolStripButtonScan,
+                toolStripButtonPause,
+                toolStripButtonOpenFolder,
+                toolStripButtonTable,
+                toolStripButtonPieChart,
+                toolStripButtonBarChart,
+                toolStripButtonSunburst,
+                toolStripButtonExportCsv,
+                toolStripButtonAnalysis,
+                toolStripButtonStorageHistory,
+                toolStripButtonScanHistory,
+                toolStripButtonSearch
+            };
+
+            foreach (Control control in controls)
+            {
+                if (control != null)
+                {
+                    control.ContextMenuStrip = contextMenuStripToolbars;
+                }
+            }
+
+            ToolStrip[] toolStrips =
+            {
+                toolStripMain,
+                toolStripViewMode,
+                toolStripExport,
+                toolStripFeatures
+            };
+
+            foreach (ToolStrip toolStrip in toolStrips)
+            {
+                if (toolStrip != null)
+                {
+                    toolStrip.ContextMenuStrip = contextMenuStripToolbars;
+
+                    foreach (ToolStripItem item in toolStrip.Items)
+                    {
+                        if (item is ToolStripControlHost host &&
+                            host.Control != null)
+                        {
+                            host.Control.ContextMenuStrip = contextMenuStripToolbars;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void contextMenuStripToolbars_Opening(
+            object sender,
+            System.ComponentModel.CancelEventArgs e)
+        {
+            RebuildToolbarContextMenu();
+        }
+
+        private void RebuildToolbarContextMenu()
+        {
+            contextMenuStripToolbars.Items.Clear();
+
+            ToolStripMenuItem titleItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText("Toolbar.CustomizeButtons"))
+                {
+                    Enabled = false
+                };
+
+            contextMenuStripToolbars.Items.Add(titleItem);
+            contextMenuStripToolbars.Items.Add(new ToolStripSeparator());
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.ScanButton"),
+                _settings.ToolbarScanButtonVisible,
+                visible => _settings.ToolbarScanButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.PauseButton"),
+                _settings.ToolbarPauseButtonVisible,
+                visible => _settings.ToolbarPauseButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.OpenFolderButton"),
+                _settings.ToolbarOpenFolderButtonVisible,
+                visible => _settings.ToolbarOpenFolderButtonVisible = visible);
+
+            contextMenuStripToolbars.Items.Add(new ToolStripSeparator());
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.TableButton"),
+                _settings.ToolbarTableButtonVisible,
+                visible => _settings.ToolbarTableButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.PieChartButton"),
+                _settings.ToolbarPieChartButtonVisible,
+                visible => _settings.ToolbarPieChartButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.BarChartButton"),
+                _settings.ToolbarBarChartButtonVisible,
+                visible => _settings.ToolbarBarChartButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.SunburstButton"),
+                _settings.ToolbarSunburstButtonVisible,
+                visible => _settings.ToolbarSunburstButtonVisible = visible);
+
+            contextMenuStripToolbars.Items.Add(new ToolStripSeparator());
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.ExportButton"),
+                _settings.ToolbarExportCsvButtonVisible,
+                visible => _settings.ToolbarExportCsvButtonVisible = visible);
+
+            contextMenuStripToolbars.Items.Add(new ToolStripSeparator());
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.AnalysisButton"),
+                _settings.ToolbarAnalysisButtonVisible,
+                visible => _settings.ToolbarAnalysisButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.StorageHistoryButton"),
+                _settings.ToolbarStorageHistoryButtonVisible,
+                visible => _settings.ToolbarStorageHistoryButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.CompareScansButton"),
+                _settings.ToolbarScanHistoryButtonVisible,
+                visible => _settings.ToolbarScanHistoryButtonVisible = visible);
+
+            AddToolbarVisibilityMenuItem(
+                LocalizationService.GetText("Toolbar.SearchButton"),
+                _settings.ToolbarSearchButtonVisible,
+                visible => _settings.ToolbarSearchButtonVisible = visible);
+
+            contextMenuStripToolbars.Items.Add(new ToolStripSeparator());
+
+            ToolStripMenuItem showAllItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText("Toolbar.ShowAllButtons"));
+            showAllItem.Click += toolbarContextShowAllButtons_Click;
+            contextMenuStripToolbars.Items.Add(showAllItem);
+
+            AntdThemeService.ConfigureContextMenu(contextMenuStripToolbars);
+        }
+
+        private void AddToolbarVisibilityMenuItem(
+            string text,
+            bool visible,
+            Action<bool> setVisible)
+        {
+            ToolStripMenuItem item =
+                new ToolStripMenuItem(text)
+                {
+                    Checked = visible,
+                    CheckOnClick = true
+                };
+
+            item.Click += (sender, e) =>
+            {
+                if (sender is not ToolStripMenuItem menuItem)
+                    return;
+
+                setVisible(menuItem.Checked);
+                _settings.ToolbarButtonVisibilitySettingsVersion = 1;
+                ApplyToolbarButtonVisibility();
+                _settings.Save();
+            };
+
+            contextMenuStripToolbars.Items.Add(item);
+        }
+
+        private void toolbarContextShowAllButtons_Click(
+            object sender,
+            EventArgs e)
+        {
+            _settings.ToolbarScanButtonVisible = true;
+            _settings.ToolbarPauseButtonVisible = true;
+            _settings.ToolbarOpenFolderButtonVisible = true;
+            _settings.ToolbarTableButtonVisible = true;
+            _settings.ToolbarPieChartButtonVisible = true;
+            _settings.ToolbarBarChartButtonVisible = true;
+            _settings.ToolbarSunburstButtonVisible = true;
+            _settings.ToolbarExportCsvButtonVisible = true;
+            _settings.ToolbarAnalysisButtonVisible = true;
+            _settings.ToolbarStorageHistoryButtonVisible = true;
+            _settings.ToolbarScanHistoryButtonVisible = true;
+            _settings.ToolbarSearchButtonVisible = true;
+            _settings.ToolbarButtonVisibilitySettingsVersion = 1;
+
+            ApplyToolbarButtonVisibility();
+            _settings.Save();
+        }
+
+        private void ApplyToolbarButtonVisibility()
+        {
+            _settings.EnsureToolbarButtonVisibilitySettings();
+
+            if (toolStripPanelMain != null)
+            {
+                toolStripPanelMain.Visible = true;
+                toolStripPanelMain.SuspendLayout();
+            }
+
+            try
+            {
+                SetToolbarGroupVisibleBeforeItemUpdate(toolStripMain);
+                SetToolbarGroupVisibleBeforeItemUpdate(toolStripViewMode);
+                SetToolbarGroupVisibleBeforeItemUpdate(toolStripExport);
+                SetToolbarGroupVisibleBeforeItemUpdate(toolStripFeatures);
+
+                SetHostedControlVisible(
+                    toolStripMain,
+                    toolStripButtonScan,
+                    _settings.ToolbarScanButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripMain,
+                    toolStripButtonPause,
+                    _settings.ToolbarPauseButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripMain,
+                    toolStripButtonOpenFolder,
+                    _settings.ToolbarOpenFolderButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripViewMode,
+                    toolStripButtonTable,
+                    _settings.ToolbarTableButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripViewMode,
+                    toolStripButtonPieChart,
+                    _settings.ToolbarPieChartButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripViewMode,
+                    toolStripButtonBarChart,
+                    _settings.ToolbarBarChartButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripViewMode,
+                    toolStripButtonSunburst,
+                    _settings.ToolbarSunburstButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripExport,
+                    toolStripButtonExportCsv,
+                    _settings.ToolbarExportCsvButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripFeatures,
+                    toolStripButtonAnalysis,
+                    _settings.ToolbarAnalysisButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripFeatures,
+                    toolStripButtonStorageHistory,
+                    _settings.ToolbarStorageHistoryButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripFeatures,
+                    toolStripButtonScanHistory,
+                    _settings.ToolbarScanHistoryButtonVisible);
+
+                SetHostedControlVisible(
+                    toolStripFeatures,
+                    toolStripButtonSearch,
+                    _settings.ToolbarSearchButtonVisible);
+
+                UpdateToolbarGroupVisibility(toolStripMain, true);
+                UpdateToolbarGroupVisibility(toolStripViewMode, false);
+                UpdateToolbarGroupVisibility(toolStripExport, false);
+                UpdateToolbarGroupVisibility(toolStripFeatures, false);
+            }
+            finally
+            {
+                if (toolStripPanelMain != null)
+                {
+                    toolStripPanelMain.ResumeLayout(true);
+                    toolStripPanelMain.PerformLayout();
+                }
+            }
+        }
+
+        private static void SetToolbarGroupVisibleBeforeItemUpdate(
+            ToolStrip toolStrip)
+        {
+            if (toolStrip == null)
+                return;
+
+            toolStrip.Visible = true;
+        }
+
+        private static void SetHostedControlVisible(
+            ToolStrip toolStrip,
+            Control hostedControl,
+            bool visible)
+        {
+            if (toolStrip == null ||
+                hostedControl == null)
+            {
+                return;
+            }
+
+            foreach (ToolStripItem item in toolStrip.Items)
+            {
+                if (item is ToolStripControlHost host &&
+                    ReferenceEquals(host.Control, hostedControl))
+                {
+                    item.Visible = visible;
+                    item.Available = visible;
+                    hostedControl.Visible = visible;
+                    return;
+                }
+            }
+        }
+
+        private static void UpdateToolbarGroupVisibility(
+            ToolStrip toolStrip,
+            bool keepVisible)
+        {
+            if (toolStrip == null)
+                return;
+
+            if (keepVisible)
+            {
+                toolStrip.Visible = true;
+                return;
+            }
+
+            bool hasVisibleItem = false;
+
+            foreach (ToolStripItem item in toolStrip.Items)
+            {
+                if (item.Available)
+                {
+                    hasVisibleItem = true;
+                    break;
+                }
+            }
+
+            toolStrip.Visible = hasVisibleItem;
         }
 
         private System.Drawing.Bitmap CreateScanHistoryButtonImage()
