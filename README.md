@@ -6,7 +6,8 @@
 
 <br>
 
-<img width="1618" height="935" alt="c2flux_advertisement" src="https://github.com/user-attachments/assets/a813424a-a483-4bee-a2cf-d4057d752343" />
+<img width="1618" height="935" alt="grafik" src="https://github.com/user-attachments/assets/e4d5fafc-5eb6-4df0-ae99-4bf45a44da13" />
+
 
 
 <br>
