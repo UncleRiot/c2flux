@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -1034,7 +1035,7 @@ namespace c2flux
             _useDarkMode ? Color.White : SystemColors.ControlText;
 
         public static Color MainDisabledButtonTextColor =>
-            _useDarkMode ? Color.FromArgb(128, 128, 128) : SystemColors.GrayText;
+            _useDarkMode ? Color.FromArgb(128, 128, 128) : SystemColors.ControlText;
 
         public static Color Accent =>
             SystemColors.Highlight;
@@ -1201,6 +1202,9 @@ namespace c2flux
                 Text = text,
                 AutoSize = false,
                 MinimumSize = new Size(width, height),
+                Font = DefaultFont,
+                ForeColor = TextPrimary,
+                BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Fill,
                 Margin = new Padding(
@@ -1229,8 +1233,26 @@ namespace c2flux
             select.Size = new Size(width, height);
             select.ListAutoWidth = true;
             select.MaxCount = 8;
+            ConfigureStorageHistorySelect(select);
 
             return select;
+        }
+
+        public static void ConfigureStorageHistorySelect(
+            AntdUI.Select select)
+        {
+            if (select == null)
+                return;
+
+            select.Font = DefaultFont;
+            select.BackColor = InputBackground;
+            select.ForeColor = TextPrimary;
+            select.BorderWidth = 1F;
+            select.BorderColor = Border;
+            select.Radius = 6;
+            select.DropDownRadius = 8;
+            select.DropDownArrow = true;
+            select.Invalidate();
         }
 
         public static void AdjustStorageHistorySelectWidth(
@@ -1303,7 +1325,7 @@ namespace c2flux
     int height,
     AntdUI.TTypeMini type)
         {
-            return new AntdUI.Button
+            AntdUI.Button button = new AntdUI.Button
             {
                 Name = name,
                 Text = text,
@@ -1313,14 +1335,27 @@ namespace c2flux
                 Type = type,
                 Radius = 6,
                 BorderWidth = 1F,
-                DefaultBorderColor = Border,
-                BackColor = BackgroundSecondary,
-                ForeColor = TextPrimary,
-                BackHover = HoverBackground,
-                BackActive = PressedBackground,
                 Anchor = AnchorStyles.None,
                 Margin = new Padding(4, 0, 4, 4)
             };
+
+            ConfigureStorageHistoryButton(button);
+            return button;
+        }
+
+        public static void ConfigureStorageHistoryButton(
+            AntdUI.Button button)
+        {
+            if (button == null)
+                return;
+
+            button.Font = DefaultFont;
+            button.DefaultBorderColor = Border;
+            button.BackColor = BackgroundSecondary;
+            button.ForeColor = TextPrimary;
+            button.BackHover = HoverBackground;
+            button.BackActive = PressedBackground;
+            button.Invalidate();
         }
 
         public static AntdUI.Select CreateStorageHistoryPathSelect(
@@ -1347,6 +1382,7 @@ namespace c2flux
                 2,
                 4,
                 2);
+            ConfigureStorageHistorySelect(select);
 
             return select;
         }
@@ -1359,9 +1395,6 @@ namespace c2flux
 
             ApplyTable(grid);
 
-            grid.BackgroundColor = BackgroundPrimary;
-            grid.BackColor = BackgroundPrimary;
-            grid.ForeColor = TextPrimary;
             grid.BorderStyle = BorderStyle.None;
             grid.CellBorderStyle =
                 DataGridViewCellBorderStyle.SingleHorizontal;
@@ -1369,10 +1402,10 @@ namespace c2flux
                 DataGridViewHeaderBorderStyle.None;
             grid.RowHeadersBorderStyle =
                 DataGridViewHeaderBorderStyle.None;
-            grid.GridColor = Border;
             grid.EnableHeadersVisualStyles = false;
             grid.ColumnHeadersHeightSizeMode =
                 DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+
             int headerHeight = ScaleForDpi(
                 grid,
                 StorageHistoryGridHeaderHeight);
@@ -1396,42 +1429,7 @@ namespace c2flux
                 }
             }
 
-            grid.ColumnHeadersDefaultCellStyle.BackColor =
-                BackgroundSecondary;
-            grid.ColumnHeadersDefaultCellStyle.ForeColor =
-                TextPrimary;
-            grid.ColumnHeadersDefaultCellStyle.SelectionBackColor =
-                BackgroundSecondary;
-            grid.ColumnHeadersDefaultCellStyle.SelectionForeColor =
-                TextPrimary;
-            grid.ColumnHeadersDefaultCellStyle.Font =
-                DefaultFont;
-            grid.ColumnHeadersDefaultCellStyle.Padding =
-                new Padding(8, 0, 8, 0);
-
-            grid.DefaultCellStyle.BackColor =
-                BackgroundPrimary;
-            grid.DefaultCellStyle.ForeColor =
-                TextPrimary;
-            grid.DefaultCellStyle.SelectionBackColor =
-                Accent;
-            grid.DefaultCellStyle.SelectionForeColor =
-                AccentText;
-            grid.DefaultCellStyle.Font =
-                DefaultFont;
-            grid.DefaultCellStyle.Padding =
-                new Padding(4, 0, 4, 0);
-
-            grid.AlternatingRowsDefaultCellStyle.BackColor =
-                BackgroundSecondary;
-            grid.AlternatingRowsDefaultCellStyle.ForeColor =
-                TextPrimary;
-            grid.AlternatingRowsDefaultCellStyle.SelectionBackColor =
-                Accent;
-            grid.AlternatingRowsDefaultCellStyle.SelectionForeColor =
-                AccentText;
-
-            ConfigureScrollBars(grid);
+            grid.Invalidate(true);
         }
 
         public static string WrapToolTipText(
@@ -1796,13 +1794,13 @@ namespace c2flux
         public static AntdUI.Progress CreateStatusScanProgress(
             string name)
         {
-            return new AntdUI.Progress
+            AntdUI.Progress progress = new AntdUI.Progress
             {
                 Name = name,
                 Dock = DockStyle.Right,
                 Width = 200,
                 Font = DefaultFont,
-                ForeColor = TextPrimary,
+                ForeColor = Color.Transparent,
                 Back = BackgroundTertiary,
                 Fill = Accent,
                 Radius = 4,
@@ -1813,8 +1811,144 @@ namespace c2flux
                 Animation = 0,
                 Visible = true,
                 Margin = Padding.Empty,
+                // Progress-Bar Position: links / rechts
+                Padding = new Padding(40, 0, 10, 0)
+            };
+
+            Label progressText = new Label
+            {
+                Name = name + "Text",
+                Text = string.Empty,
+                Font = DefaultFont,
+                ForeColor = TextPrimary,
+                BackColor = Color.Transparent,
+                AutoSize = false,
+                Margin = Padding.Empty,
                 Padding = Padding.Empty
             };
+
+            progressText.Paint += (_, e) =>
+            {
+                string text = progress.Text ?? string.Empty;
+                int separatorIndex = text.IndexOf('|');
+
+                using StringFormat format = new StringFormat(StringFormat.GenericTypographic)
+                {
+                    FormatFlags = StringFormatFlags.MeasureTrailingSpaces |
+                                  StringFormatFlags.NoWrap
+                };
+
+                SizeF fullSize = e.Graphics.MeasureString(
+                    text,
+                    progressText.Font,
+                    int.MaxValue,
+                    format);
+
+                float x =
+                    (progressText.ClientSize.Width - fullSize.Width) / 2F;
+
+                // Text 1 px nach oben
+                float y =
+                    (progressText.ClientSize.Height - fullSize.Height) / 2F - 1F;
+
+                using Brush textBrush = new SolidBrush(progressText.ForeColor);
+
+                if (separatorIndex < 0)
+                {
+                    e.Graphics.DrawString(
+                        text,
+                        progressText.Font,
+                        textBrush,
+                        x,
+                        y,
+                        format);
+                    return;
+                }
+
+                string leftText = text.Substring(0, separatorIndex);
+                string separatorText = "|";
+                string rightText = text.Substring(separatorIndex + 1);
+
+                SizeF leftSize = e.Graphics.MeasureString(
+                    leftText,
+                    progressText.Font,
+                    int.MaxValue,
+                    format);
+                SizeF separatorSize = e.Graphics.MeasureString(
+                    separatorText,
+                    progressText.Font,
+                    int.MaxValue,
+                    format);
+
+                e.Graphics.DrawString(
+                    leftText,
+                    progressText.Font,
+                    textBrush,
+                    x,
+                    y,
+                    format);
+
+                float separatorX = x + leftSize.Width;
+
+                GraphicsState state = e.Graphics.Save();
+
+                // Trennstrich unten 1 px kürzer
+                e.Graphics.SetClip(
+                    new RectangleF(
+                        separatorX,
+                        y,
+                        separatorSize.Width,
+                        Math.Max(
+                            0F,
+                            fullSize.Height - 1F)));
+
+                e.Graphics.DrawString(
+                    separatorText,
+                    progressText.Font,
+                    textBrush,
+                    separatorX,
+                    y,
+                    format);
+
+                e.Graphics.Restore(state);
+
+                e.Graphics.DrawString(
+                    rightText,
+                    progressText.Font,
+                    textBrush,
+                    separatorX + separatorSize.Width,
+                    y,
+                    format);
+            };
+
+            void UpdateProgressTextBounds()
+            {
+                progressText.Bounds = new Rectangle(
+                    progress.Padding.Left,
+                    0,
+                    Math.Max(
+                        0,
+                        progress.ClientSize.Width -
+                        progress.Padding.Horizontal),
+                    progress.ClientSize.Height);
+            }
+
+            progress.TextChanged += (_, _) =>
+            {
+                progressText.Invalidate();
+            };
+
+            progress.Resize += (_, _) =>
+            {
+                UpdateProgressTextBounds();
+                progressText.Invalidate();
+            };
+
+            progress.Controls.Add(progressText);
+            progressText.BringToFront();
+            UpdateProgressTextBounds();
+
+            return progress;
         }
 
         public static void ConfigureMainStatusPanel(
@@ -1842,7 +1976,8 @@ namespace c2flux
                 statusPanel.Padding = new Padding(
                     statusPaddingHorizontal,
                     statusPaddingVertical,
-                    statusPaddingHorizontal,
+                    // Status Bar BG Breite
+                    statusPaddingHorizontal -2,
                     statusPaddingVertical);
 
                 int minimumStatusHeight =
@@ -1880,14 +2015,41 @@ namespace c2flux
                     ScaleForDpi(
                         scanProgress,
                         200);
-                scanProgress.ForeColor = TextPrimary;
+                // Progress-Bar Position: links / rechts
+                scanProgress.Padding = new Padding(
+                    ScaleForDpi(
+                        scanProgress,
+                        40),
+                    0,
+                    ScaleForDpi(
+                        scanProgress,
+                        10),
+                    0);
+                scanProgress.ForeColor = Color.Transparent;
                 scanProgress.Back = BackgroundTertiary;
                 scanProgress.Fill = Accent;
                 scanProgress.Radius =
                     ScaleForDpi(
                         scanProgress,
                         4);
-                scanProgress.ValueRatio = 0.72F;
+                scanProgress.ValueRatio = 0.82F;
+
+                if (scanProgress.Controls[scanProgress.Name + "Text"] is Label progressText)
+                {
+                    progressText.Font = DefaultFont;
+                    progressText.ForeColor = TextPrimary;
+                    progressText.Bounds = new Rectangle(
+                        scanProgress.Padding.Left,
+                        0,
+                        Math.Max(
+                            0,
+                            scanProgress.ClientSize.Width -
+                            scanProgress.Padding.Horizontal),
+                        scanProgress.ClientSize.Height);
+                    progressText.BringToFront();
+                    progressText.Invalidate();
+                }
+
                 scanProgress.Invalidate();
             }
         }
@@ -2183,6 +2345,27 @@ namespace c2flux
             compareScansButton.Icon = compareScansIcon;
             compareScansButton.IconHover = compareScansIcon;
 
+            compareScansButton.ForeColor =
+                isAvailable
+                    ? TextPrimary
+                    : MainDisabledButtonTextColor;
+            compareScansButton.ForeHover =
+                isAvailable
+                    ? MainViewButtonIconInactiveColor
+                    : MainDisabledButtonTextColor;
+            compareScansButton.BackHover =
+                isAvailable
+                    ? MainViewButtonIconInactiveColor
+                    : BackgroundSecondary;
+            compareScansButton.BackActive =
+                isAvailable
+                    ? PressedBackground
+                    : BackgroundSecondary;
+            compareScansButton.BorderWidth =
+                isAvailable
+                    ? 1F
+                    : 0F;
+
             if (previousIcon != null &&
                 !ReferenceEquals(previousIcon, compareScansIcon))
             {
@@ -2270,7 +2453,8 @@ namespace c2flux
                 DefaultBorderColor = Border,
                 BackColor = BackgroundSecondary,
                 ForeColor = TextPrimary,
-                BackHover = HoverBackground,
+                ForeHover = MainViewButtonIconInactiveColor,
+                BackHover = MainViewButtonIconInactiveColor,
                 BackActive = PressedBackground
             };
 
@@ -2284,6 +2468,7 @@ namespace c2flux
             AntdUI.Button button = CreateMainButton(name, text);
             button.AutoToggle = true;
             button.ToggleType = AntdUI.TTypeMini.Primary;
+            button.ToggleForeHover = MainViewButtonIconInactiveColor;
             return button;
         }
 
@@ -2501,6 +2686,46 @@ namespace c2flux
                     : new Padding(0, 1, 0, 1);
                 item.Padding = Padding.Empty;
                 ApplyWindowsToolStripItem(item, _useDarkMode);
+
+                if (item is ToolStripControlHost host)
+                {
+                    ApplyMainToolbarHostedControl(host.Control);
+                }
+            }
+        }
+
+        private static void ApplyMainToolbarHostedControl(Control control)
+        {
+            if (control == null)
+                return;
+
+            control.Font = DefaultFont;
+            control.BackColor = BackgroundSecondary;
+            control.ForeColor = control.Enabled
+                ? TextPrimary
+                : MainDisabledButtonTextColor;
+
+            if (control is AntdUI.Button button)
+            {
+                button.Font = DefaultFont;
+                button.BackColor = BackgroundSecondary;
+                button.ForeColor = button.Enabled
+                    ? TextPrimary
+                    : MainDisabledButtonTextColor;
+                button.ForeHover = MainViewButtonIconInactiveColor;
+                button.ToggleForeHover = MainViewButtonIconInactiveColor;
+                button.DefaultBorderColor = Border;
+                button.BackHover = MainViewButtonIconInactiveColor;
+                button.BackActive = PressedBackground;
+                button.Invalidate();
+            }
+            else if (control is AntdUI.Select select)
+            {
+                ConfigureMainSelect(select);
+            }
+            else
+            {
+                control.Invalidate();
             }
         }
 
@@ -2908,7 +3133,7 @@ namespace c2flux
 
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_CAPTION_COLOR = 35;
-        private const int DWMWA_COLOR_DEFAULT = unchecked((int)0xFFFFFFFF);
+        private const int DWMWA_TEXT_COLOR = 36;
 
         public static void Apply(Form form, AppLayout layout)
         {
@@ -3469,6 +3694,10 @@ namespace c2flux
 
                 toolStripComboBox.ComboBox.Invalidate();
             }
+            else if (item is ToolStripControlHost host)
+            {
+                ApplyMainToolbarHostedControl(host.Control);
+            }
         }
 
         private static void SetImmersiveDarkMode(Form form, bool enabled)
@@ -3497,14 +3726,26 @@ namespace c2flux
                 return;
             }
 
-            int captionColor = useDarkMode
-                ? ToColorRef(BackgroundPrimary)
-                : DWMWA_COLOR_DEFAULT;
+            int captionColor = ToColorRef(
+                useDarkMode
+                    ? BackgroundPrimary
+                    : SystemColors.Control);
 
             DwmSetWindowAttribute(
                 form.Handle,
                 DWMWA_CAPTION_COLOR,
                 ref captionColor,
+                sizeof(int));
+
+            int textColor = ToColorRef(
+                useDarkMode
+                    ? Color.White
+                    : SystemColors.ControlText);
+
+            DwmSetWindowAttribute(
+                form.Handle,
+                DWMWA_TEXT_COLOR,
+                ref textColor,
                 sizeof(int));
         }
 

@@ -142,6 +142,9 @@ namespace c2flux
                     AntdThemeService.StorageHistoryIntensityValueLabelWidth,
                     AntdThemeService.StorageHistoryIntensityValueLabelHeight),
                 Text = trackBarGradientIntensity.Value.ToString() + "%",
+                Font = AntdThemeService.DefaultFont,
+                ForeColor = textColor,
+                BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0, 2, 0, 2)
@@ -407,6 +410,7 @@ namespace c2flux
                                 AntdThemeService.StorageHistoryWindowGridWidth);
                     }
 
+                    ApplyStorageHistoryTheme();
                     AntdThemeService.ConfigureStorageHistoryGrid(
                         dataGridViewRecords);
                     PerformLayout();
@@ -422,6 +426,7 @@ namespace c2flux
             BackColor = windowBackColor;
             ForeColor = textColor;
             AntdThemeService.Apply(this, _settings.Layout);
+            ApplyStorageHistoryTheme();
 
             AntdThemeService.ConfigureStorageHistoryGrid(
                 dataGridViewRecords);
@@ -579,6 +584,7 @@ namespace c2flux
 
             ApplyRecordSortHeaderState();
             BindRecords(_currentRecords);
+            ApplyStorageHistoryTheme();
 
             pathLayout.PerformLayout();
             pathLayout.Invalidate(true);
@@ -901,6 +907,45 @@ namespace c2flux
             return path;
         }
 
+        private void ApplyStorageHistoryTheme()
+        {
+            bool useDarkMode = IsDarkMode();
+
+            Color windowBackColor = useDarkMode
+                ? Color.FromArgb(32, 32, 32)
+                : Color.White;
+            Color textColor = useDarkMode
+                ? Color.White
+                : Color.Black;
+
+            BackColor = windowBackColor;
+            ForeColor = textColor;
+
+            pathLayout.BackColor = windowBackColor;
+            pathLayout.ForeColor = textColor;
+
+            labelPath.ForeColor = textColor;
+            labelPath.BackColor = Color.Transparent;
+            labelDisplayMode.ForeColor = textColor;
+            labelDisplayMode.BackColor = Color.Transparent;
+            labelGradientIntensity.ForeColor = textColor;
+            labelGradientIntensity.BackColor = Color.Transparent;
+            labelGradientIntensityValue.ForeColor = textColor;
+            labelGradientIntensityValue.BackColor = Color.Transparent;
+
+            AntdThemeService.ConfigureStorageHistorySelect(comboBoxPaths);
+            AntdThemeService.ConfigureStorageHistorySelect(comboBoxDisplayMode);
+            AntdThemeService.ConfigureStorageHistoryButton(buttonDelete);
+            AntdThemeService.ConfigureStorageHistoryButton(buttonClose);
+            AntdThemeService.ConfigureStorageHistoryGrid(dataGridViewRecords);
+
+            storageHistoryChart.ApplyTheme(useDarkMode);
+
+            pathLayout.Invalidate(true);
+            dataGridViewRecords.Invalidate(true);
+            storageHistoryChart.Invalidate(true);
+        }
+
         private bool IsDarkMode()
         {
             if (_settings.Layout == AppLayout.WindowsDarkMode)
@@ -944,7 +989,7 @@ namespace c2flux
 
         private void ApplyHistoryGridScrollBarTheme()
         {
-            AntdThemeService.ApplyTable(dataGridViewRecords);
+            AntdThemeService.ConfigureStorageHistoryGrid(dataGridViewRecords);
         }
 
         private sealed class StorageHistoryDataGridView : DataGridView

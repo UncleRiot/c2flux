@@ -885,11 +885,11 @@ namespace c2flux
                     e.Graphics.DrawRectangle(borderPen, barBounds);
                 }
 
-                Color percentageTextColor = selected
-                    ? SystemColors.HighlightText
-                    : IsDarkMode()
-                        ? Color.White
-                        : Color.Black;
+                Color percentageTextColor = IsDarkMode()
+                    ? selected
+                        ? SystemColors.HighlightText
+                        : Color.White
+                    : Color.Black;
 
                 TextRenderer.DrawText(
                     e.Graphics,

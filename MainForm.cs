@@ -70,6 +70,7 @@ namespace c2flux
         private AntdUI.Button toolStripButtonAnalysis;
         private AntdUI.Button toolStripButtonStorageHistory;
         private AntdUI.Button toolStripButtonScanHistory;
+        private ToolStripControlHost toolStripButtonScanHistoryHost;
         private AntdUI.Button toolStripButtonSearch;
         private SplitContainer splitContainerMain;
         private SplitContainer splitContainerLeft;
@@ -275,6 +276,7 @@ namespace c2flux
                 toolStripViewMode,
                 toolStripExport,
                 toolStripFeatures);
+            UpdateCompareScansAvailability();
             AntdThemeService.ConfigureContextMenu(contextMenuStripToolbars);
             AntdThemeService.ApplyTreeEntryView(
                 treeViewEntries);
@@ -619,6 +621,8 @@ namespace c2flux
                 toolStripButtonScanHistory,
                 _settings.SaveScanHistory);
             toolStripButtonScanHistory.Click += menuItemCompareScans_Click;
+            toolStripButtonScanHistoryHost = AntdThemeService.CreateToolStripHost(toolStripButtonScanHistory);
+            toolStripButtonScanHistoryHost.AutoToolTip = false;
 
             toolStripButtonSearch = AntdThemeService.CreateMainButton("toolStripButtonSearch", LocalizationService.GetText("Search.Title"));
             AntdThemeService.ApplyMainSearchButtonIcon(toolStripButtonSearch);
@@ -644,7 +648,7 @@ namespace c2flux
 
             toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonAnalysis));
             toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonStorageHistory));
-            toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonScanHistory));
+            toolStripFeatures.Items.Add(toolStripButtonScanHistoryHost);
             toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonSearch));
 
             toolStripPanelMain.Controls.Add(toolStripMain);
@@ -1017,10 +1021,7 @@ namespace c2flux
 
             foreach (Control control in controls)
             {
-                if (control != null)
-                {
-                    control.ContextMenuStrip = contextMenuStripToolbars;
-                }
+                AttachToolbarContextMenuTarget(control);
             }
 
             ToolStrip[] toolStrips =
@@ -1033,20 +1034,59 @@ namespace c2flux
 
             foreach (ToolStrip toolStrip in toolStrips)
             {
-                if (toolStrip != null)
-                {
-                    toolStrip.ContextMenuStrip = contextMenuStripToolbars;
+                if (toolStrip == null)
+                    continue;
 
-                    foreach (ToolStripItem item in toolStrip.Items)
+                AttachToolbarContextMenuTarget(toolStrip);
+
+                foreach (ToolStripItem item in toolStrip.Items)
+                {
+                    if (item is ToolStripControlHost host &&
+                        host.Control != null)
                     {
-                        if (item is ToolStripControlHost host &&
-                            host.Control != null)
-                        {
-                            host.Control.ContextMenuStrip = contextMenuStripToolbars;
-                        }
+                        AttachToolbarContextMenuTarget(host.Control);
                     }
                 }
             }
+
+            RebuildToolbarContextMenu();
+        }
+
+        private void AttachToolbarContextMenuTarget(Control control)
+        {
+            if (control == null)
+                return;
+
+            control.ContextMenuStrip = null;
+            control.MouseUp -= toolbarContextMenuTarget_MouseUp;
+            control.MouseUp += toolbarContextMenuTarget_MouseUp;
+        }
+
+        private void toolbarContextMenuTarget_MouseUp(
+            object sender,
+            MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            if (sender is not Control control)
+                return;
+
+            ShowToolbarContextMenu(control, e.Location);
+        }
+
+        private void ShowToolbarContextMenu(
+            Control control,
+            Point location)
+        {
+            if (contextMenuStripToolbars == null ||
+                control == null)
+            {
+                return;
+            }
+
+            RebuildToolbarContextMenu();
+            contextMenuStripToolbars.Show(control, location);
         }
 
         private void contextMenuStripToolbars_Opening(
@@ -2311,11 +2351,11 @@ namespace c2flux
         private void UpdateCompareScansAvailability()
         {
             bool isAvailable = _settings.SaveScanHistory;
-
-            toolStripButtonScanHistory.ForeColor =
+            string toolTipText =
                 isAvailable
-                    ? AntdThemeService.TextPrimary
-                    : AntdThemeService.MainDisabledButtonTextColor;
+                    ? LocalizationService.GetText("Menu.CompareScans")
+                    : LocalizationService.GetText(
+                        "Toolbar.CompareScansDisabled");
 
             AntdThemeService.ApplyMainCompareScansButtonIcon(
                 toolStripButtonScanHistory,
@@ -2323,10 +2363,10 @@ namespace c2flux
 
             AntdThemeService.SetToolTip(
                 toolStripButtonScanHistory,
-                isAvailable
-                    ? LocalizationService.GetText("Menu.CompareScans")
-                    : LocalizationService.GetText(
-                        "Toolbar.CompareScansDisabled"));
+                toolTipText);
+
+            toolStripButtonScanHistoryHost.ToolTipText = toolTipText;
+            toolStripFeatures.ShowItemToolTips = true;
 
             menuItemCompareScans.Enabled = isAvailable;
 
@@ -2427,6 +2467,7 @@ namespace c2flux
                 toolStripViewMode,
                 toolStripExport,
                 toolStripFeatures);
+            UpdateCompareScansAvailability();
             AntdThemeService.ApplyTreeEntryView(
                 treeViewEntries);
             ApplyDriveComboBoxTheme();
