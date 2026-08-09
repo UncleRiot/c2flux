@@ -6,7 +6,9 @@
 
 <br>
 
-<img width="1508" height="855" alt="c² flux – Tree Scanner" src="https://github.com/user-attachments/assets/47b00346-3bf8-4a43-ad54-8a0e970da33a" />
+<img width="1618" height="935" alt="grafik" src="https://github.com/user-attachments/assets/e4d5fafc-5eb6-4df0-ae99-4bf45a44da13" />
+
+
 
 <br>
 
