@@ -16,12 +16,15 @@ namespace c2flux
         private readonly AntdUI.Table _entryTable;
         private readonly TreemapCanvas _treemapCanvas;
         private readonly SplitContainer _splitContainer;
+        private readonly ContextMenuStrip _contextMenu;
 
         private FileSystemEntry _entry;
+        private FileSystemEntry _contextMenuEntry;
         private FileSystemEntry _rootEntry;
         private FileSystemEntry _tableDirectoryEntry;
         private string _selectedTableEntryPath;
         private string _suppressedSetEntryPath;
+        private TreemapTableRow _contextMenuTableRow;
         private List<TreemapTableRow> _tableRows =
             new List<TreemapTableRow>();
 
@@ -58,6 +61,27 @@ namespace c2flux
                 TreemapCanvas_EntryContextMenuRequested;
             _treemapCanvas.DirectoryZoomRequested +=
                 TreemapCanvas_DirectoryZoomRequested;
+
+            _contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem openInExplorerItem =
+                new ToolStripMenuItem(
+                    LocalizationService.GetText(
+                        "Context.OpenInExplorer"));
+
+            openInExplorerItem.Click +=
+                OpenInExplorerItem_Click;
+
+            _contextMenu.Items.Add(
+                openInExplorerItem);
+
+            _contextMenu.Opening +=
+                (_, e) =>
+                    e.Cancel =
+                        _contextMenuEntry == null;
+
+            AntdThemeService.ConfigureContextMenu(
+                _contextMenu);
 
             Panel upperPanel = new Panel
             {
@@ -179,8 +203,19 @@ namespace c2flux
                     {
                         Width = "22%",
                         MinWidth = "120",
-                        Ellipsis = true,
-                        SortOrder = true
+                        Ellipsis = false,
+                        SortOrder = true,
+                        Render =
+                            (value, record, rowIndex) =>
+                            {
+                                string text =
+                                    record is TreemapTableRow row
+                                        ? row.Name
+                                        : string.Empty;
+
+                                return new TableVisibleEllipsisCellText(
+                                    text);
+                            }
                     },
                     new AntdUI.Column(
                         nameof(TreemapTableRow.SizeBytes),
@@ -239,13 +274,66 @@ namespace c2flux
                     {
                         Width = "50%",
                         MinWidth = "180",
-                        Ellipsis = true,
-                        SortOrder = true
+                        Ellipsis = false,
+                        SortOrder = true,
+                        Render =
+                            (value, record, rowIndex) =>
+                            {
+                                string text =
+                                    record is TreemapTableRow row
+                                        ? row.FullPath
+                                        : string.Empty;
+
+                                return new TableVisibleEllipsisCellText(
+                                    text);
+                            }
                     }
                 };
 
+            table.MouseDown +=
+                EntryTable_MouseDown;
+            table.CellClickBegin +=
+                EntryTable_CellClickBegin;
+            table.MouseUp +=
+                EntryTable_MouseUp;
+
             AntdThemeService.ApplyTable(table);
             return table;
+        }
+
+        private void EntryTable_MouseDown(
+            object sender,
+            MouseEventArgs e)
+        {
+            _contextMenuTableRow = null;
+        }
+
+        private void EntryTable_CellClickBegin(
+            object sender,
+            AntdUI.TableClickBeginEventArgs e)
+        {
+            dynamic eventArgs = e;
+
+            _contextMenuTableRow =
+                eventArgs.Record as TreemapTableRow;
+        }
+
+        private void EntryTable_MouseUp(
+            object sender,
+            MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right ||
+                _contextMenuTableRow?.Entry == null)
+            {
+                return;
+            }
+
+            _contextMenuEntry =
+                _contextMenuTableRow.Entry;
+
+            _contextMenu.Show(
+                _entryTable,
+                e.Location);
         }
 
         private void ApplyTreemapHeight()
@@ -586,9 +674,54 @@ namespace c2flux
             object sender,
             TreemapEntryContextMenuEventArgs e)
         {
-            EntryContextMenuRequested?.Invoke(
+            if (e?.Entry == null)
+                return;
+
+            _contextMenuEntry =
+                e.Entry;
+
+            _contextMenu.Show(
                 this,
-                e);
+                PointToClient(
+                    e.ScreenLocation));
+        }
+
+        private void OpenInExplorerItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_contextMenuEntry == null ||
+                string.IsNullOrWhiteSpace(
+                    _contextMenuEntry.FullPath))
+            {
+                return;
+            }
+
+            string targetPath =
+                _contextMenuEntry.FullPath;
+
+            if (!File.Exists(targetPath) &&
+                !Directory.Exists(targetPath))
+            {
+                return;
+            }
+
+            string arguments =
+                File.Exists(targetPath)
+                    ? "/select,\"" +
+                      targetPath +
+                      "\""
+                    : "\"" +
+                      targetPath +
+                      "\"";
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = arguments,
+                    UseShellExecute = true
+                });
         }
 
         private void TreemapCanvas_DirectoryZoomRequested(
@@ -679,6 +812,108 @@ namespace c2flux
             return normalized.TrimEnd(
                 Path.DirectorySeparatorChar,
                 Path.AltDirectorySeparatorChar);
+        }
+
+        private sealed class TableVisibleEllipsisCellText :
+            AntdUI.CellText
+        {
+            public TableVisibleEllipsisCellText(
+                string text)
+            {
+                Text = text;
+            }
+
+            public override void Paint(
+                AntdUI.Canvas g,
+                Font font,
+                bool enable,
+                SolidBrush fore)
+            {
+                Font renderFont = Font ?? font;
+                string text = Text ?? string.Empty;
+
+                if (text.Length == 0 ||
+                    Rect.Width <= 0)
+                {
+                    return;
+                }
+
+                string visibleText =
+                    GetVisibleText(
+                        g,
+                        renderFont,
+                        text,
+                        Rect.Width);
+
+                if (Fore.HasValue)
+                {
+                    g.DrawText(
+                        visibleText,
+                        renderFont,
+                        Fore.Value,
+                        Rect,
+                        AntdUI.FormatFlags.Left |
+                        AntdUI.FormatFlags.VerticalCenter);
+                }
+                else
+                {
+                    g.DrawText(
+                        visibleText,
+                        renderFont,
+                        fore,
+                        Rect,
+                        AntdUI.FormatFlags.Left |
+                        AntdUI.FormatFlags.VerticalCenter);
+                }
+            }
+
+            private static string GetVisibleText(
+                AntdUI.Canvas g,
+                Font font,
+                string text,
+                int availableWidth)
+            {
+                if (g.MeasureText(
+                        text,
+                        font).Width <=
+                    availableWidth)
+                {
+                    return text;
+                }
+
+                int low = 0;
+                int high = text.Length;
+
+                while (low < high)
+                {
+                    int mid =
+                        low +
+                        ((high - low + 1) / 2);
+
+                    string candidate =
+                        text.Substring(
+                            0,
+                            mid);
+
+                    if (g.MeasureText(
+                            candidate,
+                            font).Width <=
+                        availableWidth)
+                    {
+                        low = mid;
+                    }
+                    else
+                    {
+                        high = mid - 1;
+                    }
+                }
+
+                return low <= 0
+                    ? string.Empty
+                    : text.Substring(
+                        0,
+                        low);
+            }
         }
 
         private sealed class PercentCellProgress :
@@ -1932,7 +2167,7 @@ namespace c2flux
             {
                 if (node?.Entry == null ||
                     !node.Entry.IsDirectory ||
-                    bounds.Width < 150F ||
+                    bounds.Width < 60F ||
                     bounds.Height < 44F)
                 {
                     return;
