@@ -23,7 +23,7 @@
 - (Fix) Added parent-folder context menu handling for aggregated `Other` blocks.
 - (Change) Lightened aggregated `Other` blocks for better visual consistency.
 
-- ## Changelog v1.1.7
+## Changelog v1.1.7
 
 
 - ✨(Feature) Treemap view
