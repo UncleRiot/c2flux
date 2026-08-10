@@ -1000,11 +1000,13 @@ namespace c2flux
             Control
         {
             private const float OuterPadding = 3F;
-            private const float GroupPadding = 2F;
+            private const float GroupPadding = 0F;
+            private const float FamilyHeaderHeight = 34F;
             private const float MinimumRecursiveWidth = 24F;
             private const float MinimumRecursiveHeight = 20F;
             private const float MinimumLabelWidth = 64F;
             private const float MinimumLabelHeight = 22F;
+            private const long MinimumLabelSizeBytes = 100L * 1024L * 1024L;
             private const double FamilySplitMinimumShare = 0.10D;
             private const double FamilyPromotionMinimumShare = 0.50D;
             private const double MinimumChildPixelArea = 30D;
@@ -1193,9 +1195,7 @@ namespace c2flux
                         e.Location);
 
                 if (hitArea == null ||
-                    hitArea.Node == null ||
-                    hitArea.Node.IsAggregate ||
-                    hitArea.Node.Entry == null)
+                    hitArea.Node == null)
                 {
                     return;
                 }
@@ -1203,6 +1203,12 @@ namespace c2flux
                 if (e.Button ==
                     MouseButtons.Left)
                 {
+                    if (hitArea.Node.IsAggregate ||
+                        hitArea.Node.Entry == null)
+                    {
+                        return;
+                    }
+
                     EntryActivated?.Invoke(
                         this,
                         new TreemapEntryEventArgs(
@@ -1213,10 +1219,20 @@ namespace c2flux
                 if (e.Button ==
                     MouseButtons.Right)
                 {
+                    FileSystemEntry contextEntry =
+                        hitArea.Node.IsAggregate
+                            ? hitArea.Node.AggregateParentEntry
+                            : hitArea.Node.Entry;
+
+                    if (contextEntry == null)
+                    {
+                        return;
+                    }
+
                     EntryContextMenuRequested?.Invoke(
                         this,
                         new TreemapEntryContextMenuEventArgs(
-                            hitArea.Node.Entry,
+                            contextEntry,
                             PointToScreen(
                                 e.Location)));
                 }
@@ -1372,6 +1388,7 @@ namespace c2flux
                         bounds,
                         0,
                         FamilyColors[0],
+                        false,
                         false,
                         false);
                 }
@@ -1747,6 +1764,30 @@ namespace c2flux
                         }
                     }
 
+                    long parentSize =
+                        Math.Max(
+                            0L,
+                            GetNodeSize(
+                                parentNode));
+
+                    long itemSize =
+                        Math.Max(
+                            0L,
+                            GetNodeSize(
+                                item.Node));
+
+                    bool showDirectoryHeader =
+                        childFamilyLocked &&
+                        !isFamilyRoot &&
+                        !item.Node.IsAggregate &&
+                        item.Node.Entry != null &&
+                        item.Node.Entry.IsDirectory &&
+                        item.Node.Children.Count > 0 &&
+                        parentSize > 0L &&
+                        itemSize /
+                            (double)parentSize <
+                            FamilyPromotionMinimumShare;
+
                     DrawNode(
                         graphics,
                         item.Node,
@@ -1754,7 +1795,8 @@ namespace c2flux
                         depth,
                         childFamilyColor,
                         childFamilyLocked,
-                        isFamilyRoot);
+                        isFamilyRoot,
+                        showDirectoryHeader);
                 }
             }
 
@@ -1765,7 +1807,8 @@ namespace c2flux
                 int depth,
                 Color familyColor,
                 bool familyLocked,
-                bool isFamilyRoot)
+                bool isFamilyRoot,
+                bool showDirectoryHeader)
             {
                 if (node == null ||
                     bounds.Width < 1F ||
@@ -1796,13 +1839,76 @@ namespace c2flux
                             node,
                             depth);
 
-                using (SolidBrush fillBrush =
-                       new SolidBrush(
-                           nodeColor))
+                Color gradientTopColor =
+                    node.IsAggregate
+                        ? LightenColor(
+                            nodeColor,
+                            1.05D)
+                        : LightenColor(
+                            nodeColor,
+                            1.12D);
+
+                Color gradientBottomColor =
+                    node.IsAggregate
+                        ? DarkenColor(
+                            nodeColor,
+                            0.94D)
+                        : DarkenColor(
+                            nodeColor,
+                            0.88D);
+
+                using (LinearGradientBrush fillBrush =
+                       new LinearGradientBrush(
+                           bounds,
+                           gradientTopColor,
+                           gradientBottomColor,
+                           LinearGradientMode.Vertical))
                 {
                     graphics.FillRectangle(
                         fillBrush,
                         bounds);
+                }
+
+                if (!node.IsAggregate &&
+                    (node.Entry == null ||
+                     !node.Entry.IsDirectory) &&
+                    bounds.Width >= 18F &&
+                    bounds.Height >= 14F)
+                {
+                    RectangleF highlightBounds =
+                        new RectangleF(
+                            bounds.X + 1F,
+                            bounds.Y + 1F,
+                            Math.Max(
+                                0F,
+                                bounds.Width - 2F),
+                            Math.Min(
+                                Math.Max(
+                                    0F,
+                                    bounds.Height - 2F),
+                                Math.Max(
+                                    6F,
+                                    bounds.Height * 0.28F)));
+
+                    using (LinearGradientBrush highlightBrush =
+                           new LinearGradientBrush(
+                               highlightBounds,
+                               Color.FromArgb(
+                                   48,
+                                   255,
+                                   255,
+                                   255),
+                               Color.FromArgb(
+                                   0,
+                                   255,
+                                   255,
+                                   255),
+                               LinearGradientMode.Vertical))
+                    {
+                        graphics.FillRectangle(
+                            highlightBrush,
+                            highlightBounds);
+                    }
                 }
 
                 List<TreemapNode> visibleChildren =
@@ -1820,13 +1926,35 @@ namespace c2flux
                     bounds.Height >=
                         MinimumRecursiveHeight;
 
+                bool canDrawDirectoryHeader =
+                    showDirectoryHeader &&
+                    CanDrawDirectoryHeader(
+                        graphics,
+                        node,
+                        bounds);
+
                 if (canDrawChildren)
                 {
+                    float directoryHeaderHeight =
+                        isFamilyRoot &&
+                        bounds.Width >= 60F &&
+                        bounds.Height >= 44F
+                            ? Math.Min(
+                                FamilyHeaderHeight,
+                                Math.Max(
+                                    0F,
+                                    bounds.Height -
+                                    MinimumRecursiveHeight))
+                            : canDrawDirectoryHeader
+                                ? FamilyHeaderHeight
+                                : 0F;
+
                     RectangleF contentBounds =
                         new RectangleF(
                             bounds.X +
                             GroupPadding,
                             bounds.Y +
+                            directoryHeaderHeight +
                             GroupPadding,
                             Math.Max(
                                 0F,
@@ -1835,6 +1963,7 @@ namespace c2flux
                             Math.Max(
                                 0F,
                                 bounds.Height -
+                                directoryHeaderHeight -
                                 GroupPadding * 2F));
 
                     List<TreemapLayoutItem> childLayout =
@@ -1858,12 +1987,19 @@ namespace c2flux
                         bounds);
                 }
 
-                DrawNodeBorder(
-                    graphics,
-                    node,
-                    bounds,
-                    familyColor,
-                    isFamilyRoot);
+                if (node.IsAggregate ||
+                    node.Entry == null ||
+                    !node.Entry.IsDirectory ||
+                    isFamilyRoot)
+                {
+                    DrawNodeBorder(
+                        graphics,
+                        node,
+                        bounds,
+                        familyColor,
+                        nodeColor,
+                        isFamilyRoot);
+                }
 
                 if (isFamilyRoot)
                 {
@@ -1872,6 +2008,15 @@ namespace c2flux
                         node,
                         bounds,
                         familyColor);
+                }
+                else if (canDrawDirectoryHeader &&
+                         canDrawChildren)
+                {
+                    DrawDirectoryOverlayLabel(
+                        graphics,
+                        node,
+                        bounds,
+                        nodeColor);
                 }
 
                 DrawHoverBorder(
@@ -2109,39 +2254,31 @@ namespace c2flux
                     result.Add(
                         TreemapNode.CreateAggregate(
                             aggregateSize,
-                            aggregateCount));
+                            aggregateCount,
+                            node.Entry));
                 }
 
                 return result;
             }
-
             private void DrawNodeLabel(
                 Graphics graphics,
                 TreemapNode node,
                 RectangleF bounds)
             {
+                long nodeSize =
+                    GetNodeSize(
+                        node);
+
                 if (node == null ||
-                    bounds.Width <
-                        MinimumLabelWidth ||
+                    nodeSize <
+                        MinimumLabelSizeBytes ||
                     bounds.Height <
                         MinimumLabelHeight)
                 {
                     return;
                 }
 
-                string text =
-                    bounds.Height >= 38F
-                        ? node.DisplayName +
-                          Environment.NewLine +
-                          SizeFormatter.Format(
-                              GetNodeSize(
-                                  node))
-                        : node.DisplayName;
-
-                TextRenderer.DrawText(
-                    graphics,
-                    text,
-                    Font,
+                Rectangle labelBounds =
                     Rectangle.Round(
                         new RectangleF(
                             bounds.X + 4F,
@@ -2151,12 +2288,309 @@ namespace c2flux
                                 bounds.Width - 8F),
                             Math.Max(
                                 0F,
-                                bounds.Height - 6F))),
+                                bounds.Height - 6F)));
+
+                if (labelBounds.Width <= 0 ||
+                    labelBounds.Height <= 0)
+                {
+                    return;
+                }
+
+                const int horizontalPadding = 3;
+                const int lineHeight = 17;
+                const int labelBackgroundAlpha = 110;
+
+                string sizeText =
+                    SizeFormatter.Format(
+                        nodeSize);
+
+                Size sizeTextSize =
+                    TextRenderer.MeasureText(
+                        graphics,
+                        sizeText,
+                        Font,
+                        new Size(
+                            int.MaxValue,
+                            lineHeight),
+                        TextFormatFlags.Left |
+                        TextFormatFlags.SingleLine |
+                        TextFormatFlags.NoPadding);
+
+                int requiredSizeWidth =
+                    sizeTextSize.Width +
+                    horizontalPadding * 2;
+
+                if (requiredSizeWidth >
+                    labelBounds.Width)
+                {
+                    return;
+                }
+
+                bool canDrawTwoLines =
+                    labelBounds.Height >=
+                        lineHeight * 2 &&
+                    bounds.Width >=
+                        MinimumLabelWidth;
+
+                int titleTop =
+                    labelBounds.Y;
+
+                int sizeTop =
+                    canDrawTwoLines
+                        ? labelBounds.Y +
+                          lineHeight
+                        : labelBounds.Y;
+
+                if (canDrawTwoLines)
+                {
+                    Size titleTextSize =
+                        TextRenderer.MeasureText(
+                            graphics,
+                            node.DisplayName,
+                            Font,
+                            new Size(
+                                Math.Max(
+                                    1,
+                                    labelBounds.Width),
+                                lineHeight),
+                            TextFormatFlags.Left |
+                            TextFormatFlags.SingleLine |
+                            TextFormatFlags.EndEllipsis |
+                            TextFormatFlags.NoPadding);
+
+                    int titleWidth =
+                        Math.Min(
+                            labelBounds.Width,
+                            titleTextSize.Width +
+                            horizontalPadding * 2);
+
+                    Rectangle titleBackgroundBounds =
+                        new Rectangle(
+                            labelBounds.X,
+                            titleTop,
+                            titleWidth,
+                            lineHeight);
+
+                    using (SolidBrush titleBackgroundBrush =
+                           new SolidBrush(
+                               Color.FromArgb(
+                                   labelBackgroundAlpha,
+                                   0,
+                                   0,
+                                   0)))
+                    {
+                        graphics.FillRectangle(
+                            titleBackgroundBrush,
+                            titleBackgroundBounds);
+                    }
+
+                    Rectangle titleTextBounds =
+                        new Rectangle(
+                            titleBackgroundBounds.X +
+                            horizontalPadding,
+                            titleBackgroundBounds.Y,
+                            Math.Max(
+                                0,
+                                titleBackgroundBounds.Width -
+                                horizontalPadding * 2),
+                            titleBackgroundBounds.Height);
+
+                    TextRenderer.DrawText(
+                        graphics,
+                        node.DisplayName,
+                        Font,
+                        titleTextBounds,
+                        Color.White,
+                        TextFormatFlags.Left |
+                        TextFormatFlags.VerticalCenter |
+                        TextFormatFlags.EndEllipsis |
+                        TextFormatFlags.NoPadding |
+                        TextFormatFlags.SingleLine);
+                }
+
+                Rectangle sizeBackgroundBounds =
+                    new Rectangle(
+                        labelBounds.X,
+                        sizeTop,
+                        requiredSizeWidth,
+                        lineHeight);
+
+                using (SolidBrush sizeBackgroundBrush =
+                       new SolidBrush(
+                           Color.FromArgb(
+                               labelBackgroundAlpha,
+                               0,
+                               0,
+                               0)))
+                {
+                    graphics.FillRectangle(
+                        sizeBackgroundBrush,
+                        sizeBackgroundBounds);
+                }
+
+                Rectangle sizeTextBounds =
+                    new Rectangle(
+                        sizeBackgroundBounds.X +
+                        horizontalPadding,
+                        sizeBackgroundBounds.Y,
+                        Math.Max(
+                            0,
+                            sizeBackgroundBounds.Width -
+                            horizontalPadding * 2),
+                        sizeBackgroundBounds.Height);
+
+                TextRenderer.DrawText(
+                    graphics,
+                    sizeText,
+                    Font,
+                    sizeTextBounds,
                     Color.White,
                     TextFormatFlags.Left |
-                    TextFormatFlags.Top |
+                    TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPadding |
+                    TextFormatFlags.SingleLine);
+            }
+            private bool CanDrawDirectoryHeader(
+                Graphics graphics,
+                TreemapNode node,
+                RectangleF bounds)
+            {
+                if (node?.Entry == null ||
+                    !node.Entry.IsDirectory ||
+                    GetNodeSize(
+                        node) <
+                        MinimumLabelSizeBytes ||
+                    bounds.Height <
+                        FamilyHeaderHeight +
+                        MinimumRecursiveHeight)
+                {
+                    return false;
+                }
+
+                string sizeText =
+                    SizeFormatter.Format(
+                        GetNodeSize(
+                            node));
+
+                Size sizeTextSize =
+                    TextRenderer.MeasureText(
+                        graphics,
+                        sizeText,
+                        Font,
+                        new Size(
+                            int.MaxValue,
+                            17),
+                        TextFormatFlags.Left |
+                        TextFormatFlags.SingleLine |
+                        TextFormatFlags.NoPadding);
+
+                return bounds.Width >=
+                    sizeTextSize.Width + 8F;
+            }
+
+            private void DrawDirectoryOverlayLabel(
+                Graphics graphics,
+                TreemapNode node,
+                RectangleF bounds,
+                Color nodeColor)
+            {
+                if (!CanDrawDirectoryHeader(
+                        graphics,
+                        node,
+                        bounds))
+                {
+                    return;
+                }
+
+                const int horizontalPadding = 4;
+                const int lineHeight = 17;
+                const int headerHeight = 34;
+
+                Rectangle headerBounds =
+                    Rectangle.Round(
+                        new RectangleF(
+                            bounds.X,
+                            bounds.Y,
+                            bounds.Width,
+                            headerHeight));
+
+                using (SolidBrush headerBack =
+                       new SolidBrush(
+                           Color.FromArgb(
+                               245,
+                               DarkenColor(
+                                   nodeColor,
+                                   0.72D))))
+                {
+                    graphics.FillRectangle(
+                        headerBack,
+                        headerBounds);
+                }
+
+                using (Pen headerBorder =
+                       new Pen(
+                           Color.FromArgb(
+                               170,
+                               LightenColor(
+                                   nodeColor,
+                                   1.28D)),
+                           1F))
+                {
+                    graphics.DrawLine(
+                        headerBorder,
+                        headerBounds.Left,
+                        headerBounds.Bottom - 1,
+                        headerBounds.Right - 1,
+                        headerBounds.Bottom - 1);
+                }
+
+                Rectangle titleBounds =
+                    new Rectangle(
+                        headerBounds.X +
+                        horizontalPadding,
+                        headerBounds.Y,
+                        Math.Max(
+                            0,
+                            headerBounds.Width -
+                            horizontalPadding * 2),
+                        lineHeight);
+
+                Rectangle sizeBounds =
+                    new Rectangle(
+                        headerBounds.X +
+                        horizontalPadding,
+                        headerBounds.Y +
+                        lineHeight,
+                        Math.Max(
+                            0,
+                            headerBounds.Width -
+                            horizontalPadding * 2),
+                        lineHeight);
+
+                TextRenderer.DrawText(
+                    graphics,
+                    node.DisplayName,
+                    Font,
+                    titleBounds,
+                    Color.White,
+                    TextFormatFlags.Left |
+                    TextFormatFlags.VerticalCenter |
                     TextFormatFlags.EndEllipsis |
-                    TextFormatFlags.NoPadding);
+                    TextFormatFlags.NoPadding |
+                    TextFormatFlags.SingleLine);
+
+                TextRenderer.DrawText(
+                    graphics,
+                    SizeFormatter.Format(
+                        GetNodeSize(
+                            node)),
+                    Font,
+                    sizeBounds,
+                    Color.White,
+                    TextFormatFlags.Left |
+                    TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPadding |
+                    TextFormatFlags.SingleLine);
             }
 
             private void DrawFamilyCaption(
@@ -2173,65 +2607,105 @@ namespace c2flux
                     return;
                 }
 
-                string caption =
-                    node.Entry.Name +
-                    "  " +
-                    SizeFormatter.Format(
-                        node.Entry.SizeBytes);
-
-                Size proposedSize =
-                    new Size(
-                        Math.Max(
-                            1,
-                            (int)bounds.Width - 12),
-                        22);
-
-                Size textSize =
-                    TextRenderer.MeasureText(
-                        graphics,
-                        caption,
-                        Font,
-                        proposedSize,
-                        TextFormatFlags.Left |
-                        TextFormatFlags.SingleLine |
-                        TextFormatFlags.EndEllipsis |
-                        TextFormatFlags.NoPadding);
-
-                Rectangle captionBounds =
-                    new Rectangle(
-                        (int)bounds.X + 5,
-                        (int)bounds.Y + 5,
+                int headerHeight =
+                    (int)Math.Round(
                         Math.Min(
-                            (int)bounds.Width - 10,
-                            textSize.Width + 10),
-                        20);
+                            FamilyHeaderHeight,
+                            Math.Max(
+                                0F,
+                                bounds.Height -
+                                MinimumRecursiveHeight)));
 
-                using (SolidBrush captionBack =
+                if (headerHeight <= 0)
+                {
+                    return;
+                }
+
+                Rectangle headerBounds =
+                    new Rectangle(
+                        (int)Math.Round(
+                            bounds.X),
+                        (int)Math.Round(
+                            bounds.Y),
+                        Math.Max(
+                            0,
+                            (int)Math.Round(
+                                bounds.Width)),
+                        headerHeight);
+
+                using (SolidBrush headerBack =
                        new SolidBrush(
                            Color.FromArgb(
-                               190,
-                               AntdThemeService.BackgroundPrimary)))
+                               110,
+                               0,
+                               0,
+                               0)))
                 {
                     graphics.FillRectangle(
-                        captionBack,
-                        captionBounds);
+                        headerBack,
+                        headerBounds);
                 }
 
-                using (Pen captionBorder =
+                using (Pen headerBorder =
                        new Pen(
-                           familyColor,
+                           LightenColor(
+                               familyColor,
+                               1.18D),
                            1F))
                 {
-                    graphics.DrawRectangle(
-                        captionBorder,
-                        captionBounds);
+                    graphics.DrawLine(
+                        headerBorder,
+                        headerBounds.Left,
+                        headerBounds.Bottom - 1,
+                        headerBounds.Right - 1,
+                        headerBounds.Bottom - 1);
                 }
+
+                Rectangle titleBounds =
+                    new Rectangle(
+                        headerBounds.X + 4,
+                        headerBounds.Y,
+                        Math.Max(
+                            0,
+                            headerBounds.Width - 8),
+                        Math.Min(
+                            17,
+                            headerBounds.Height));
 
                 TextRenderer.DrawText(
                     graphics,
-                    caption,
+                    node.Entry.Name,
                     Font,
-                    captionBounds,
+                    titleBounds,
+                    Color.White,
+                    TextFormatFlags.Left |
+                    TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.EndEllipsis |
+                    TextFormatFlags.NoPadding |
+                    TextFormatFlags.SingleLine);
+
+                if (headerBounds.Height <= 17)
+                {
+                    return;
+                }
+
+                Rectangle sizeBounds =
+                    new Rectangle(
+                        headerBounds.X + 4,
+                        headerBounds.Y + 17,
+                        Math.Max(
+                            0,
+                            headerBounds.Width - 8),
+                        Math.Min(
+                            17,
+                            headerBounds.Height - 17));
+
+                TextRenderer.DrawText(
+                    graphics,
+                    SizeFormatter.Format(
+                        node.Entry.SizeBytes),
+                    Font,
+                    sizeBounds,
                     Color.White,
                     TextFormatFlags.Left |
                     TextFormatFlags.VerticalCenter |
@@ -2245,18 +2719,28 @@ namespace c2flux
                 TreemapNode node,
                 RectangleF bounds,
                 Color familyColor,
+                Color nodeColor,
                 bool isFamilyRoot)
             {
+                bool isLeafNode =
+                    !node.IsAggregate &&
+                    (node.Entry == null ||
+                     !node.Entry.IsDirectory);
+
                 Color borderColor =
                     isFamilyRoot
                         ? LightenColor(
                             familyColor,
                             1.35D)
-                        : AntdThemeService.Border;
+                        : isLeafNode
+                            ? DarkenColor(
+                                nodeColor,
+                                0.58D)
+                            : AntdThemeService.Border;
 
                 float borderWidth =
                     isFamilyRoot
-                        ? 2F
+                        ? 1.4F
                         : 1F;
 
                 using Pen borderPen =
@@ -2274,6 +2758,71 @@ namespace c2flux
                     Math.Max(
                         0F,
                         bounds.Height - 1F));
+
+                if (isLeafNode &&
+                    bounds.Width >= 8F &&
+                    bounds.Height >= 8F)
+                {
+                    using Pen highlightPen =
+                        new Pen(
+                            Color.FromArgb(
+                                92,
+                                LightenColor(
+                                    nodeColor,
+                                    1.65D)));
+
+                    graphics.DrawLine(
+                        highlightPen,
+                        bounds.X + 1F,
+                        bounds.Y + 1F,
+                        Math.Max(
+                            bounds.X + 1F,
+                            bounds.Right - 2F),
+                        bounds.Y + 1F);
+
+                    graphics.DrawLine(
+                        highlightPen,
+                        bounds.X + 1F,
+                        bounds.Y + 1F,
+                        bounds.X + 1F,
+                        Math.Max(
+                            bounds.Y + 1F,
+                            bounds.Bottom - 2F));
+
+                    using Pen shadowPen =
+                        new Pen(
+                            Color.FromArgb(
+                                70,
+                                DarkenColor(
+                                    nodeColor,
+                                    0.42D)));
+
+                    graphics.DrawLine(
+                        shadowPen,
+                        bounds.X + 1F,
+                        Math.Max(
+                            bounds.Y + 1F,
+                            bounds.Bottom - 2F),
+                        Math.Max(
+                            bounds.X + 1F,
+                            bounds.Right - 2F),
+                        Math.Max(
+                            bounds.Y + 1F,
+                            bounds.Bottom - 2F));
+
+                    graphics.DrawLine(
+                        shadowPen,
+                        Math.Max(
+                            bounds.X + 1F,
+                            bounds.Right - 2F),
+                        bounds.Y + 1F,
+                        Math.Max(
+                            bounds.X + 1F,
+                            bounds.Right - 2F),
+                        Math.Max(
+                            bounds.Y + 1F,
+                            bounds.Bottom - 2F));
+                }
             }
 
             private void DrawHoverBorder(
@@ -2386,13 +2935,13 @@ namespace c2flux
                 return Color.FromArgb(
                     ScaleColor(
                         familyColor.R,
-                        0.52D),
+                        0.78D),
                     ScaleColor(
                         familyColor.G,
-                        0.52D),
+                        0.78D),
                     ScaleColor(
                         familyColor.B,
-                        0.52D));
+                        0.78D));
             }
 
             private static Color LightenColor(
@@ -2410,6 +2959,26 @@ namespace c2flux
                             color.G * factor)),
                     Math.Min(
                         255,
+                        (int)Math.Round(
+                            color.B * factor)));
+            }
+
+            private static Color DarkenColor(
+                Color color,
+                double factor)
+            {
+                return Color.FromArgb(
+                    color.A,
+                    Math.Max(
+                        0,
+                        (int)Math.Round(
+                            color.R * factor)),
+                    Math.Max(
+                        0,
+                        (int)Math.Round(
+                            color.G * factor)),
+                    Math.Max(
+                        0,
                         (int)Math.Round(
                             color.B * factor)));
             }
@@ -2821,7 +3390,8 @@ namespace c2flux
                 private TreemapNode(
                     string displayName,
                     long explicitSizeBytes,
-                    int aggregateCount)
+                    int aggregateCount,
+                    FileSystemEntry aggregateParentEntry)
                 {
                     DisplayName =
                         displayName;
@@ -2829,6 +3399,8 @@ namespace c2flux
                         explicitSizeBytes;
                     AggregateCount =
                         aggregateCount;
+                    AggregateParentEntry =
+                        aggregateParentEntry;
                     IsAggregate =
                         true;
                     Children =
@@ -2836,6 +3408,7 @@ namespace c2flux
                 }
 
                 public FileSystemEntry Entry { get; }
+                public FileSystemEntry AggregateParentEntry { get; }
                 public string DisplayName { get; }
                 public long ExplicitSizeBytes { get; }
                 public int AggregateCount { get; }
@@ -2844,14 +3417,16 @@ namespace c2flux
 
                 public static TreemapNode CreateAggregate(
                     long sizeBytes,
-                    int count)
+                    int count,
+                    FileSystemEntry aggregateParentEntry)
                 {
                     return new TreemapNode(
                         "Other (" +
                         count +
                         ")",
                         sizeBytes,
-                        count);
+                        count,
+                        aggregateParentEntry);
                 }
             }
 
