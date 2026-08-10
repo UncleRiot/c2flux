@@ -48,6 +48,22 @@ namespace c2flux
                 return;
 
             column.Visible = visible;
+
+            if (string.Equals(
+                columnKey,
+                nameof(EntryChartItem.SizeBytes),
+                StringComparison.Ordinal))
+            {
+                AntdUI.Column sizeMbColumn = Columns.FirstOrDefault(
+                    currentColumn => string.Equals(
+                        currentColumn.Key,
+                        nameof(EntryChartItem.SizeMb),
+                        StringComparison.Ordinal));
+
+                if (sizeMbColumn != null)
+                    sizeMbColumn.Visible = visible;
+            }
+
             LoadLayout();
             Invalidate();
         }
@@ -65,12 +81,16 @@ namespace c2flux
                 LocalizationService.GetText("Common.Name"));
 
             SetColumnTitle(
-                nameof(EntryChartItem.SizeBytes),
-                LocalizationService.GetText("Common.Size"));
-
-            SetColumnTitle(
                 nameof(EntryChartItem.Percent),
                 LocalizationService.GetText("Chart.TableUsage"));
+
+            SetColumnTitle(
+                nameof(EntryChartItem.SizeBytes),
+                LocalizationService.GetText("Advanced.SizeGb"));
+
+            SetColumnTitle(
+                nameof(EntryChartItem.SizeMb),
+                LocalizationService.GetText("Advanced.SizeMb"));
 
             SetColumnTitle(
                 nameof(EntryChartItem.FullPath),
@@ -113,25 +133,8 @@ namespace c2flux
                                 ? row.Name
                                 : string.Empty;
 
-                        return new TableVisibleEllipsisCellText(
+                        return AntdThemeService.CreateVisibleTableCellText(
                             text);
-                    }
-                },
-                new AntdUI.Column(
-                    nameof(EntryChartItem.SizeBytes),
-                    LocalizationService.GetText("Common.Size"),
-                    AntdUI.ColumnAlign.Right)
-                {
-                    Width = "14%",
-                    MinWidth = "90",
-                    Ellipsis = true,
-                    SortOrder = true,
-                    Render = (value, record, rowIndex) =>
-                    {
-                        if (record is EntryChartItem row)
-                            return row.FormattedSize;
-
-                        return value?.ToString() ?? string.Empty;
                     }
                 },
                 new AntdUI.Column(
@@ -159,10 +162,46 @@ namespace c2flux
                     }
                 },
                 new AntdUI.Column(
+                    nameof(EntryChartItem.SizeBytes),
+                    LocalizationService.GetText("Advanced.SizeGb"),
+                    AntdUI.ColumnAlign.Right)
+                {
+                    Width = "auto",
+                    Ellipsis = true,
+                    SortOrder = true,
+                    Render = (value, record, rowIndex) =>
+                    {
+                        long sizeBytes = record is EntryChartItem row
+                            ? row.SizeBytes
+                            : 0L;
+
+                        return (sizeBytes /
+                                (1024D * 1024D * 1024D))
+                            .ToString("N2") + " GB";
+                    }
+                },
+                new AntdUI.Column(
+                    nameof(EntryChartItem.SizeMb),
+                    LocalizationService.GetText("Advanced.SizeMb"),
+                    AntdUI.ColumnAlign.Right)
+                {
+                    Width = "auto",
+                    Ellipsis = true,
+                    SortOrder = true,
+                    Render = (value, record, rowIndex) =>
+                    {
+                        double sizeMb = record is EntryChartItem row
+                            ? row.SizeMb
+                            : 0D;
+
+                        return sizeMb.ToString("N0") + " MB";
+                    }
+                },
+                new AntdUI.Column(
                     nameof(EntryChartItem.FullPath),
                     LocalizationService.GetText("Common.Path"))
                 {
-                    Width = "50%",
+                    Width = "fill",
                     MinWidth = "180",
                     Ellipsis = false,
                     SortOrder = true,
@@ -173,7 +212,7 @@ namespace c2flux
                                 ? row.FullPath
                                 : string.Empty;
 
-                        return new TableVisibleEllipsisCellText(
+                        return AntdThemeService.CreateVisibleTableCellText(
                             text);
                     }
                 }
@@ -274,6 +313,7 @@ namespace c2flux
                     FullPath = child.FullPath,
                     SizeBytes = child.SizeBytes,
                     FormattedSize = SizeFormatter.Format(child.SizeBytes),
+                    SizeMb = child.SizeBytes / (1024D * 1024D),
                     Percent = totalSize <= 0
                         ? 0D
                         : (double)child.SizeBytes * 100D / totalSize
@@ -336,94 +376,6 @@ namespace c2flux
             return result;
         }
 
-        private sealed class TableVisibleEllipsisCellText : AntdUI.CellText
-        {
-            public TableVisibleEllipsisCellText(
-                string text)
-            {
-                Text = text;
-            }
-
-            public override void Paint(
-                AntdUI.Canvas g,
-                Font font,
-                bool enable,
-                SolidBrush fore)
-            {
-                Font renderFont = Font ?? font;
-                string text = Text ?? string.Empty;
-
-                if (text.Length == 0 || Rect.Width <= 0)
-                    return;
-
-                string visibleText = GetVisibleText(
-                    g,
-                    renderFont,
-                    text,
-                    Rect.Width);
-
-                if (Fore.HasValue)
-                {
-                    g.DrawText(
-                        visibleText,
-                        renderFont,
-                        Fore.Value,
-                        Rect,
-                        AntdUI.FormatFlags.Left |
-                        AntdUI.FormatFlags.VerticalCenter);
-                }
-                else
-                {
-                    g.DrawText(
-                        visibleText,
-                        renderFont,
-                        fore,
-                        Rect,
-                        AntdUI.FormatFlags.Left |
-                        AntdUI.FormatFlags.VerticalCenter);
-                }
-            }
-
-            private static string GetVisibleText(
-                AntdUI.Canvas g,
-                Font font,
-                string text,
-                int availableWidth)
-            {
-                if (g.MeasureText(text, font).Width <=
-                    availableWidth)
-                {
-                    return text;
-                }
-
-                int low = 0;
-                int high = text.Length;
-
-                while (low < high)
-                {
-                    int mid =
-                        low + ((high - low + 1) / 2);
-
-                    string candidate =
-                        text.Substring(0, mid);
-
-                    if (g.MeasureText(candidate, font).Width <=
-                        availableWidth)
-                    {
-                        low = mid;
-                    }
-                    else
-                    {
-                        high = mid - 1;
-                    }
-                }
-
-                return low <= 0
-                    ? string.Empty
-                    : text.Substring(0, low);
-            }
-        }
-
         private sealed class PercentCellProgress : AntdUI.CellProgress
         {
             private readonly string _text;
@@ -457,6 +409,7 @@ namespace c2flux
             public string FullPath { get; set; }
             public long SizeBytes { get; set; }
             public string FormattedSize { get; set; }
+            public double SizeMb { get; set; }
             public double Percent { get; set; }
         }
     }

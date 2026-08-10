@@ -4130,6 +4130,111 @@ namespace c2flux
             table.Invalidate();
         }
 
+        public static AntdUI.CellText CreateVisibleTableCellText(
+            string text)
+        {
+            return new VisibleTableCellText(text);
+        }
+
+        private sealed class VisibleTableCellText : AntdUI.CellText
+        {
+            public VisibleTableCellText(string text)
+                : base(text)
+            {
+            }
+
+            public override void Paint(
+                AntdUI.Canvas g,
+                Font font,
+                bool enable,
+                SolidBrush fore)
+            {
+                Font renderFont = Font ?? font;
+                string text = Text ?? string.Empty;
+
+                if (text.Length == 0 || Rect.Width <= 0)
+                    return;
+
+                string visibleText = GetVisibleText(
+                    g,
+                    renderFont,
+                    text,
+                    Rect.Width);
+
+                if (Fore.HasValue)
+                {
+                    g.DrawText(
+                        visibleText,
+                        renderFont,
+                        Fore.Value,
+                        Rect,
+                        AntdUI.FormatFlags.Left |
+                        AntdUI.FormatFlags.VerticalCenter);
+                }
+                else
+                {
+                    g.DrawText(
+                        visibleText,
+                        renderFont,
+                        fore,
+                        Rect,
+                        AntdUI.FormatFlags.Left |
+                        AntdUI.FormatFlags.VerticalCenter);
+                }
+            }
+
+            private static string GetVisibleText(
+                AntdUI.Canvas g,
+                Font font,
+                string text,
+                int availableWidth)
+            {
+                if (g.MeasureText(text, font).Width <=
+                    availableWidth)
+                {
+                    return text;
+                }
+
+                const string ellipsis = "…";
+
+                if (g.MeasureText(ellipsis, font).Width >
+                    availableWidth)
+                {
+                    return text.Substring(0, 1);
+                }
+
+                int low = 0;
+                int high = text.Length;
+
+                while (low < high)
+                {
+                    int middle =
+                        low + (high - low + 1) / 2;
+                    string candidate =
+                        text.Substring(0, middle) +
+                        ellipsis;
+
+                    if (g.MeasureText(candidate, font).Width <=
+                        availableWidth)
+                    {
+                        low = middle;
+                    }
+                    else
+                    {
+                        high = middle - 1;
+                    }
+                }
+
+                if (low == 0)
+                    return ellipsis;
+
+                if (char.IsHighSurrogate(text[low - 1]))
+                    low--;
+
+                return text.Substring(0, low) + ellipsis;
+            }
+        }
+
         public static void ApplyTreeEntryView(
             TreeEntrySizeBarView treeView)
         {

@@ -213,7 +213,7 @@ namespace c2flux
                                         ? row.Name
                                         : string.Empty;
 
-                                return new TableVisibleEllipsisCellText(
+                                return AntdThemeService.CreateVisibleTableCellText(
                                     text);
                             }
                     },
@@ -284,7 +284,7 @@ namespace c2flux
                                         ? row.FullPath
                                         : string.Empty;
 
-                                return new TableVisibleEllipsisCellText(
+                                return AntdThemeService.CreateVisibleTableCellText(
                                     text);
                             }
                     }
@@ -812,108 +812,6 @@ namespace c2flux
             return normalized.TrimEnd(
                 Path.DirectorySeparatorChar,
                 Path.AltDirectorySeparatorChar);
-        }
-
-        private sealed class TableVisibleEllipsisCellText :
-            AntdUI.CellText
-        {
-            public TableVisibleEllipsisCellText(
-                string text)
-            {
-                Text = text;
-            }
-
-            public override void Paint(
-                AntdUI.Canvas g,
-                Font font,
-                bool enable,
-                SolidBrush fore)
-            {
-                Font renderFont = Font ?? font;
-                string text = Text ?? string.Empty;
-
-                if (text.Length == 0 ||
-                    Rect.Width <= 0)
-                {
-                    return;
-                }
-
-                string visibleText =
-                    GetVisibleText(
-                        g,
-                        renderFont,
-                        text,
-                        Rect.Width);
-
-                if (Fore.HasValue)
-                {
-                    g.DrawText(
-                        visibleText,
-                        renderFont,
-                        Fore.Value,
-                        Rect,
-                        AntdUI.FormatFlags.Left |
-                        AntdUI.FormatFlags.VerticalCenter);
-                }
-                else
-                {
-                    g.DrawText(
-                        visibleText,
-                        renderFont,
-                        fore,
-                        Rect,
-                        AntdUI.FormatFlags.Left |
-                        AntdUI.FormatFlags.VerticalCenter);
-                }
-            }
-
-            private static string GetVisibleText(
-                AntdUI.Canvas g,
-                Font font,
-                string text,
-                int availableWidth)
-            {
-                if (g.MeasureText(
-                        text,
-                        font).Width <=
-                    availableWidth)
-                {
-                    return text;
-                }
-
-                int low = 0;
-                int high = text.Length;
-
-                while (low < high)
-                {
-                    int mid =
-                        low +
-                        ((high - low + 1) / 2);
-
-                    string candidate =
-                        text.Substring(
-                            0,
-                            mid);
-
-                    if (g.MeasureText(
-                            candidate,
-                            font).Width <=
-                        availableWidth)
-                    {
-                        low = mid;
-                    }
-                    else
-                    {
-                        high = mid - 1;
-                    }
-                }
-
-                return low <= 0
-                    ? string.Empty
-                    : text.Substring(
-                        0,
-                        low);
-            }
         }
 
         private sealed class PercentCellProgress :

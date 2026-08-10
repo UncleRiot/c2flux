@@ -38,6 +38,59 @@ namespace c2flux
             TB
         }
 
+        private class Analysis_ResponsiveTableGrid : AntdUI.Table
+        {
+            public Analysis_ResponsiveTableGrid()
+            {
+                Dock = DockStyle.Fill;
+                FixedHeader = true;
+                VisibleHeader = true;
+                EnableHeaderResizing = true;
+                ColumnDragSort = false;
+                MultipleRows = false;
+                LostFocusClearSelection = false;
+                MouseClickPenetration = true;
+                ScrollBarAvoidHeader = true;
+                AutoSizeColumnsMode = AntdUI.ColumnsMode.Fill;
+                ShowTip = true;
+                EmptyHeader = true;
+                EmptyText = string.Empty;
+    
+                ApplyAntdUIStyle();
+            }
+    
+            public void SetResponsiveColumns(
+                params (string ColumnName, int Percentage)[] responsiveColumns)
+            {
+                if (responsiveColumns == null || Columns == null)
+                    return;
+    
+                foreach ((string ColumnName, int Percentage) definition in responsiveColumns)
+                {
+                    AntdUI.Column column = Columns.FirstOrDefault(
+                        currentColumn => string.Equals(
+                            currentColumn.Key,
+                            definition.ColumnName,
+                            StringComparison.Ordinal));
+    
+                    if (column == null)
+                        continue;
+    
+                    column.Width = $"{Math.Max(0, definition.Percentage)}%";
+                }
+    
+                LoadLayout();
+                Invalidate();
+            }
+    
+            public void ApplyAntdUIStyle()
+            {
+                AntdThemeService.ConfigureAnalysisTable(this);
+                LoadLayout();
+                Invalidate();
+            }
+        }
+
         private readonly FileSystemEntry _rootEntry;
         private readonly Analysis_ResponsiveTableGrid _fileTypeGrid =
             new Analysis_ResponsiveTableGrid();
@@ -97,8 +150,17 @@ namespace c2flux
                     nameof(FileTypeRow.Extension),
                     LocalizationService.GetText("Advanced.FileType"))
                 {
-                    Ellipsis = true,
-                    SortOrder = true
+                    Ellipsis = false,
+                    SortOrder = true,
+                    Render = (value, record, rowIndex) =>
+                    {
+                        string text = record is FileTypeRow row
+                            ? row.Extension
+                            : value?.ToString();
+
+                        return AntdThemeService.CreateVisibleTableCellText(
+                            text);
+                    }
                 },
                 new AntdUI.Column(
                     nameof(FileTypeRow.UsagePercent),
@@ -213,7 +275,7 @@ namespace c2flux
                             ? row.Name
                             : value?.ToString();
 
-                        return new AnalysisVisibleEllipsisCellText(name);
+                        return AntdThemeService.CreateVisibleTableCellText(name);
                     }
                 },
                 new AntdUI.Column(
@@ -281,7 +343,7 @@ namespace c2flux
                                 ? row.LastWriteTime.ToString("g")
                                 : string.Empty;
 
-                        return new AnalysisVisibleEllipsisCellText(
+                        return AntdThemeService.CreateVisibleTableCellText(
                             modified);
                     }
                 },
@@ -298,7 +360,7 @@ namespace c2flux
                             ? row.FullPath
                             : value?.ToString();
 
-                        return new AnalysisVisibleEllipsisCellText(path);
+                        return AntdThemeService.CreateVisibleTableCellText(path);
                     }
                 }
             };
@@ -569,106 +631,6 @@ namespace c2flux
                     : "\"" + path + "\"",
                 UseShellExecute = true
             });
-        }
-
-        private sealed class AnalysisVisibleEllipsisCellText :
-            AntdUI.CellText
-        {
-            public AnalysisVisibleEllipsisCellText(string text)
-                : base(text)
-            {
-            }
-
-            public override void Paint(
-                AntdUI.Canvas g,
-                Font font,
-                bool enable,
-                SolidBrush fore)
-            {
-                Font renderFont = Font ?? font;
-                string text = Text ?? string.Empty;
-
-                if (text.Length == 0 || Rect.Width <= 0)
-                    return;
-
-                string visibleText = GetVisibleText(
-                    g,
-                    renderFont,
-                    text,
-                    Rect.Width);
-
-                if (Fore.HasValue)
-                {
-                    g.DrawText(
-                        visibleText,
-                        renderFont,
-                        Fore.Value,
-                        Rect,
-                        AntdUI.FormatFlags.Left |
-                        AntdUI.FormatFlags.VerticalCenter);
-                }
-                else
-                {
-                    g.DrawText(
-                        visibleText,
-                        renderFont,
-                        fore,
-                        Rect,
-                        AntdUI.FormatFlags.Left |
-                        AntdUI.FormatFlags.VerticalCenter);
-                }
-            }
-
-            private static string GetVisibleText(
-                AntdUI.Canvas g,
-                Font font,
-                string text,
-                int availableWidth)
-            {
-                if (g.MeasureText(text, font).Width <=
-                    availableWidth)
-                {
-                    return text;
-                }
-
-                const string ellipsis = "…";
-
-                if (g.MeasureText(ellipsis, font).Width >
-                    availableWidth)
-                {
-                    return text.Substring(0, 1);
-                }
-
-                int low = 0;
-                int high = text.Length;
-
-                while (low < high)
-                {
-                    int middle =
-                        low + (high - low + 1) / 2;
-                    string candidate =
-                        text.Substring(0, middle) +
-                        ellipsis;
-
-                    if (g.MeasureText(candidate, font).Width <=
-                        availableWidth)
-                    {
-                        low = middle;
-                    }
-                    else
-                    {
-                        high = middle - 1;
-                    }
-                }
-
-                if (low == 0)
-                    return ellipsis;
-
-                if (char.IsHighSurrogate(text[low - 1]))
-                    low--;
-
-                return text.Substring(0, low) + ellipsis;
-            }
         }
 
         private sealed class AnalysisPercentCellProgress :
