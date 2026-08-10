@@ -314,8 +314,17 @@ namespace c2flux
 
                 stream.Write(lineBytes, 0, lineBytes.Length);
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    System.Diagnostics.Trace.TraceError(
+                        "AppAlertLog failed to write the log file: " +
+                        exception);
+                }
+                catch
+                {
+                }
             }
         }
 

@@ -463,8 +463,27 @@ namespace c2flux
             {
                 _settings.Save();
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    AppAlertLog.AddWarning(
+                        "Storage history",
+                        "Storage history settings could not be saved.",
+                        exception.ToString());
+                }
+                catch (Exception loggingException)
+                {
+                    try
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "AppAlertLog failed while logging an exception: " +
+                            loggingException);
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
 

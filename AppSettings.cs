@@ -355,8 +355,31 @@ namespace c2flux
                     LegacySettingsFilePath,
                     SettingsFilePath);
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    AppAlertLog.AddWarning(
+                        "Settings",
+                        "The legacy settings file could not be migrated.",
+                        "Source: " + LegacySettingsFilePath +
+                        Environment.NewLine +
+                        "Target: " + SettingsFilePath +
+                        Environment.NewLine +
+                        exception);
+                }
+                catch (Exception loggingException)
+                {
+                    try
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "AppAlertLog failed while logging an exception: " +
+                            loggingException);
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
 
@@ -456,8 +479,29 @@ namespace c2flux
                     {
                         System.IO.File.Delete(temporaryFilePath);
                     }
-                    catch
+                    catch (Exception exception)
                     {
+                        try
+                        {
+                            AppAlertLog.AddWarning(
+                                "Settings",
+                                "The temporary settings file could not be deleted.",
+                                "Path: " + temporaryFilePath +
+                                Environment.NewLine +
+                                exception);
+                        }
+                        catch (Exception loggingException)
+                        {
+                            try
+                            {
+                                System.Diagnostics.Trace.TraceError(
+                                    "AppAlertLog failed while logging an exception: " +
+                                    loggingException);
+                            }
+                            catch
+                            {
+                            }
+                        }
                     }
                 }
             }

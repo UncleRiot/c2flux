@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
@@ -36,7 +36,7 @@ namespace c2flux
 
             if (_settings.AutoCheckForUpdates)
             {
-                UpdateGitHubStatusAsync();
+                _ = UpdateGitHubStatusAsync();
             }
             else
             {
@@ -469,61 +469,82 @@ namespace c2flux
         }
 
 
-        private async void UpdateGitHubStatusAsync()
+        private async Task UpdateGitHubStatusAsync()
         {
-            linkLabelUpdate.Text =
-                LocalizationService.GetText(
-                    "About.UpdateChecking");
-            linkLabelUpdate.Tag = string.Empty;
-            linkLabelUpdate.Links.Clear();
-
-            GitHubUpdateResult result =
-                await GitHubUpdateService.CheckForUpdateAsync();
-
-            if (IsDisposed)
-            {
-                return;
-            }
-
-            linkLabelUpdate.Tag = string.Empty;
-            linkLabelUpdate.Links.Clear();
-
-            if (result.ErrorKind != GitHubUpdateErrorKind.None)
-            {
-                linkLabelUpdate.Text =
-                    result.ErrorKind == GitHubUpdateErrorKind.Timeout ||
-                    result.ErrorKind == GitHubUpdateErrorKind.Network ||
-                    result.ErrorKind == GitHubUpdateErrorKind.Http
-                    ? LocalizationService.GetText(
-                        "About.GitHubUnavailable")
-                    : LocalizationService.GetText(
-                        "Common.Error");
-
-                linkLabelUpdate.LinkBehavior =
-                    LinkBehavior.NeverUnderline;
-                return;
-            }
-
-            if (!result.UpdateAvailable)
+            try
             {
                 linkLabelUpdate.Text =
                     LocalizationService.GetText(
-                        "About.NoNewVersion");
-                linkLabelUpdate.LinkBehavior =
-                    LinkBehavior.NeverUnderline;
-                return;
-            }
+                        "About.UpdateChecking");
+                linkLabelUpdate.Tag = string.Empty;
+                linkLabelUpdate.Links.Clear();
 
-            linkLabelUpdate.Text =
-                LocalizationService.Format(
-                    "About.UpdateAvailable",
-                    result.LatestVersion);
-            linkLabelUpdate.Tag = result.DownloadUrl;
-            linkLabelUpdate.LinkBehavior =
-                LinkBehavior.HoverUnderline;
-            linkLabelUpdate.Links.Add(
-                0,
-                linkLabelUpdate.Text.Length);
+                GitHubUpdateResult result =
+                    await GitHubUpdateService.CheckForUpdateAsync();
+
+                if (IsDisposed)
+                {
+                    return;
+                }
+
+                linkLabelUpdate.Tag = string.Empty;
+                linkLabelUpdate.Links.Clear();
+
+                if (result.ErrorKind != GitHubUpdateErrorKind.None)
+                {
+                    linkLabelUpdate.Text =
+                        result.ErrorKind == GitHubUpdateErrorKind.Timeout ||
+                        result.ErrorKind == GitHubUpdateErrorKind.Network ||
+                        result.ErrorKind == GitHubUpdateErrorKind.Http
+                        ? LocalizationService.GetText(
+                            "About.GitHubUnavailable")
+                        : LocalizationService.GetText(
+                            "Common.Error");
+
+                    linkLabelUpdate.LinkBehavior =
+                        LinkBehavior.NeverUnderline;
+                    return;
+                }
+
+                if (!result.UpdateAvailable)
+                {
+                    linkLabelUpdate.Text =
+                        LocalizationService.GetText(
+                            "About.NoNewVersion");
+                    linkLabelUpdate.LinkBehavior =
+                        LinkBehavior.NeverUnderline;
+                    return;
+                }
+
+                linkLabelUpdate.Text =
+                    LocalizationService.Format(
+                        "About.UpdateAvailable",
+                        result.LatestVersion);
+                linkLabelUpdate.Tag = result.DownloadUrl;
+                linkLabelUpdate.LinkBehavior =
+                    LinkBehavior.HoverUnderline;
+                linkLabelUpdate.Links.Add(
+                    0,
+                    linkLabelUpdate.Text.Length);
+            }
+            catch (Exception exception)
+            {
+                AppAlertLog.AddWarning(
+                    "GitHub update",
+                    "The About dialog could not update the GitHub status.",
+                    exception.ToString());
+
+                if (!IsDisposed)
+                {
+                    linkLabelUpdate.Tag = string.Empty;
+                    linkLabelUpdate.Links.Clear();
+                    linkLabelUpdate.Text =
+                        LocalizationService.GetText(
+                            "Common.Error");
+                    linkLabelUpdate.LinkBehavior =
+                        LinkBehavior.NeverUnderline;
+                }
+            }
         }
 
 

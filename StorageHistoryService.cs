@@ -153,8 +153,29 @@ namespace c2flux
                 totalCapacityBytes = Math.Max(0L, driveInfo.TotalSize);
                 freeSpaceBytes = Math.Max(0L, driveInfo.AvailableFreeSpace);
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    AppAlertLog.AddWarning(
+                        "Storage history",
+                        "Drive space information could not be read.",
+                        "Path: " + path +
+                        Environment.NewLine +
+                        exception);
+                }
+                catch (Exception loggingException)
+                {
+                    try
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "AppAlertLog failed while logging an exception: " +
+                            loggingException);
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
 
@@ -333,8 +354,29 @@ namespace c2flux
                     if (File.Exists(temporaryFilePath))
                         File.Delete(temporaryFilePath);
                 }
-                catch
+                catch (Exception exception)
                 {
+                    try
+                    {
+                        AppAlertLog.AddWarning(
+                            "Storage history",
+                            "The temporary storage history file could not be deleted.",
+                            "Path: " + temporaryFilePath +
+                            Environment.NewLine +
+                            exception);
+                    }
+                    catch (Exception loggingException)
+                    {
+                        try
+                        {
+                            System.Diagnostics.Trace.TraceError(
+                                "AppAlertLog failed while logging an exception: " +
+                                loggingException);
+                        }
+                        catch
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -400,8 +442,30 @@ namespace c2flux
 
                 return fullPath.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    AppAlertLog.AddWarning(
+                        "Storage history",
+                        "The storage history path could not be normalized.",
+                        "Path: " + path +
+                        Environment.NewLine +
+                        exception);
+                }
+                catch (Exception loggingException)
+                {
+                    try
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "AppAlertLog failed while logging an exception: " +
+                            loggingException);
+                    }
+                    catch
+                    {
+                    }
+                }
+
                 return path.Trim();
             }
         }

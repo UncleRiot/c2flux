@@ -53,8 +53,7 @@ namespace c2flux
         private FileSystemEntry _liveRootEntry;
         private ConcurrentQueue<string> _skippedDirectoryDetails;
         private int _skippedDirectories;
-        private int _fileInformationClass;
-        private int _fileNameOffset;
+        private FileInformationConfiguration _fileInformationConfiguration;
         private PauseToken _pauseToken;
         private CompiledPathFilter _pathFilter;
         private ConcurrentBag<List<FileSystemEntry>> _workerFileBatches;
@@ -80,8 +79,11 @@ namespace c2flux
                 _pendingDirectoryCount = 1;
                 _skippedDirectories = 0;
                 _skippedDirectoryDetails = new ConcurrentQueue<string>();
-                _fileInformationClass = FileIdFullDirectoryInformationClass;
-                _fileNameOffset = FileIdFullDirectoryInformationFileNameOffset;
+                Volatile.Write(
+                    ref _fileInformationConfiguration,
+                    new FileInformationConfiguration(
+                        FileIdFullDirectoryInformationClass,
+                        FileIdFullDirectoryInformationFileNameOffset));
                 _workQueue = new BlockingCollection<WorkItem>();
                 _pathFilter = new CompiledPathFilter(_settings.ExcludedPaths);
                 _workerFileBatches = new ConcurrentBag<List<FileSystemEntry>>();
@@ -222,8 +224,11 @@ namespace c2flux
 
                 IO_STATUS_BLOCK ioStatusBlock = new IO_STATUS_BLOCK();
 
-                int fileInformationClass = Volatile.Read(ref _fileInformationClass);
-                int fileNameOffset = Volatile.Read(ref _fileNameOffset);
+                FileInformationConfiguration fileInformationConfiguration =
+                    Volatile.Read(ref _fileInformationConfiguration);
+
+                int fileInformationClass = fileInformationConfiguration.FileInformationClass;
+                int fileNameOffset = fileInformationConfiguration.FileNameOffset;
 
                 int status = NtQueryDirectoryFile(
                     directoryHandle,
@@ -280,8 +285,11 @@ namespace c2flux
         }
         private void SetFileInformationClassFallback()
         {
-            Volatile.Write(ref _fileInformationClass, FileFullDirectoryInformationClass);
-            Volatile.Write(ref _fileNameOffset, FileFullDirectoryInformationFileNameOffset);
+            Volatile.Write(
+                ref _fileInformationConfiguration,
+                new FileInformationConfiguration(
+                    FileFullDirectoryInformationClass,
+                    FileFullDirectoryInformationFileNameOffset));
         }
 
         private long ParseDirectoryBuffer(
@@ -877,6 +885,18 @@ namespace c2flux
                             Path.AltDirectorySeparatorChar);
                 }
             }
+        }
+
+        private sealed class FileInformationConfiguration
+        {
+            public FileInformationConfiguration(int fileInformationClass, int fileNameOffset)
+            {
+                FileInformationClass = fileInformationClass;
+                FileNameOffset = fileNameOffset;
+            }
+
+            public int FileInformationClass { get; }
+            public int FileNameOffset { get; }
         }
 
         private sealed class WorkItem

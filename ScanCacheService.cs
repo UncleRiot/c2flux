@@ -57,8 +57,30 @@ namespace c2flux
 
                 return new ScanCacheService(cacheFilePath, fileEntries);
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    AppAlertLog.AddWarning(
+                        "Scan cache",
+                        "The scan cache could not be loaded.",
+                        "Path: " + cacheFilePath +
+                        Environment.NewLine +
+                        exception);
+                }
+                catch (Exception loggingException)
+                {
+                    try
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "AppAlertLog failed while logging an exception: " +
+                            loggingException);
+                    }
+                    catch
+                    {
+                    }
+                }
+
                 return new ScanCacheService(cacheFilePath, new Dictionary<string, ScanCacheFileEntry>(StringComparer.OrdinalIgnoreCase));
             }
         }
@@ -84,8 +106,30 @@ namespace c2flux
 
                 return ConvertToFileSystemEntry(database.RootEntry);
             }
-            catch
+            catch (Exception exception)
             {
+                try
+                {
+                    AppAlertLog.AddWarning(
+                        "Scan cache",
+                        "The cached scan tree could not be loaded.",
+                        "Path: " + cacheFilePath +
+                        Environment.NewLine +
+                        exception);
+                }
+                catch (Exception loggingException)
+                {
+                    try
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "AppAlertLog failed while logging an exception: " +
+                            loggingException);
+                    }
+                    catch
+                    {
+                    }
+                }
+
                 return null;
             }
         }

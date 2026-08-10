@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -1719,6 +1719,29 @@ namespace c2flux
                         false);
                 }
             }
+            catch (Exception exception)
+            {
+                session.ScanStopwatch?.Stop();
+
+                AppAlertLog.AddError(
+                    LocalizationService.GetText("Alert.Scan"),
+                    exception.Message,
+                    "Path: " + rootPath +
+                    Environment.NewLine +
+                    exception);
+
+                if (IsCurrentScanSession(session) && IsSelectedScanPath(session.RootPath))
+                {
+                    _statusMainFormController.SetStatusText(
+                        LocalizationService.GetText("Common.Error") +
+                        ": " +
+                        exception.Message);
+                    _statusMainFormController.SetScanProgress(
+                        null,
+                        session.ScanStopwatch?.Elapsed,
+                        false);
+                }
+            }
             finally
             {
                 session.IsRunning = false;
@@ -2389,9 +2412,26 @@ namespace c2flux
                 FileName = "scan-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".wtfscan"
             };
 
-            if (dialog.ShowDialog(this) == DialogResult.OK)
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
             {
                 ScanResultFileService.Save(dialog.FileName, _currentRootEntry);
+            }
+            catch (Exception exception)
+            {
+                AppAlertLog.AddError(
+                    LocalizationService.GetText("Menu.SaveScanResult"),
+                    exception.Message,
+                    "Path: " + dialog.FileName +
+                    Environment.NewLine +
+                    exception);
+
+                _statusMainFormController.SetStatusText(
+                    LocalizationService.GetText("Common.Error") +
+                    ": " +
+                    exception.Message);
             }
         }
 
@@ -2405,14 +2445,31 @@ namespace c2flux
             if (dialog.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            FileSystemEntry loadedEntry = ScanResultFileService.Load(dialog.FileName);
+            try
+            {
+                FileSystemEntry loadedEntry = ScanResultFileService.Load(dialog.FileName);
 
-            if (loadedEntry == null)
-                return;
+                if (loadedEntry == null)
+                    return;
 
-            _currentRootEntry = loadedEntry;
-            RenderScanResult(_currentRootEntry);
-            SetScanningState(false);
+                _currentRootEntry = loadedEntry;
+                RenderScanResult(_currentRootEntry);
+                SetScanningState(false);
+            }
+            catch (Exception exception)
+            {
+                AppAlertLog.AddError(
+                    LocalizationService.GetText("Menu.LoadScanResult"),
+                    exception.Message,
+                    "Path: " + dialog.FileName +
+                    Environment.NewLine +
+                    exception);
+
+                _statusMainFormController.SetStatusText(
+                    LocalizationService.GetText("Common.Error") +
+                    ": " +
+                    exception.Message);
+            }
         }
 
         private void menuItemAdvancedFeatures_Click(object sender, EventArgs e)
