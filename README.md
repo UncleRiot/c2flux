@@ -9,6 +9,11 @@
 <img width="1618" height="935" alt="grafik" src="https://github.com/user-attachments/assets/e4d5fafc-5eb6-4df0-ae99-4bf45a44da13" />
 
 <br><br>
+✨ Treemap view
+
+   <img width="1475" height="936" alt="grafik" src="https://github.com/user-attachments/assets/02029d53-caa9-4442-a2b8-9f87e107daa3" />
+
+<br><br>
 
 🚀 Find files at lightspeed (example, more than 700k files):
 <br><br>
