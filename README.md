@@ -2,12 +2,25 @@
 
 # c² flux – Tree Scanner
 
-**A fast and lightweight disk space analyzer for Windows.**
+**Scan your drives, get an overview of used disk space, find everything. Fast. Faster. c²flux!**
 
 <br>
 
 <img width="1618" height="935" alt="grafik" src="https://github.com/user-attachments/assets/e4d5fafc-5eb6-4df0-ae99-4bf45a44da13" />
 
+<br><br>
+✨ Treemap view
+
+   <img width="1475" height="936" alt="grafik" src="https://github.com/user-attachments/assets/02029d53-caa9-4442-a2b8-9f87e107daa3" />
+
+<br><br>
+
+🚀 Find files at lightspeed (example, more than 700k files):
+<br><br>
+<img width="453" height="30" alt="grafik" src="https://github.com/user-attachments/assets/7a2fe76e-b99e-43f7-962d-78eb7d964108" />
+<br>
+
+<img width="648" height="519" alt="grafik" src="https://github.com/user-attachments/assets/4585438f-301b-4a32-90ac-1c1bbd744f96" />
 
 
 <br>
