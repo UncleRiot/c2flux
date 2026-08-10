@@ -42,6 +42,10 @@ namespace c2flux
 
                 return _children;
             }
+            set
+            {
+                _children = value;
+            }
         }
 
         public int DirectoryCount
