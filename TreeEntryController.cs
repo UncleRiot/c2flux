@@ -12,7 +12,8 @@ namespace c2flux
         private readonly ToolStripMenuItem _contextMenuItemExport;
         private readonly ToolStripMenuItem _contextMenuItemCopyToClipboard;
         private readonly Action<FileSystemEntry> _selectedEntryChanged;
-        private readonly Action<FileSystemEntry, System.Drawing.Point> _showContextMenu;
+        private readonly Action<FileSystemEntry, System.Drawing.Point, bool> _showContextMenu;
+        private readonly HashSet<string> _hiddenRootPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private System.Windows.Forms.Timer _liveTreeUpdateTimer;
         private readonly Dictionary<string, ScanProgress> _pendingLiveTreeScanProgressByRootPath = new Dictionary<string, ScanProgress>(StringComparer.OrdinalIgnoreCase);
         private bool _liveTreeUpdateInProgress;
@@ -26,7 +27,7 @@ namespace c2flux
             ToolStripMenuItem contextMenuItemExport,
             ToolStripMenuItem contextMenuItemCopyToClipboard,
             Action<FileSystemEntry> selectedEntryChanged,
-            Action<FileSystemEntry, System.Drawing.Point> showContextMenu)
+            Action<FileSystemEntry, System.Drawing.Point, bool> showContextMenu)
         {
             _treeViewEntries = treeViewEntries;
             _contextMenuStripTreeEntries = contextMenuStripTreeEntries;
@@ -52,9 +53,50 @@ namespace c2flux
             return _treeViewEntries.SelectEntry(entry);
         }
 
+        public FileSystemEntry GetRootEntry(
+            FileSystemEntry entry)
+        {
+            return _treeViewEntries.GetRootEntry(entry);
+        }
+
+        public bool RemoveRootEntry(
+            FileSystemEntry entry)
+        {
+            FileSystemEntry rootEntry =
+                _treeViewEntries.GetRootEntry(entry);
+
+            if (rootEntry == null ||
+                string.IsNullOrWhiteSpace(rootEntry.FullPath))
+            {
+                return false;
+            }
+
+            bool removed =
+                _treeViewEntries.RemoveRootEntry(rootEntry);
+
+            if (!removed)
+                return false;
+
+            _hiddenRootPaths.Add(rootEntry.FullPath);
+            ClearPendingLiveTreeUpdate(rootEntry.FullPath);
+            ContextMenuEntry = null;
+
+            return true;
+        }
+
+        public void RestoreRootEntryVisibility(
+            string rootPath)
+        {
+            if (string.IsNullOrWhiteSpace(rootPath))
+                return;
+
+            _hiddenRootPaths.Remove(rootPath);
+        }
+
         public void ShowContextMenu(
             FileSystemEntry entry,
-            System.Drawing.Point screenLocation)
+            System.Drawing.Point screenLocation,
+            bool allowRemoveFromTreePane = false)
         {
             if (entry == null ||
                 string.IsNullOrWhiteSpace(entry.FullPath))
@@ -71,7 +113,8 @@ namespace c2flux
             {
                 _showContextMenu(
                     entry,
-                    screenLocation);
+                    screenLocation,
+                    allowRemoveFromTreePane);
             }
             else
             {
@@ -139,6 +182,9 @@ namespace c2flux
             if (string.IsNullOrWhiteSpace(rootPath))
                 return;
 
+            if (_hiddenRootPaths.Contains(rootPath))
+                return;
+
             _pendingLiveTreeScanProgressByRootPath[rootPath] = scanProgress;
 
             if (_liveTreeUpdateTimer != null && !_liveTreeUpdateTimer.Enabled)
@@ -163,6 +209,9 @@ namespace c2flux
             if (scanProgress.LiveRootEntry == null)
                 return;
 
+            if (_hiddenRootPaths.Contains(scanProgress.LiveRootEntry.FullPath))
+                return;
+
             _treeViewEntries.UpdateRootEntry(scanProgress.LiveRootEntry);
         }
 
@@ -171,12 +220,18 @@ namespace c2flux
             if (rootEntry == null)
                 return;
 
+            if (_hiddenRootPaths.Contains(rootEntry.FullPath))
+                return;
+
             _treeViewEntries.UpdateRootEntry(rootEntry);
         }
 
         public void RenderScanResult(FileSystemEntry rootEntry)
         {
             if (rootEntry == null)
+                return;
+
+            if (_hiddenRootPaths.Contains(rootEntry.FullPath))
                 return;
 
             _treeViewEntries.SetRootEntry(rootEntry);
@@ -212,7 +267,8 @@ namespace c2flux
                 ShowContextMenu(
                     e.Entry,
                     _treeViewEntries.PointToScreen(
-                        e.Location));
+                        e.Location),
+                    true);
                 return;
             }
 

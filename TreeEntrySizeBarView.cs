@@ -87,6 +87,67 @@ namespace c2flux
             get { return _selectedNode == null ? null : _selectedNode.Entry; }
         }
 
+        public FileSystemEntry GetRootEntry(
+            FileSystemEntry entry)
+        {
+            TreeEntrySizeBarNode rootNode =
+                FindRootNodeForEntry(entry);
+
+            return rootNode?.Entry;
+        }
+
+        public bool RemoveRootEntry(
+            FileSystemEntry entry)
+        {
+            TreeEntrySizeBarNode rootNode =
+                FindRootNodeForEntry(entry);
+
+            if (rootNode == null)
+                return false;
+
+            bool selectedNodeRemoved =
+                _selectedNode != null &&
+                IsSameOrDescendantPath(
+                    _selectedNode.Entry?.FullPath,
+                    rootNode.Entry?.FullPath);
+
+            int rootIndex =
+                _rootNodes.IndexOf(rootNode);
+
+            RemoveExpandedKeys(rootNode);
+            _rootNodes.Remove(rootNode);
+            RebuildVisibleNodes(false);
+
+            if (selectedNodeRemoved)
+            {
+                _selectedNode = null;
+
+                if (_rootNodes.Count > 0)
+                {
+                    TreeEntrySizeBarNode newSelectedNode =
+                        _rootNodes[
+                            Math.Min(
+                                rootIndex,
+                                _rootNodes.Count - 1)];
+
+                    SelectNode(
+                        newSelectedNode,
+                        true);
+                    EnsureNodeVisible(
+                        newSelectedNode);
+                }
+                else
+                {
+                    SelectedEntryChanged?.Invoke(
+                        this,
+                        new SelectedEntryChangedEventArgs(null));
+                }
+            }
+
+            Invalidate();
+            return true;
+        }
+
         public bool SelectEntry(
             FileSystemEntry entry)
         {
@@ -1099,6 +1160,20 @@ namespace c2flux
             }
 
             return SizeFormatter.Format(displaySizeBytes) + "  " + entry.Name;
+        }
+
+        private void RemoveExpandedKeys(
+            TreeEntrySizeBarNode node)
+        {
+            if (node == null)
+                return;
+
+            _expandedKeys.Remove(node.Key);
+
+            foreach (TreeEntrySizeBarNode childNode in node.Children)
+            {
+                RemoveExpandedKeys(childNode);
+            }
         }
 
         private void ToggleNode(TreeEntrySizeBarNode node)

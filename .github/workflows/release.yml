@@ -30,9 +30,12 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $version = $tag.TrimStart("v")
+          $baseVersion = $version.Split("-")[0]
+          $assemblyVersion = "$baseVersion.0"
           $isPrerelease = $version -match "-(alpha|beta|rc)(\.|$)"
 
           "version=$version" >> $env:GITHUB_OUTPUT
+          "assembly_version=$assemblyVersion" >> $env:GITHUB_OUTPUT
           "is_prerelease=$($isPrerelease.ToString().ToLower())" >> $env:GITHUB_OUTPUT
 
       - name: Projekt veröffentlichen
@@ -43,8 +46,8 @@ jobs:
           --self-contained false
           --output publish
           -p:Version=${{ steps.version.outputs.version }}
-          -p:AssemblyVersion=${{ steps.version.outputs.version }}
-          -p:FileVersion=${{ steps.version.outputs.version }}
+          -p:AssemblyVersion=${{ steps.version.outputs.assembly_version }}
+          -p:FileVersion=${{ steps.version.outputs.assembly_version }}
           -p:InformationalVersion=${{ steps.version.outputs.version }}
 
       - name: ZIP erstellen

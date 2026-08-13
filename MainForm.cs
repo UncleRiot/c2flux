@@ -78,6 +78,7 @@ namespace c2flux
         private SplitContainer splitContainerLeft;
         private TreeEntrySizeBarView treeViewEntries;
         private ContextMenuStrip contextMenuStripTreeEntries;
+        private ToolStripMenuItem contextMenuItemRemoveFromTreePane;
         private ToolStripMenuItem contextMenuItemOpenInExplorer;
         private ToolStripMenuItem contextMenuItemExport;
         private ToolStripMenuItem contextMenuItemCopyToClipboard;
@@ -710,6 +711,7 @@ namespace c2flux
             treeViewEntries.RowHeight = 22;
 
             contextMenuStripTreeEntries = new ContextMenuStrip();
+            contextMenuItemRemoveFromTreePane = new ToolStripMenuItem();
             contextMenuItemOpenInExplorer = new ToolStripMenuItem(LocalizationService.GetText("Context.OpenInExplorer"));
             contextMenuItemExport = new ToolStripMenuItem(LocalizationService.GetText("Context.Export"));
             contextMenuItemCopyPath = new ToolStripMenuItem(
@@ -718,11 +720,13 @@ namespace c2flux
                 GetTreeCopyMenuText("Text"));
             contextMenuItemCopyToClipboard = new ToolStripMenuItem(
                 GetTreeCopyMenuText(".CSV"));
+            contextMenuItemRemoveFromTreePane.Click += contextMenuItemRemoveFromTreePane_Click;
             contextMenuItemOpenInExplorer.Click += contextMenuItemOpenInExplorer_Click;
             contextMenuItemExport.Click += contextMenuItemExport_Click;
             contextMenuItemCopyPath.Click += contextMenuItemCopyPath_Click;
             contextMenuItemCopyTreeText.Click += contextMenuItemCopyTreeText_Click;
             contextMenuItemCopyToClipboard.Click += contextMenuItemCopyToClipboard_Click;
+            contextMenuStripTreeEntries.Items.Add(contextMenuItemRemoveFromTreePane);
             contextMenuStripTreeEntries.Items.Add(contextMenuItemExport);
             contextMenuStripTreeEntries.Items.Add(contextMenuItemCopyPath);
             contextMenuStripTreeEntries.Items.Add(contextMenuItemCopyTreeText);
@@ -1577,6 +1581,7 @@ namespace c2flux
             };
 
             _scanSessions[normalizedRootPath] = session;
+            _treeEntryController.RestoreRootEntryVisibility(normalizedRootPath);
             _treeEntryController.ClearPendingLiveTreeUpdate(normalizedRootPath);
 
             FileSystemEntry initialRootEntry = new FileSystemEntry
@@ -2302,27 +2307,65 @@ namespace c2flux
 
         private void ShowTreeEntryContextMenu(
             FileSystemEntry entry,
-            Point screenLocation)
+            Point screenLocation,
+            bool allowRemoveFromTreePane)
         {
             if (entry == null || string.IsNullOrWhiteSpace(entry.FullPath))
                 return;
 
+            FileSystemEntry rootEntry =
+                allowRemoveFromTreePane
+                    ? _treeEntryController.GetRootEntry(entry)
+                    : null;
+
+            string rootDisplayName =
+                rootEntry == null
+                    ? string.Empty
+                    : NormalizeScanPath(rootEntry.FullPath)
+                        .TrimEnd(
+                            Path.DirectorySeparatorChar,
+                            Path.AltDirectorySeparatorChar);
+
+            contextMenuItemRemoveFromTreePane.Visible =
+                rootEntry != null;
+
+            if (rootEntry != null)
+            {
+                contextMenuItemRemoveFromTreePane.Text =
+                    LocalizationService.Format(
+                        "Context.RemoveFromTreePane",
+                        rootDisplayName);
+            }
+
             List<NativeShellContextMenuCommand> commands =
-                new List<NativeShellContextMenuCommand>
-                {
+                new List<NativeShellContextMenuCommand>();
+
+            if (rootEntry != null)
+            {
+                commands.Add(
                     new NativeShellContextMenuCommand(
-                        LocalizationService.GetText("Context.Export"),
-                        () => _exportEntryController.ExportEntry(entry)),
-                    new NativeShellContextMenuCommand(
-                        "Copy: Selected item",
-                        () => _exportEntryController.CopyEntryNameToClipboard(entry)),
-                    new NativeShellContextMenuCommand(
-                        GetTreeCopyMenuText("Text"),
-                        () => _exportEntryController.CopyEntryTreeTextToClipboard(entry)),
-                    new NativeShellContextMenuCommand(
-                        GetTreeCopyMenuText(".CSV"),
-                        () => _exportEntryController.CopyEntryExportToClipboard(entry))
-                };
+                        LocalizationService.Format(
+                            "Context.RemoveFromTreePane",
+                            rootDisplayName),
+                        () => _treeEntryController.RemoveRootEntry(entry)));
+            }
+
+            commands.Add(
+                new NativeShellContextMenuCommand(
+                    LocalizationService.GetText("Context.Export"),
+                    () => _exportEntryController.ExportEntry(entry)));
+            commands.Add(
+                new NativeShellContextMenuCommand(
+                    "Copy: Selected item",
+                    () => _exportEntryController.CopyEntryNameToClipboard(entry)));
+            commands.Add(
+                new NativeShellContextMenuCommand(
+                    GetTreeCopyMenuText("Text"),
+                    () => _exportEntryController.CopyEntryTreeTextToClipboard(entry)));
+            commands.Add(
+                new NativeShellContextMenuCommand(
+                    GetTreeCopyMenuText(".CSV"),
+                    () => _exportEntryController.CopyEntryExportToClipboard(entry)));
 
             bool shown = NativeShellContextMenu.Show(
                 this,
@@ -2337,6 +2380,12 @@ namespace c2flux
                     treeViewEntries,
                     treeViewEntries.PointToClient(screenLocation));
             }
+        }
+
+        private void contextMenuItemRemoveFromTreePane_Click(object sender, EventArgs e)
+        {
+            _treeEntryController.RemoveRootEntry(
+                _treeEntryController.ContextMenuEntry);
         }
 
         private void contextMenuItemOpenInExplorer_Click(object sender, EventArgs e)
