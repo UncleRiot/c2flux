@@ -4,8 +4,11 @@
 
 **Scan your drives, get an overview of used disk space, find everything. Fast. Faster. c²flux!**
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.1.9-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.1.9/c2flux-v1.1.9-win-x64.zip)
 
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.1.10--beta.1-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.1.10-beta.1/c2flux-v1.1.10-beta.1-win-x64.zip)
+<br>
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.1.9-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.1.9/c2flux-v1.1.9-win-x64.zip)
+<br>
 <br>
 
 <img width="1618" height="935" alt="grafik" src="https://github.com/user-attachments/assets/e4d5fafc-5eb6-4df0-ae99-4bf45a44da13" />
