@@ -867,12 +867,13 @@ namespace c2flux
             if (string.IsNullOrWhiteSpace(path))
                 return;
 
-            DialogResult result = MessageBox.Show(
+            DialogResult result = AppDialogs.ShowWarningYesNo(
                 this,
+                _settings,
                 LocalizationService.GetText("StorageHistory.DeleteConfirm"),
                 LocalizationService.GetText("StorageHistory.Title"),
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
+                LocalizationService.GetText("Common.Yes"),
+                LocalizationService.GetText("Common.No"));
 
             if (result != DialogResult.Yes)
                 return;

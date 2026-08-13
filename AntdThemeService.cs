@@ -1121,23 +1121,8 @@ namespace c2flux
             if (tabs == null)
                 return;
 
-            tabs.Type = AntdUI.TabType.Card;
-            tabs.Centered = false;
-            tabs.ItemSize = ScanHistoryTabWidth;
-            tabs.Gap = ScanHistoryTabGap;
-            tabs.ForeColor = TextPrimary;
-            tabs.Fill = BackgroundSecondary;
-            tabs.FillHover = HoverBackground;
-            tabs.FillActive = Accent;
-            tabs.BackColor = BackgroundPrimary;
-            tabs.Font = DefaultFont;
-            tabs.TabStop = false;
-            tabs.EnableSwitch = true;
+            ConfigureAnalysisTabs(tabs);
             tabs.EnablePageScrolling = true;
-            tabs.EnablePageCloseByMouseMiddle = false;
-            tabs.EnablePageCloseByMouseDoubleClick = false;
-            tabs.DragOrder = false;
-            tabs.TabMenuVisible = true;
         }
 
         // Tabellen Scans / Summary / Folder growth / New files / Changed files / Deleted files
@@ -1148,6 +1133,12 @@ namespace c2flux
                 return;
 
             ApplyTable(grid);
+        }
+
+        public static void ConfigureScanHistoryButton(
+            AntdUI.Button button)
+        {
+            ApplyMainButtonVisualStyle(button);
         }
 
         // Tabs File types / Largest files - vollständige zentrale Darstellung
@@ -1353,7 +1344,8 @@ namespace c2flux
             button.DefaultBorderColor = Border;
             button.BackColor = BackgroundSecondary;
             button.ForeColor = TextPrimary;
-            button.BackHover = HoverBackground;
+            button.ForeHover = MainViewButtonIconInactiveColor;
+            button.BackHover = MainViewButtonIconInactiveColor;
             button.BackActive = PressedBackground;
             button.Invalidate();
         }
@@ -2477,17 +2469,10 @@ namespace c2flux
                 Name = name,
                 Text = text,
                 AutoSize = true,
-                Height = 32,
-                Font = DefaultFont,
-                Radius = 6,
-                BorderWidth = 1F,
-                DefaultBorderColor = Border,
-                BackColor = BackgroundSecondary,
-                ForeColor = TextPrimary,
-                ForeHover = MainViewButtonIconInactiveColor,
-                BackHover = MainViewButtonIconInactiveColor,
-                BackActive = PressedBackground
+                Height = 32
             };
+
+            ApplyMainButtonVisualStyle(button);
 
             return button;
         }
@@ -2725,6 +2710,27 @@ namespace c2flux
             }
         }
 
+        private static void ApplyMainButtonVisualStyle(
+            AntdUI.Button button)
+        {
+            if (button == null)
+                return;
+
+            button.Font = DefaultFont;
+            button.Radius = 6;
+            button.BorderWidth = 1F;
+            button.DefaultBorderColor = Border;
+            button.BackColor = BackgroundSecondary;
+            button.ForeColor = button.Enabled
+                ? TextPrimary
+                : MainDisabledButtonTextColor;
+            button.ForeHover = MainViewButtonIconInactiveColor;
+            button.ToggleForeHover = MainViewButtonIconInactiveColor;
+            button.BackHover = MainViewButtonIconInactiveColor;
+            button.BackActive = PressedBackground;
+            button.Invalidate();
+        }
+
         private static void ApplyMainToolbarHostedControl(Control control)
         {
             if (control == null)
@@ -2738,17 +2744,7 @@ namespace c2flux
 
             if (control is AntdUI.Button button)
             {
-                button.Font = DefaultFont;
-                button.BackColor = BackgroundSecondary;
-                button.ForeColor = button.Enabled
-                    ? TextPrimary
-                    : MainDisabledButtonTextColor;
-                button.ForeHover = MainViewButtonIconInactiveColor;
-                button.ToggleForeHover = MainViewButtonIconInactiveColor;
-                button.DefaultBorderColor = Border;
-                button.BackHover = MainViewButtonIconInactiveColor;
-                button.BackActive = PressedBackground;
-                button.Invalidate();
+                ApplyMainButtonVisualStyle(button);
             }
             else if (control is AntdUI.Select select)
             {
@@ -2980,6 +2976,8 @@ namespace c2flux
                 SearchResetFiltersButtonHeight,
                 SearchResetFiltersButtonRadius,
                 AntdUI.TTypeMini.Default);
+            buttonResetFilters.ForeHover = MainViewButtonIconInactiveColor;
+            buttonResetFilters.BackHover = MainViewButtonIconInactiveColor;
 
             // Kontextmenü Suchergebnisse
             ConfigureContextMenu(contextMenuResults);

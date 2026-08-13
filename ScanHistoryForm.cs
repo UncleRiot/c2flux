@@ -345,6 +345,9 @@ namespace c2flux
             panelTop.BackColor = AntdThemeService.BackgroundPrimary;
             panelBottom.BackColor = AntdThemeService.BackgroundPrimary;
 
+            AntdThemeService.ConfigureScanHistoryButton(buttonCompare);
+            AntdThemeService.ConfigureScanHistoryButton(buttonRefresh);
+            AntdThemeService.ConfigureScanHistoryButton(buttonClose);
             AntdThemeService.ConfigureScanHistoryTabs(tabControlResults);
         }
 
