@@ -1,0 +1,63 @@
+name: Build and Release c2flux
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: .NET 8 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Abhängigkeiten wiederherstellen
+        run: dotnet restore c2flux.sln
+
+      - name: Versionsinformationen ermitteln
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart("v")
+          $isPrerelease = $version -match "-(alpha|beta|rc)(\.|$)"
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "is_prerelease=$($isPrerelease.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+
+      - name: Projekt veröffentlichen
+        run: >
+          dotnet publish c2flux.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained false
+          --output publish
+          -p:Version=${{ steps.version.outputs.version }}
+          -p:AssemblyVersion=${{ steps.version.outputs.version }}
+          -p:FileVersion=${{ steps.version.outputs.version }}
+          -p:InformationalVersion=${{ steps.version.outputs.version }}
+
+      - name: ZIP erstellen
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path "publish\*" `
+            -DestinationPath "c2flux-v${{ steps.version.outputs.version }}-win-x64.zip"
+
+      - name: GitHub Release erstellen
+        uses: softprops/action-gh-release@v3
+        with:
+          name: c2flux ${{ github.ref_name }}
+          files: c2flux-v${{ steps.version.outputs.version }}-win-x64.zip
+          generate_release_notes: true
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
