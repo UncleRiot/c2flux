@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Türkçe",
   "Search.Title": "Ara",
   "Search.Source": "Arama kaynağı",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Dil dosyası eklenemedi.",
   "Settings.LanguageDeleteFailed": "Dil dosyası silinemedi.",
   "Settings.ShowFilesInTree": "Dosyaları ağaçta göster",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Daha hızlı NTFS taraması. Ek dosya meta verilerini ve ayrıntılı tarama verilerini atlar. Yönetici hakları gerektirir.",
   "Settings.SkipReparsePoints": "Yeniden ayrıştırma noktalarını / bağlantıları atla",
   "Settings.ShowPartitionPanel": "Bölüm panelini göster",
   "Settings.StartElevated": "Yükseltilmiş ayrıcalıklarla başlat",

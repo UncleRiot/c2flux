@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Magyar",
   "Search.Title": "Keresés",
   "Search.Source": "Keresés forrása",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "A nyelvi fájl nem adható hozzá.",
   "Settings.LanguageDeleteFailed": "A nyelvi fájl nem törölhető.",
   "Settings.ShowFilesInTree": "Fájlok megjelenítése a fában",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Gyorsabb NTFS-vizsgálat. Kihagyja a további fájlmetaadatokat és a részletes vizsgálati adatokat. Rendszergazdai jogosultság szükséges.",
   "Settings.SkipReparsePoints": "Újraelemzési pontok / csomópontok kihagyása",
   "Settings.ShowPartitionPanel": "Partíciópanel megjelenítése",
   "Settings.StartElevated": "Indítás emelt jogosultságokkal",

@@ -56,6 +56,7 @@ namespace c2flux
         public static bool IsSaveBlocked { get; private set; }
 
         public bool ShowFilesInTree { get; set; }
+        public bool C2FluxScan { get; set; }
         public bool SkipReparsePoints { get; set; } = true;
         public bool ShowPartitionPanel { get; set; } = true;
         public int PartitionFillColorLightArgb { get; set; } = unchecked((int)0xFF32CD32);

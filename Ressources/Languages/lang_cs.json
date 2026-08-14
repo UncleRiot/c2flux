@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Čeština",
   "Search.Title": "Hledat",
   "Search.Source": "Zdroj hledání",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Jazykový soubor se nepodařilo přidat.",
   "Settings.LanguageDeleteFailed": "Jazykový soubor se nepodařilo odstranit.",
   "Settings.ShowFilesInTree": "Zobrazit soubory ve stromu",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Rychlejší skenování NTFS. Přeskakuje dodatečná metadata souborů a podrobná data skenování. Vyžaduje oprávnění správce.",
   "Settings.SkipReparsePoints": "Přeskakovat body opětovného zpracování / spojení",
   "Settings.ShowPartitionPanel": "Zobrazit panel oddílu",
   "Settings.StartElevated": "Spustit se zvýšenými oprávněními",

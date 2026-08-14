@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Norsk",
   "Search.Title": "Søk",
   "Search.Source": "Søkekilde",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Språkfilen kunne ikke legges til.",
   "Settings.LanguageDeleteFailed": "Språkfilen kunne ikke slettes.",
   "Settings.ShowFilesInTree": "Vis filer i treet",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Raskere NTFS-skanning. Hopper over ekstra filmetadata og detaljerte skannedata. Krever administratorrettigheter.",
   "Settings.SkipReparsePoints": "Hopp over reparse-punkter / junctions",
   "Settings.ShowPartitionPanel": "Vis partisjonspanel",
   "Settings.StartElevated": "Start med forhøyede rettigheter",

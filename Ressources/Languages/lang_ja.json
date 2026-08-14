@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "日本語",
   "Search.Title": "検索",
   "Search.Source": "検索元",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "言語ファイルを追加できませんでした。",
   "Settings.LanguageDeleteFailed": "言語ファイルを削除できませんでした。",
   "Settings.ShowFilesInTree": "ツリーにファイルを表示",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "より高速なNTFSスキャン。追加のファイルメタデータと詳細なスキャンデータを省略します。管理者権限が必要です。",
   "Settings.SkipReparsePoints": "再解析ポイント / ジャンクションをスキップ",
   "Settings.ShowPartitionPanel": "パーティションパネルを表示",
   "Settings.StartElevated": "管理者権限で起動",

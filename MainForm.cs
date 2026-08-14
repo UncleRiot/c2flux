@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -1563,6 +1563,7 @@ namespace c2flux
 
         private async Task StartScanAsync(string rootPath)
         {
+            Stopwatch scanStopwatch = Stopwatch.StartNew();
             string normalizedRootPath = NormalizeScanPath(rootPath);
 
             if (_scanSessions.TryGetValue(normalizedRootPath, out ScanSession existingSession) && existingSession.IsRunning)
@@ -1576,13 +1577,11 @@ namespace c2flux
                 CancellationTokenSource = new CancellationTokenSource(),
                 PauseTokenSource = new PauseTokenSource(),
                 IsRunning = true,
-                ScanTargetBytes = GetUsedSpaceBytes(rootPath),
-                ScanStopwatch = Stopwatch.StartNew()
+                ScanTargetBytes = 0,
+                ScanStopwatch = scanStopwatch
             };
 
             _scanSessions[normalizedRootPath] = session;
-            _treeEntryController.RestoreRootEntryVisibility(normalizedRootPath);
-            _treeEntryController.ClearPendingLiveTreeUpdate(normalizedRootPath);
 
             FileSystemEntry initialRootEntry = new FileSystemEntry
             {
@@ -1593,16 +1592,53 @@ namespace c2flux
 
             session.RootEntry = initialRootEntry;
             _currentRootEntry = initialRootEntry;
-            RenderScanResult(initialRootEntry);
-            SetScanningState(true);
+
+            bool scanProgressStarted = false;
+            float scanStartAnimationValue = 0.005F;
+
+            using System.Windows.Forms.Timer scanStartProgressTimer =
+                new System.Windows.Forms.Timer
+                {
+                    Interval = 50
+                };
+
+            scanStartProgressTimer.Tick += (_, _) =>
+            {
+                if (scanProgressStarted ||
+                    !IsCurrentScanSession(session) ||
+                    !IsSelectedScanPath(session.RootPath))
+                {
+                    return;
+                }
+
+                scanStartAnimationValue = Math.Min(
+                    0.03F,
+                    scanStartAnimationValue + 0.002F);
+
+                _statusMainFormController.SetScanProgressPending(
+                    scanStartAnimationValue,
+                    session.ScanStopwatch?.Elapsed,
+                    true);
+            };
 
             if (IsSelectedScanPath(session.RootPath))
             {
-                _statusMainFormController.SetScanProgress(
-                    0D,
-                    TimeSpan.Zero,
+                _statusMainFormController.SetScanProgressPending(
+                    scanStartAnimationValue,
+                    session.ScanStopwatch?.Elapsed,
                     true);
+
+                scanStartProgressTimer.Start();
             }
+
+            session.ScanTargetBytes = await Task.Run(
+                () => GetUsedSpaceBytes(rootPath));
+
+            _treeEntryController.RestoreRootEntryVisibility(normalizedRootPath);
+            _treeEntryController.ClearPendingLiveTreeUpdate(normalizedRootPath);
+
+            RenderScanResult(initialRootEntry);
+            SetScanningState(true);
 
             Progress<ScanProgress> progress = new Progress<ScanProgress>(scanProgress =>
             {
@@ -1625,7 +1661,23 @@ namespace c2flux
 
                 if (IsSelectedScanPath(session.RootPath))
                 {
-                    UpdateSelectedScanStatus(session, scanProgress);
+                    double realPercent = session.ScanTargetBytes <= 0
+                        ? 0D
+                        : (double)scanProgress.ScannedBytes *
+                            100D /
+                            session.ScanTargetBytes;
+
+                    if (!scanProgressStarted &&
+                        realPercent >= scanStartAnimationValue * 100D)
+                    {
+                        scanProgressStarted = true;
+                        scanStartProgressTimer.Stop();
+                    }
+
+                    if (scanProgressStarted)
+                    {
+                        UpdateSelectedScanStatus(session, scanProgress);
+                    }
                 }
 
                 _treeEntryController.QueueLiveTreeUpdate(scanProgress);
@@ -1650,27 +1702,72 @@ namespace c2flux
                     return;
 
                 Stopwatch uiTransitionStopwatch = Stopwatch.StartNew();
+                Stopwatch uiTransitionPhaseStopwatch = Stopwatch.StartNew();
 
                 ApplyDriveTotalSizeToRootEntry(rootPath, rootEntry);
 
+                uiTransitionPhaseStopwatch.Stop();
+                TimeSpan applyDriveTotalSizeElapsed =
+                    uiTransitionPhaseStopwatch.Elapsed;
+
                 session.RootEntry = rootEntry;
                 session.LatestProgress = null;
-                StorageHistoryService.AddRecord(rootEntry.FullPath, rootEntry.SizeBytes);
 
+                uiTransitionPhaseStopwatch.Restart();
+                StorageHistoryService.AddRecord(
+                    rootEntry.FullPath,
+                    rootEntry.SizeBytes);
+                uiTransitionPhaseStopwatch.Stop();
+
+                TimeSpan storageHistoryRecordElapsed =
+                    uiTransitionPhaseStopwatch.Elapsed;
+
+                uiTransitionPhaseStopwatch.Restart();
                 _treeEntryController.FlushPendingLiveTreeUpdate();
+                uiTransitionPhaseStopwatch.Stop();
+
+                TimeSpan flushPendingLiveTreeElapsed =
+                    uiTransitionPhaseStopwatch.Elapsed;
+
+                uiTransitionPhaseStopwatch.Restart();
                 _treeEntryController.UpdateScanResult(rootEntry);
-                await _partitionGridController.LoadPartitionListAsync();
+                uiTransitionPhaseStopwatch.Stop();
+
+                TimeSpan treeUpdateElapsed =
+                    uiTransitionPhaseStopwatch.Elapsed;
+
+                Stopwatch partitionReloadStopwatch =
+                    Stopwatch.StartNew();
+
+                Task partitionReloadTask =
+                    _partitionGridController.LoadPartitionListAsync();
+
+                TimeSpan bindGridElapsed = TimeSpan.Zero;
+                TimeSpan selectedEntrySummaryElapsed = TimeSpan.Zero;
+                TimeSpan finalStatusElapsed = TimeSpan.Zero;
 
                 if (IsSelectedScanPath(session.RootPath))
                 {
                     _currentRootEntry = rootEntry;
+
+                    uiTransitionPhaseStopwatch.Restart();
                     _layoutMainFormController.BindGrid(rootEntry);
                     ApplyEntryColumnVisibility();
+                    uiTransitionPhaseStopwatch.Stop();
 
+                    bindGridElapsed =
+                        uiTransitionPhaseStopwatch.Elapsed;
+
+                    uiTransitionPhaseStopwatch.Restart();
                     _statusMainFormController.SetSelectedEntrySummary(
                         rootEntry,
-                        GetSelectedEntryFileCount(rootEntry));
+                        rootEntry.AllFiles.Count);
+                    uiTransitionPhaseStopwatch.Stop();
 
+                    selectedEntrySummaryElapsed =
+                        uiTransitionPhaseStopwatch.Elapsed;
+
+                    uiTransitionPhaseStopwatch.Restart();
                     _statusMainFormController.SetScanProgress(
                         100D,
                         session.ScanStopwatch?.Elapsed,
@@ -1679,6 +1776,10 @@ namespace c2flux
                     _statusMainFormController.ReportSkippedDirectories(
                         session.SkippedDirectories,
                         session.SkippedDirectoryDetails);
+                    uiTransitionPhaseStopwatch.Stop();
+
+                    finalStatusElapsed =
+                        uiTransitionPhaseStopwatch.Elapsed;
                 }
 
                 uiTransitionStopwatch.Stop();
@@ -1688,11 +1789,38 @@ namespace c2flux
                     string.Format(
                         "UI result transition: {0:N0} ms",
                         uiTransitionStopwatch.Elapsed.TotalMilliseconds),
-                    string.Format(
-                        "Path: {0}{1}ElapsedMilliseconds: {2:N0}",
-                        rootPath,
+                    string.Join(
                         Environment.NewLine,
-                        uiTransitionStopwatch.Elapsed.TotalMilliseconds));
+                        string.Format(
+                            "Path: {0}",
+                            rootPath),
+                        string.Format(
+                            "ApplyDriveTotalSizeMilliseconds: {0:N0}",
+                            applyDriveTotalSizeElapsed.TotalMilliseconds),
+                        string.Format(
+                            "StorageHistoryRecordMilliseconds: {0:N0}",
+                            storageHistoryRecordElapsed.TotalMilliseconds),
+                        string.Format(
+                            "FlushPendingLiveTreeMilliseconds: {0:N0}",
+                            flushPendingLiveTreeElapsed.TotalMilliseconds),
+                        string.Format(
+                            "TreeUpdateMilliseconds: {0:N0}",
+                            treeUpdateElapsed.TotalMilliseconds),
+                        string.Format(
+                            "PartitionReloadDeferred: {0}",
+                            true),
+                        string.Format(
+                            "BindGridMilliseconds: {0:N0}",
+                            bindGridElapsed.TotalMilliseconds),
+                        string.Format(
+                            "SelectedEntrySummaryMilliseconds: {0:N0}",
+                            selectedEntrySummaryElapsed.TotalMilliseconds),
+                        string.Format(
+                            "FinalStatusMilliseconds: {0:N0}",
+                            finalStatusElapsed.TotalMilliseconds),
+                        string.Format(
+                            "ElapsedMilliseconds: {0:N0}",
+                            uiTransitionStopwatch.Elapsed.TotalMilliseconds)));
 
                 await SaveScanHistoryIfEnabledAsync(rootEntry, session);
 
@@ -1703,12 +1831,38 @@ namespace c2flux
                 {
                     _statusMainFormController.UpdateStatusStripForDrive(
                         rootEntry.FullPath,
-                        GetSelectedEntryFileCount(rootEntry));
+                        rootEntry.AllFiles.Count);
                     _statusMainFormController.SetScanProgress(
                         100D,
                         session.ScanStopwatch?.Elapsed,
                         true);
                 }
+
+                await partitionReloadTask;
+                partitionReloadStopwatch.Stop();
+
+                if (IsCurrentScanSession(session) &&
+                    IsSelectedScanPath(session.RootPath))
+                {
+                    _statusMainFormController.UpdateStatusStripForDrive(
+                        rootEntry.FullPath,
+                        rootEntry.AllFiles.Count);
+                    _statusMainFormController.SetScanProgress(
+                        100D,
+                        session.ScanStopwatch?.Elapsed,
+                        true);
+                }
+
+                AppAlertLog.AddVerboseInformation(
+                    "Performance",
+                    string.Format(
+                        "Deferred partition reload: {0:N0} ms",
+                        partitionReloadStopwatch.Elapsed.TotalMilliseconds),
+                    string.Format(
+                        "Path: {0}{1}ElapsedMilliseconds: {2:N0}",
+                        rootPath,
+                        Environment.NewLine,
+                        partitionReloadStopwatch.Elapsed.TotalMilliseconds));
             }
             catch (OperationCanceledException)
             {
@@ -1749,6 +1903,8 @@ namespace c2flux
             }
             finally
             {
+                scanStartProgressTimer.Stop();
+
                 session.IsRunning = false;
                 session.PauseTokenSource.Dispose();
                 session.CancellationTokenSource.Dispose();

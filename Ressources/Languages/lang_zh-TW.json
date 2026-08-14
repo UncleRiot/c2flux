@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "繁體中文",
   "Search.Title": "搜尋",
   "Search.Source": "搜尋來源",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "無法新增語言檔案。",
   "Settings.LanguageDeleteFailed": "無法刪除語言檔案。",
   "Settings.ShowFilesInTree": "在樹中顯示檔案",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "更快的 NTFS 掃描。略過額外的檔案中繼資料和詳細掃描資料。需要系統管理員權限。",
   "Settings.SkipReparsePoints": "跳過重解析點 / 聯接",
   "Settings.ShowPartitionPanel": "顯示分區面板",
   "Settings.StartElevated": "以提升的權限啟動",

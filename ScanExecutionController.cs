@@ -30,33 +30,67 @@ namespace c2flux
 
             if (IsRootDrivePath(rootPath) && NtfsMftScanner.IsSupported(rootPath))
             {
-                try
+                if (_settings.C2FluxScan)
                 {
-                    SetStatusTextByKey("Status.MftFastScanRunning", statusKeyChanged);
-                    NtfsMftScanner ntfsMftScanner = new NtfsMftScanner(_settings);
-                    scannerStopwatch.Restart();
+                    try
+                    {
+                        SetStatusTextByKey("Status.MftFastScanRunning", statusKeyChanged);
+                        C2FluxScanner c2FluxScanner = new C2FluxScanner(_settings);
+                        scannerStopwatch.Restart();
 
-                    FileSystemEntry result = await ntfsMftScanner.ScanAsync(
-                        rootPath,
-                        progress,
-                        cancellationToken,
-                        pauseToken);
+                        FileSystemEntry result = await c2FluxScanner.ScanAsync(
+                            rootPath,
+                            progress,
+                            cancellationToken,
+                            pauseToken);
 
-                    LogScannerPerformance("NtfsMftScanner", rootPath, scannerStopwatch.Elapsed);
-                    return result;
+                        LogScannerPerformance("C2FluxScanner", rootPath, scannerStopwatch.Elapsed);
+                        return result;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception c2FluxException)
+                    {
+                        LogScannerPerformance("C2FluxScanner", rootPath, scannerStopwatch.Elapsed);
+                        AppAlertLog.AddWarning(
+                            LocalizationService.GetText("Alert.Scan"),
+                            LocalizationService.Format(
+                                "Alert.MftUnavailable",
+                                c2FluxException.Message));
+                    }
                 }
-                catch (OperationCanceledException)
+                else
                 {
-                    throw;
-                }
-                catch (Exception mftException)
-                {
-                    LogScannerPerformance("NtfsMftScanner", rootPath, scannerStopwatch.Elapsed);
-                    AppAlertLog.AddWarning(
-                        LocalizationService.GetText("Alert.Scan"),
-                        LocalizationService.Format(
-                            "Alert.MftUnavailable",
-                            mftException.Message));
+                    try
+                    {
+                        SetStatusTextByKey("Status.MftFastScanRunning", statusKeyChanged);
+                        NtfsMftScanner ntfsMftScanner = new NtfsMftScanner(_settings);
+                        scannerStopwatch.Restart();
+
+                        FileSystemEntry result = await ntfsMftScanner.ScanAsync(
+                            rootPath,
+                            progress,
+                            cancellationToken,
+                            pauseToken);
+
+                        LogScannerPerformance("NtfsMftScanner", rootPath, scannerStopwatch.Elapsed);
+                        return result;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception mftException)
+                    {
+                        LogScannerPerformance("NtfsMftScanner", rootPath, scannerStopwatch.Elapsed);
+                        AppAlertLog.AddWarning(
+                            LocalizationService.GetText("Alert.Scan"),
+                            LocalizationService.Format(
+                                "Alert.MftUnavailable",
+                                mftException.Message));
+                    }
                 }
             }
 

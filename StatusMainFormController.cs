@@ -192,7 +192,6 @@ namespace c2flux
             TimeSpan elapsedValue =
                 elapsed.GetValueOrDefault();
 
-            _scanProgress.Visible = true;
             _scanProgress.UseSystemText = true;
             _scanProgress.Animation = 0;
             _scanProgress.Text = string.Format(
@@ -200,12 +199,47 @@ namespace c2flux
                 value,
                 elapsedValue.TotalSeconds);
             _scanProgress.Value = (float)(value / 100D);
+            _scanProgress.Visible = visible;
             _scanProgress.Refresh();
 
             SetMainWindowTitle(
                 visible && percent.HasValue
                     ? value
                     : null);
+        }
+
+        public void SetScanProgressPending(
+            float value,
+            TimeSpan? elapsed,
+            bool visible)
+        {
+            if (_scanProgress == null)
+                return;
+
+            if (_scanProgress.InvokeRequired)
+            {
+                _scanProgress.BeginInvoke(
+                    new Action(
+                        () => SetScanProgressPending(
+                            value,
+                            elapsed,
+                            visible)));
+                return;
+            }
+
+            float normalizedValue = Math.Max(0F, Math.Min(1F, value));
+            TimeSpan elapsedValue = elapsed.GetValueOrDefault();
+
+            _scanProgress.UseSystemText = false;
+            _scanProgress.Animation = 0;
+            _scanProgress.Text = string.Format(
+                "{0:0.0} s",
+                elapsedValue.TotalSeconds);
+            _scanProgress.Value = normalizedValue;
+            _scanProgress.Visible = visible;
+            _scanProgress.Refresh();
+
+            SetMainWindowTitle(null);
         }
 
         public void UpdateStatusStripForDrive(string rootPath)

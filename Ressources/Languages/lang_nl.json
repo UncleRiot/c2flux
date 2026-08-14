@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Nederlands",
   "Search.Title": "Zoeken",
   "Search.Source": "Zoekbron",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Het taalbestand kon niet worden toegevoegd.",
   "Settings.LanguageDeleteFailed": "Het taalbestand kon niet worden verwijderd.",
   "Settings.ShowFilesInTree": "Bestanden in boomstructuur weergeven",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Snellere NTFS-scan. Slaat extra bestandsmetadata en gedetailleerde scangegevens over. Vereist beheerdersrechten.",
   "Settings.SkipReparsePoints": "Reparsepunten / koppelingen overslaan",
   "Settings.ShowPartitionPanel": "Partitiepaneel weergeven",
   "Settings.StartElevated": "Starten met verhoogde bevoegdheden",

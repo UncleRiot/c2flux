@@ -28,6 +28,8 @@ namespace c2flux
         private Panel panelStatistics;
         private Panel panelLogging;
         private AntdUI.Checkbox checkBoxShowFilesInTree;
+        private AntdUI.Checkbox checkBoxC2FluxScan;
+        private AntdUI.Button buttonC2FluxScanHelp;
         private AntdUI.Checkbox checkBoxSkipReparsePoints;
         private AntdUI.Checkbox checkBoxShowPartitionPanel;
         private AntdUI.Checkbox checkBoxStartElevatedOnStartup;
@@ -111,6 +113,8 @@ namespace c2flux
                 AntdThemeService.ApplySettingsHighDpiLayout(
                     this);
 
+                PositionC2FluxScanHelpButton();
+
                 if (DeviceDpi >= 144)
                 {
                     int rightMargin =
@@ -157,6 +161,42 @@ namespace c2flux
             {
                 ResumeLayout(true);
             }
+        }
+
+        private void PositionC2FluxScanHelpButton()
+        {
+            if (checkBoxC2FluxScan == null ||
+                buttonC2FluxScanHelp == null)
+            {
+                return;
+            }
+
+            int textWidth = TextRenderer.MeasureText(
+                checkBoxC2FluxScan.Text ?? string.Empty,
+                checkBoxC2FluxScan.Font,
+                Size.Empty,
+                TextFormatFlags.NoPadding).Width;
+            //c²flux scan option
+            int checkboxContentWidth =
+                AntdThemeService.ScaleForDpi(
+                    this,
+                    28) +
+                textWidth;
+            //c²flux scan option
+            int spacing =
+                AntdThemeService.ScaleForDpi(
+                    this,
+                    0);
+
+            checkBoxC2FluxScan.Width = checkboxContentWidth;
+            buttonC2FluxScanHelp.Location = new Point(
+                checkBoxC2FluxScan.Right + spacing,
+                checkBoxC2FluxScan.Top +
+                Math.Max(
+                    0,
+                    (checkBoxC2FluxScan.Height - buttonC2FluxScanHelp.Height) / 2));
+
+            buttonC2FluxScanHelp.BringToFront();
         }
 
         private void InitializeComponent()
@@ -341,6 +381,30 @@ namespace c2flux
                 AntdThemeService.SettingsGeneralShowFilesCheckboxHeight,
                 backgroundSecondary);
 
+            checkBoxC2FluxScan = AntdThemeService.CreateSettingsCheckBox(
+                "checkBoxC2FluxScan",
+                LocalizationService.GetText("Settings.C2FluxScan"),
+                AntdThemeService.SettingsGeneralC2FluxScanCheckboxLeft,
+                AntdThemeService.SettingsGeneralC2FluxScanCheckboxTop,
+                AntdThemeService.SettingsGeneralC2FluxScanCheckboxWidth,
+                AntdThemeService.SettingsGeneralC2FluxScanCheckboxHeight,
+                backgroundSecondary);
+
+            buttonC2FluxScanHelp = new AntdUI.Button
+            {
+                Name = "buttonC2FluxScanHelp",
+                Text = "?",
+                Location = new Point(
+                    AntdThemeService.SettingsGeneralC2FluxScanHelpButtonLeft,
+                    AntdThemeService.SettingsGeneralC2FluxScanHelpButtonTop),
+                Size = new Size(
+                    AntdThemeService.SettingsGeneralC2FluxScanHelpButtonWidth,
+                    AntdThemeService.SettingsGeneralC2FluxScanHelpButtonHeight),
+                Type = AntdUI.TTypeMini.Primary,
+                Radius = AntdThemeService.SettingsGeneralC2FluxScanHelpButtonRadius,
+                TabStop = false
+            };
+
             checkBoxSkipReparsePoints = AntdThemeService.CreateSettingsCheckBox(
                 "checkBoxSkipReparsePoints",
                 LocalizationService.GetText("Settings.SkipReparsePoints"),
@@ -447,6 +511,9 @@ namespace c2flux
             toolTip.SetToolTip(
                 buttonDeleteLanguage,
                 LocalizationService.GetText("Settings.DeleteLanguage"));
+            toolTip.SetToolTip(
+                buttonC2FluxScanHelp,
+                LocalizationService.GetText("Settings.C2FluxScanHelp"));
 
             ReloadLanguageItems(_settings.LanguageCode);
 
@@ -826,6 +893,8 @@ namespace c2flux
             };
 
             panelGeneral.Controls.Add(checkBoxShowFilesInTree);
+            panelGeneral.Controls.Add(checkBoxC2FluxScan);
+            panelGeneral.Controls.Add(buttonC2FluxScanHelp);
             panelGeneral.Controls.Add(checkBoxSkipReparsePoints);
             panelGeneral.Controls.Add(checkBoxShowPartitionPanel);
             panelGeneral.Controls.Add(checkBoxStartElevatedOnStartup);
@@ -1367,6 +1436,7 @@ namespace c2flux
         private void LoadSettings()
         {
             checkBoxShowFilesInTree.Checked = _settings.ShowFilesInTree;
+            checkBoxC2FluxScan.Checked = _settings.C2FluxScan;
             checkBoxSkipReparsePoints.Checked = _settings.SkipReparsePoints;
             checkBoxShowPartitionPanel.Checked = _settings.ShowPartitionPanel;
             checkBoxStartElevatedOnStartup.Checked = _settings.StartElevatedOnStartup;
@@ -1556,6 +1626,7 @@ namespace c2flux
             }
 
             _settings.ShowFilesInTree = checkBoxShowFilesInTree.Checked;
+            _settings.C2FluxScan = checkBoxC2FluxScan.Checked;
             _settings.SkipReparsePoints = checkBoxSkipReparsePoints.Checked;
             _settings.ShowPartitionPanel = checkBoxShowPartitionPanel.Checked;
             _settings.StartElevatedOnStartup = checkBoxStartElevatedOnStartup.Checked;

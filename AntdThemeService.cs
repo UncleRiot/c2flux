@@ -765,87 +765,100 @@ namespace c2flux
         public const int SettingsGeneralShowFilesCheckboxWidth = 420;
         public const int SettingsGeneralShowFilesCheckboxHeight = 24;
 
+        // Checkbox c²flux Scan
+        public const int SettingsGeneralC2FluxScanCheckboxLeft = 24;
+        public const int SettingsGeneralC2FluxScanCheckboxTop = 60;
+        public const int SettingsGeneralC2FluxScanCheckboxWidth = 360;
+        public const int SettingsGeneralC2FluxScanCheckboxHeight = 24;
+
+        // Button c²flux Scan help
+        public const int SettingsGeneralC2FluxScanHelpButtonLeft = 145;
+        public const int SettingsGeneralC2FluxScanHelpButtonTop = 60;
+        public const int SettingsGeneralC2FluxScanHelpButtonWidth = 24;
+        public const int SettingsGeneralC2FluxScanHelpButtonHeight = 24;
+        public const int SettingsGeneralC2FluxScanHelpButtonRadius = 12;
+
         // Checkbox Skip reparse points
         public const int SettingsGeneralSkipReparsePointsCheckboxLeft = 24;
-        public const int SettingsGeneralSkipReparsePointsCheckboxTop = 60;
+        public const int SettingsGeneralSkipReparsePointsCheckboxTop = 96;
         public const int SettingsGeneralSkipReparsePointsCheckboxWidth = 420;
         public const int SettingsGeneralSkipReparsePointsCheckboxHeight = 24;
 
         // Checkbox Show partition panel
         public const int SettingsGeneralShowPartitionPanelCheckboxLeft = 24;
-        public const int SettingsGeneralShowPartitionPanelCheckboxTop = 96;
+        public const int SettingsGeneralShowPartitionPanelCheckboxTop = 132;
         public const int SettingsGeneralShowPartitionPanelCheckboxWidth = 420;
         public const int SettingsGeneralShowPartitionPanelCheckboxHeight = 24;
 
         // Checkbox Start elevated
         public const int SettingsGeneralStartElevatedCheckboxLeft = 24;
-        public const int SettingsGeneralStartElevatedCheckboxTop = 132;
+        public const int SettingsGeneralStartElevatedCheckboxTop = 168;
         public const int SettingsGeneralStartElevatedCheckboxWidth = 420;
         public const int SettingsGeneralStartElevatedCheckboxHeight = 24;
 
         // Checkbox Show elevation prompt
         public const int SettingsGeneralShowElevationPromptCheckboxLeft = 24;
-        public const int SettingsGeneralShowElevationPromptCheckboxTop = 168;
+        public const int SettingsGeneralShowElevationPromptCheckboxTop = 204;
         public const int SettingsGeneralShowElevationPromptCheckboxWidth = 420;
         public const int SettingsGeneralShowElevationPromptCheckboxHeight = 24;
 
         // Checkbox Explorer context menu: Scan drive
         public const int SettingsGeneralShellContextMenuCheckboxLeft = 24;
-        public const int SettingsGeneralShellContextMenuCheckboxTop = 204;
+        public const int SettingsGeneralShellContextMenuCheckboxTop = 240;
         public const int SettingsGeneralShellContextMenuCheckboxWidth = 420;
         public const int SettingsGeneralShellContextMenuCheckboxHeight = 24;
 
         // Checkbox Explorer context menu: Search
         public const int SettingsGeneralShellSearchContextMenuCheckboxLeft = 24;
-        public const int SettingsGeneralShellSearchContextMenuCheckboxTop = 240;
+        public const int SettingsGeneralShellSearchContextMenuCheckboxTop = 276;
         public const int SettingsGeneralShellSearchContextMenuCheckboxWidth = 420;
         public const int SettingsGeneralShellSearchContextMenuCheckboxHeight = 24;
 
         // Checkbox Auto check for updates
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxLeft = 24;
-        public const int SettingsGeneralAutoCheckForUpdatesCheckboxTop = 276;
+        public const int SettingsGeneralAutoCheckForUpdatesCheckboxTop = 312;
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxWidth = 420;
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxHeight = 24;
 
         // Text Language
         public const int SettingsGeneralLanguageLabelLeft = 34;
-        public const int SettingsGeneralLanguageLabelTop = 322;
+        public const int SettingsGeneralLanguageLabelTop = 358;
         public const int SettingsGeneralLanguageLabelWidth = 70;
         public const int SettingsGeneralLanguageLabelHeight = 32;
 
         // Auswahlfeld Language
         public const int SettingsGeneralLanguageSelectLeft = 104;
-        public const int SettingsGeneralLanguageSelectTop = 320;
+        public const int SettingsGeneralLanguageSelectTop = 356;
         public const int SettingsGeneralLanguageSelectWidth = 216;
         public const int SettingsGeneralLanguageSelectHeight = 32;
 
         // Button Add language
         public const int SettingsGeneralAddLanguageButtonLeft = 320;
-        public const int SettingsGeneralAddLanguageButtonTop = 320;
+        public const int SettingsGeneralAddLanguageButtonTop = 356;
         public const int SettingsGeneralAddLanguageButtonWidth = 32;
         public const int SettingsGeneralAddLanguageButtonHeight = 32;
 
         // Button Delete language
         public const int SettingsGeneralDeleteLanguageButtonLeft = 346;
-        public const int SettingsGeneralDeleteLanguageButtonTop = 320;
+        public const int SettingsGeneralDeleteLanguageButtonTop = 356;
         public const int SettingsGeneralDeleteLanguageButtonWidth = 32;
         public const int SettingsGeneralDeleteLanguageButtonHeight = 32;
 
         // Text Layout
         public const int SettingsGeneralLayoutLabelLeft = 34;
-        public const int SettingsGeneralLayoutLabelTop = 362;
+        public const int SettingsGeneralLayoutLabelTop = 398;
         public const int SettingsGeneralLayoutLabelWidth = 70;
         public const int SettingsGeneralLayoutLabelHeight = 32;
 
         // Auswahlfeld Layout
         public const int SettingsGeneralLayoutSelectLeft = 104;
-        public const int SettingsGeneralLayoutSelectTop = 360;
+        public const int SettingsGeneralLayoutSelectTop = 396;
         public const int SettingsGeneralLayoutSelectWidth = 216;
         public const int SettingsGeneralLayoutSelectHeight = 32;
 
         // Scrollbereich General
         public const int SettingsGeneralScrollContentWidth = 460;
-        public const int SettingsGeneralScrollContentHeight = 416;
+        public const int SettingsGeneralScrollContentHeight = 452;
 
         // ============================================================
         // Settings - Export

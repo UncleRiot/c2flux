@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Bahasa Indonesia",
   "Search.Title": "Cari",
   "Search.Source": "Sumber pencarian",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "File bahasa tidak dapat ditambahkan.",
   "Settings.LanguageDeleteFailed": "File bahasa tidak dapat dihapus.",
   "Settings.ShowFilesInTree": "Tampilkan file di pohon",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Pemindaian NTFS lebih cepat. Melewati metadata file tambahan dan data pemindaian terperinci. Memerlukan hak administrator.",
   "Settings.SkipReparsePoints": "Lewati titik reparse / junction",
   "Settings.ShowPartitionPanel": "Tampilkan panel partisi",
   "Settings.StartElevated": "Mulai dengan hak istimewa yang ditingkatkan",

@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Русский",
   "Search.Title": "Поиск",
   "Search.Source": "Источник поиска",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Не удалось добавить языковой файл.",
   "Settings.LanguageDeleteFailed": "Не удалось удалить языковой файл.",
   "Settings.ShowFilesInTree": "Показывать файлы в дереве",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Более быстрое сканирование NTFS. Пропускает дополнительные метаданные файлов и подробные данные сканирования. Требуются права администратора.",
   "Settings.SkipReparsePoints": "Пропускать точки повторной обработки / соединения",
   "Settings.ShowPartitionPanel": "Показывать панель раздела",
   "Settings.StartElevated": "Запускать с повышенными привилегиями",

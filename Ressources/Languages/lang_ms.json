@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Bahasa Melayu",
   "Search.Title": "Cari",
   "Search.Source": "Sumber carian",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Fail bahasa tidak dapat ditambah.",
   "Settings.LanguageDeleteFailed": "Fail bahasa tidak dapat dipadam.",
   "Settings.ShowFilesInTree": "Tunjukkan fail di pepohon",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Imbasan NTFS yang lebih pantas. Melangkau metadata fail tambahan dan data imbasan terperinci. Memerlukan hak pentadbir.",
   "Settings.SkipReparsePoints": "Langkau titik reparse / junction",
   "Settings.ShowPartitionPanel": "Tunjukkan panel partition",
   "Settings.StartElevated": "Mulai dengan keistimewaan diaraskan",

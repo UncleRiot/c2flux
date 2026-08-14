@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "한국어",
   "Search.Title": "검색",
   "Search.Source": "검색 소스",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "언어 파일을 추가할 수 없습니다.",
   "Settings.LanguageDeleteFailed": "언어 파일을 삭제할 수 없습니다.",
   "Settings.ShowFilesInTree": "트리에 파일 표시",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "더 빠른 NTFS 스캔입니다. 추가 파일 메타데이터와 상세 스캔 데이터를 건너뜁니다. 관리자 권한이 필요합니다.",
   "Settings.SkipReparsePoints": "재분석 지점 / 정션 건너뛰기",
   "Settings.ShowPartitionPanel": "파티션 패널 표시",
   "Settings.StartElevated": "상승된 권한으로 시작",

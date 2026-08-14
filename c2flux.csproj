@@ -24,19 +24,24 @@
 		<Product>c² flux - Tree Scanner</Product>
 		<Copyright>Copyright © Daniel Capilla</Copyright>
 
-		<Version>1.1.11</Version>
-		<AssemblyVersion>1.1.11</AssemblyVersion>
-		<FileVersion>1.1.11</FileVersion>
-		<InformationalVersion>1.1.11</InformationalVersion>
+		<Version>1.2.38</Version>
+		<AssemblyVersion>1.2.38</AssemblyVersion>
+		<FileVersion>1.2.38</FileVersion>
+		<InformationalVersion>1.2.38</InformationalVersion>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	</PropertyGroup>
 
 	
 
 	<ItemGroup>
-		<PackageReference Include="itsWindows11.NtfsReader" Version="0.1.0" />
 		<PackageReference Include="AntdUI" Version="2.4.3" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.22" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<Compile Remove="Libraries\NtfsReader\**\*.cs" />
+		<ProjectReference Include="Libraries\NtfsReader\NtfsReader.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

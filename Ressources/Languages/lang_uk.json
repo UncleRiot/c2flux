@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Українська",
   "Search.Title": "Пошук",
   "Search.Source": "Джерело пошуку",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Не вдалося додати мовний файл.",
   "Settings.LanguageDeleteFailed": "Не вдалося видалити мовний файл.",
   "Settings.ShowFilesInTree": "Показувати файли в дереві",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Швидше сканування NTFS. Пропускає додаткові метадані файлів і докладні дані сканування. Потрібні права адміністратора.",
   "Settings.SkipReparsePoints": "Пропускати точки повторної обробки / з'єднання",
   "Settings.ShowPartitionPanel": "Показувати панель розділу",
   "Settings.StartElevated": "Запускати з підвищеними привілеями",

@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "ไทย",
   "Search.Title": "ค้นหา",
   "Search.Source": "แหล่งการค้นหา",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "ไม่สามารถเพิ่มไฟล์ภาษาได้",
   "Settings.LanguageDeleteFailed": "ไม่สามารถลบไฟล์ภาษาได้",
   "Settings.ShowFilesInTree": "แสดงไฟล์ในโครงสร้าง",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "สแกน NTFS ได้เร็วขึ้น โดยข้ามเมทาดาทาของไฟล์เพิ่มเติมและข้อมูลการสแกนแบบละเอียด ต้องใช้สิทธิ์ผู้ดูแลระบบ",
   "Settings.SkipReparsePoints": "ข้ามจุดแยกวิเคราะห์ใหม่ / จุดเชื่อมต่อ",
   "Settings.ShowPartitionPanel": "แสดงบานหน้าต่างพาร์ติชัน",
   "Settings.StartElevated": "เริ่มด้วยสิทธิ์ระดับสูง",

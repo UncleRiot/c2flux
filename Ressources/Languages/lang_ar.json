@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "العربية",
   "Search.Title": "بحث",
   "Search.Source": "مصدر البحث",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "تعذر إضافة ملف اللغة.",
   "Settings.LanguageDeleteFailed": "تعذر حذف ملف اللغة.",
   "Settings.ShowFilesInTree": "إظهار الملفات في الشجرة",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "فحص NTFS أسرع. يتخطى بيانات تعريف الملفات الإضافية وبيانات الفحص التفصيلية. يتطلب صلاحيات المسؤول.",
   "Settings.SkipReparsePoints": "تخطي نقاط إعادة التحليل / الوصلات",
   "Settings.ShowPartitionPanel": "إظهار لوحة القسم",
   "Settings.StartElevated": "البدء بصلاحيات مرتفعة",

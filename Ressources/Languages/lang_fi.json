@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Suomi",
   "Search.Title": "Haku",
   "Search.Source": "Haun lähde",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Kielitiedostoa ei voitu lisätä.",
   "Settings.LanguageDeleteFailed": "Kielitiedostoa ei voitu poistaa.",
   "Settings.ShowFilesInTree": "Näytä tiedostot puussa",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Nopeampi NTFS-tarkistus. Ohittaa ylimääräiset tiedostometatiedot ja yksityiskohtaiset tarkistustiedot. Vaatii järjestelmänvalvojan oikeudet.",
   "Settings.SkipReparsePoints": "Ohita uudelleenjäsennyspisteet / liitokset",
   "Settings.ShowPartitionPanel": "Näytä osio-paneeli",
   "Settings.StartElevated": "Käynnistä korotetuilla oikeuksilla",

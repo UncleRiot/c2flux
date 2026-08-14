@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "فارسی",
   "Search.Title": "جستجو",
   "Search.Source": "منبع جستجو",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "فایل زبان اضافه نشد.",
   "Settings.LanguageDeleteFailed": "فایل زبان حذف نشد.",
   "Settings.ShowFilesInTree": "نمایش فایل‌ها در درخت",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "اسکن سریع‌تر NTFS. فراداده‌های اضافی فایل و داده‌های جزئی اسکن را نادیده می‌گیرد. به دسترسی مدیر نیاز دارد.",
   "Settings.SkipReparsePoints": "رد کردن نقاط reparse / junction",
   "Settings.ShowPartitionPanel": "نمایش پنل پارتیشن",
   "Settings.StartElevated": "شروع با دسترسی سطح بالا",

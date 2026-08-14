@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "اردو",
   "Search.Title": "تلاش",
   "Search.Source": "تلاش کا ماخذ",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "زبان کی فائل شامل نہیں کی جا سکی۔",
   "Settings.LanguageDeleteFailed": "زبان کی فائل حذف نہیں کی جا سکی۔",
   "Settings.ShowFilesInTree": "درخت میں فائلیں دکھائیں",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "تیز تر NTFS اسکین۔ اضافی فائل میٹا ڈیٹا اور تفصیلی اسکین ڈیٹا کو چھوڑ دیتا ہے۔ ایڈمنسٹریٹر کے حقوق درکار ہیں۔",
   "Settings.SkipReparsePoints": "ری پارس پوائنٹس / جنکشنز چھوڑ دیں",
   "Settings.ShowPartitionPanel": "پارٹیشن پین دکھائیں",
   "Settings.StartElevated": "اعلیٰ اختیارات کے ساتھ شروع کریں",

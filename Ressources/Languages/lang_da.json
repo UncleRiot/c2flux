@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Dansk",
   "Search.Title": "Søg",
   "Search.Source": "Søgekilde",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Sprogfilen kunne ikke tilføjes.",
   "Settings.LanguageDeleteFailed": "Sprogfilen kunne ikke slettes.",
   "Settings.ShowFilesInTree": "Vis filer i træet",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Hurtigere NTFS-scanning. Springer ekstra filmetadata og detaljerede scanningsdata over. Kræver administratorrettigheder.",
   "Settings.SkipReparsePoints": "Spring reparse-punkter / junctions over",
   "Settings.ShowPartitionPanel": "Vis partitionspanel",
   "Settings.StartElevated": "Start med forhøjede rettigheder",

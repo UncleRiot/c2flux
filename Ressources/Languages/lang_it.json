@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Italiano",
   "Search.Title": "Cerca",
   "Search.Source": "Origine ricerca",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Impossibile aggiungere il file di lingua.",
   "Settings.LanguageDeleteFailed": "Impossibile eliminare il file di lingua.",
   "Settings.ShowFilesInTree": "Mostra file nell'albero",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Scansione NTFS più rapida. Ignora i metadati aggiuntivi dei file e i dati di scansione dettagliati. Richiede diritti di amministratore.",
   "Settings.SkipReparsePoints": "Ignora punti di reparse / giunzioni",
   "Settings.ShowPartitionPanel": "Mostra pannello partizione",
   "Settings.StartElevated": "Avvia con privilegi elevati",

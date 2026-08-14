@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Tiếng Việt",
   "Search.Title": "Tìm kiếm",
   "Search.Source": "Nguồn tìm kiếm",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Không thể thêm tệp ngôn ngữ.",
   "Settings.LanguageDeleteFailed": "Không thể xóa tệp ngôn ngữ.",
   "Settings.ShowFilesInTree": "Hiển thị tệp trong cây",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Quét NTFS nhanh hơn. Bỏ qua siêu dữ liệu tệp bổ sung và dữ liệu quét chi tiết. Yêu cầu quyền quản trị viên.",
   "Settings.SkipReparsePoints": "Bỏ qua điểm phân tích lại / junction",
   "Settings.ShowPartitionPanel": "Hiển thị bảng phân vùng",
   "Settings.StartElevated": "Khởi động với đặc quyền nâng cao",

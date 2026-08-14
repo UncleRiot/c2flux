@@ -677,6 +677,14 @@ namespace c2flux
             if (e?.Entry == null)
                 return;
 
+            if (EntryContextMenuRequested != null)
+            {
+                EntryContextMenuRequested.Invoke(
+                    this,
+                    e);
+                return;
+            }
+
             _contextMenuEntry =
                 e.Entry;
 

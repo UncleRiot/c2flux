@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "हिन्दी",
   "Search.Title": "खोज",
   "Search.Source": "खोज स्रोत",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "भाषा फ़ाइल जोड़ी नहीं जा सकी।",
   "Settings.LanguageDeleteFailed": "भाषा फ़ाइल हटाई नहीं जा सकी।",
   "Settings.ShowFilesInTree": "ट्री में फ़ाइलें दिखाएँ",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "तेज़ NTFS स्कैन। अतिरिक्त फ़ाइल मेटाडेटा और विस्तृत स्कैन डेटा को छोड़ देता है। प्रशासक अधिकार आवश्यक हैं।",
   "Settings.SkipReparsePoints": "रीपार्स पॉइंट / जंक्शन छोड़ें",
   "Settings.ShowPartitionPanel": "पार्टिशन पैनल दिखाएँ",
   "Settings.StartElevated": "उन्नत विशेषाधिकारों के साथ शुरू करें",

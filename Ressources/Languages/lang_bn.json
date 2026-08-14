@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "বাংলা",
   "Search.Title": "অনুসন্ধান",
   "Search.Source": "অনুসন্ধানের উৎস",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "ভাষা ফাইল যোগ করা যায়নি।",
   "Settings.LanguageDeleteFailed": "ভাষা ফাইল মুছে ফেলা যায়নি।",
   "Settings.ShowFilesInTree": "ট্রিতে ফাইল দেখান",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "দ্রুততর NTFS স্ক্যান। অতিরিক্ত ফাইল মেটাডেটা এবং বিস্তারিত স্ক্যান ডেটা এড়িয়ে যায়। প্রশাসকের অধিকার প্রয়োজন।",
   "Settings.SkipReparsePoints": "রিপার্স পয়েন্ট / জাংশন এড়িয়ে যান",
   "Settings.ShowPartitionPanel": "পার্টিশন প্যানেল দেখান",
   "Settings.StartElevated": "উন্নত অধিকারসহ শুরু করুন",

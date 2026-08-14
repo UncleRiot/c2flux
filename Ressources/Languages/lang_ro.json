@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Română",
   "Search.Title": "Căutare",
   "Search.Source": "Sursa căutării",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Fișierul de limbă nu a putut fi adăugat.",
   "Settings.LanguageDeleteFailed": "Fișierul de limbă nu a putut fi șters.",
   "Settings.ShowFilesInTree": "Afișează fișierele în arbore",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Scanare NTFS mai rapidă. Omite metadatele suplimentare ale fișierelor și datele detaliate de scanare. Necesită drepturi de administrator.",
   "Settings.SkipReparsePoints": "Omite punctele de reanalizare / joncțiunile",
   "Settings.ShowPartitionPanel": "Afișează panoul partiției",
   "Settings.StartElevated": "Pornește cu privilegii ridicate",

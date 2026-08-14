@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Svenska",
   "Search.Title": "Sök",
   "Search.Source": "Sökkälla",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "Språkfilen kunde inte läggas till.",
   "Settings.LanguageDeleteFailed": "Språkfilen kunde inte tas bort.",
   "Settings.ShowFilesInTree": "Visa filer i trädet",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "Snabbare NTFS-skanning. Hoppar över extra filmetadata och detaljerad skanningsdata. Kräver administratörsrättigheter.",
   "Settings.SkipReparsePoints": "Hoppa över reparse-punkter / junctions",
   "Settings.ShowPartitionPanel": "Visa partitionspanel",
   "Settings.StartElevated": "Starta med förhöjda behörigheter",

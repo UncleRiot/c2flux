@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "עברית",
   "Search.Title": "חיפוש",
   "Search.Source": "מקור החיפוש",
@@ -277,6 +277,8 @@
   "Settings.LanguageImportFailed": "לא ניתן להוסיף את קובץ השפה.",
   "Settings.LanguageDeleteFailed": "לא ניתן למחוק את קובץ השפה.",
   "Settings.ShowFilesInTree": "הצג קבצים בעץ",
+  "Settings.C2FluxScan": "c²flux Scan",
+  "Settings.C2FluxScanHelp": "סריקת NTFS מהירה יותר. מדלגת על מטא-נתונים נוספים של קבצים ועל נתוני סריקה מפורטים. דורשת הרשאות מנהל מערכת.",
   "Settings.SkipReparsePoints": "דלג על נקודות ניתוח מחדש / junctions",
   "Settings.ShowPartitionPanel": "הצג חלונית מחיצה",
   "Settings.StartElevated": "הפעל עם הרשאות מוגברות",

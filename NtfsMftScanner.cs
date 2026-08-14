@@ -12,7 +12,8 @@ namespace c2flux
 {
     public sealed class NtfsMftScanner
     {
-        private const int ProgressReportIntervalNodes = 5000;
+        private const int ProgressReportIntervalNodes = 25000;
+        private const uint NtfsRootDirectoryNodeIndex = 5;
 
         private readonly AppSettings _settings;
 
@@ -71,6 +72,23 @@ namespace c2flux
                 int gen2CollectionsBefore = GC.CollectionCount(2);
                 int progressReportCount = 0;
 
+                long pathPreparationTicks = 0;
+                long pathPreparationAllocatedBytes = 0;
+                long nodePathResolutionTicks = 0;
+                long nodePathResolutionAllocatedBytes = 0;
+                long normalizePathTicks = 0;
+                long normalizePathAllocatedBytes = 0;
+                long filteringTicks = 0;
+                long filteringAllocatedBytes = 0;
+                long directoryProcessingTicks = 0;
+                long directoryProcessingAllocatedBytes = 0;
+                long fileParentProcessingTicks = 0;
+                long fileParentProcessingAllocatedBytes = 0;
+                long fileEntryProcessingTicks = 0;
+                long fileEntryProcessingAllocatedBytes = 0;
+                long progressProcessingTicks = 0;
+                long progressProcessingAllocatedBytes = 0;
+
                 cancellationToken.ThrowIfCancellationRequested();
                 pauseToken.WaitWhilePaused(cancellationToken);
 
@@ -87,7 +105,10 @@ namespace c2flux
                 NtfsReader reader = new NtfsReader(
                     driveInfo,
                     RetrieveMode.Minimal | RetrieveMode.StandardInformations);
-                List<INode> nodes = reader.GetNodes(driveRoot);
+                List<INode> nodes = NtfsReaderFastNodeProvider.GetNodes(
+                    reader,
+                    driveRoot,
+                    out bool fastNodeEnumerationUsed);
                 phaseStopwatch.Stop();
                 TimeSpan mftReadElapsed = phaseStopwatch.Elapsed;
 
@@ -103,6 +124,24 @@ namespace c2flux
                     [normalizedRootPath] = rootEntry
                 };
 
+                Dictionary<uint, INode> directoryNodesByNodeIndex = new Dictionary<uint, INode>();
+
+                foreach (INode node in nodes)
+                {
+                    if (node != null &&
+                        node.Attributes.HasFlag(System.IO.Filesystem.Ntfs.Attributes.Directory))
+                    {
+                        directoryNodesByNodeIndex[node.NodeIndex] = node;
+                    }
+                }
+
+                Dictionary<uint, string> directoryPathsByNodeIndex = new Dictionary<uint, string>
+                {
+                    [NtfsRootDirectoryNodeIndex] = normalizedRootPath
+                };
+                List<INode> directoryResolutionBuffer = new List<INode>();
+                HashSet<uint> directoryResolutionVisitedNodeIndexes = new HashSet<uint>();
+
                 int scannedDirectories = 1;
                 int scannedFiles = 0;
                 long scannedBytes = 0;
@@ -113,33 +152,108 @@ namespace c2flux
                     cancellationToken.ThrowIfCancellationRequested();
                     pauseToken.WaitWhilePaused(cancellationToken);
 
-                    if (node == null || string.IsNullOrWhiteSpace(node.FullName))
-                        continue;
+                    long measurementStartTicks = Stopwatch.GetTimestamp();
+                    long measurementStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
 
-                    string fullPath = NormalizePath(node.FullName);
-
-                    if (!fullPath.StartsWith(rootEntry.FullPath, StringComparison.OrdinalIgnoreCase))
+                    if (node == null)
+                    {
+                        pathPreparationTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        pathPreparationAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                         continue;
+                    }
 
                     bool isDirectory = node.Attributes.HasFlag(System.IO.Filesystem.Ntfs.Attributes.Directory);
+
+                    long nodePathResolutionStartTicks = Stopwatch.GetTimestamp();
+                    long nodePathResolutionStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
+                    string resolvedFileParentPath = string.Empty;
+
+                    string fullPath = isDirectory
+                        ? ResolveDirectoryPath(
+                            node.NodeIndex,
+                            normalizedRootPath,
+                            directoryNodesByNodeIndex,
+                            directoryPathsByNodeIndex,
+                            directoryResolutionBuffer,
+                            directoryResolutionVisitedNodeIndexes)
+                        : ResolveFilePath(
+                            node,
+                            normalizedRootPath,
+                            directoryNodesByNodeIndex,
+                            directoryPathsByNodeIndex,
+                            directoryResolutionBuffer,
+                            directoryResolutionVisitedNodeIndexes,
+                            out resolvedFileParentPath);
+
+                    if (string.IsNullOrWhiteSpace(fullPath))
+                    {
+                        fullPath = node.FullName;
+                    }
+
+                    nodePathResolutionTicks += Stopwatch.GetTimestamp() - nodePathResolutionStartTicks;
+                    nodePathResolutionAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - nodePathResolutionStartAllocatedBytes;
+
+                    if (string.IsNullOrWhiteSpace(fullPath))
+                    {
+                        pathPreparationTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        pathPreparationAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
+                        continue;
+                    }
+
+                    long normalizePathStartTicks = Stopwatch.GetTimestamp();
+                    long normalizePathStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
+                    fullPath = NormalizePath(fullPath);
+
+                    normalizePathTicks += Stopwatch.GetTimestamp() - normalizePathStartTicks;
+                    normalizePathAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - normalizePathStartAllocatedBytes;
+
+                    pathPreparationTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                    pathPreparationAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
+
+                    measurementStartTicks = Stopwatch.GetTimestamp();
+                    measurementStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
+                    if (!fullPath.StartsWith(rootEntry.FullPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        filteringTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        filteringAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
+                        continue;
+                    }
 
                     if (isDirectory &&
                         string.Equals(NormalizeDirectoryPath(fullPath), normalizedRootPath, StringComparison.OrdinalIgnoreCase))
                     {
+                        filteringTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        filteringAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                         continue;
                     }
 
                     if (hasExcludedPaths && ScanPathFilter.IsExcluded(fullPath, _settings.ExcludedPaths))
+                    {
+                        filteringTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        filteringAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                         continue;
+                    }
+
+                    filteringTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                    filteringAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
 
                     if (isDirectory)
                     {
+                        measurementStartTicks = Stopwatch.GetTimestamp();
+                        measurementStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
                         FileSystemEntry directoryEntry = EnsureDirectoryEntry(fullPath, rootEntry, directoryEntriesByPath);
 
                         if (directoryEntry != null)
                         {
                             scannedDirectories++;
                         }
+
+                        directoryProcessingTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        directoryProcessingAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                     }
                     else
                     {
@@ -148,32 +262,57 @@ namespace c2flux
                         scannedFiles++;
                         scannedBytes += nodeSize;
 
-                        string parentPath = GetParentDirectoryPath(fullPath);
+                        measurementStartTicks = Stopwatch.GetTimestamp();
+                        measurementStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
+                        FileSystemEntry parentEntry = null;
+                        string parentPath = resolvedFileParentPath;
 
                         if (!string.IsNullOrWhiteSpace(parentPath))
                         {
-                            FileSystemEntry parentEntry = EnsureDirectoryEntry(parentPath, rootEntry, directoryEntriesByPath);
-
-                            if (parentEntry != null)
+                            if (!directoryEntriesByPath.TryGetValue(parentPath, out parentEntry))
                             {
-                                parentEntry.SizeBytes += nodeSize;
-
-                                FileSystemEntry fileEntry = new FileSystemEntry
-                                {
-                                    Name = Path.GetFileName(fullPath),
-                                    FullPath = fullPath,
-                                    SizeBytes = nodeSize,
-                                    IsDirectory = false,
-                                    LastWriteTimeUtc = node.LastChangeTime
-                                };
-
-                                rootEntry.AllFiles.Add(fileEntry);
-
-                                if (_settings.ShowFilesInTree)
-                                {
-                                    parentEntry.Children.Add(fileEntry);
-                                }
+                                parentEntry = EnsureDirectoryEntry(parentPath, rootEntry, directoryEntriesByPath);
                             }
+                        }
+                        else
+                        {
+                            parentPath = GetParentDirectoryPath(fullPath);
+
+                            if (!string.IsNullOrWhiteSpace(parentPath))
+                            {
+                                parentEntry = EnsureDirectoryEntry(parentPath, rootEntry, directoryEntriesByPath);
+                            }
+                        }
+
+                        fileParentProcessingTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        fileParentProcessingAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
+
+                        if (parentEntry != null)
+                        {
+                            measurementStartTicks = Stopwatch.GetTimestamp();
+                            measurementStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
+                            parentEntry.SizeBytes += nodeSize;
+
+                            FileSystemEntry fileEntry = new FileSystemEntry
+                            {
+                                Name = Path.GetFileName(fullPath),
+                                FullPath = fullPath,
+                                SizeBytes = nodeSize,
+                                IsDirectory = false,
+                                LastWriteTimeUtc = node.LastChangeTime
+                            };
+
+                            rootEntry.AllFiles.Add(fileEntry);
+
+                            if (_settings.ShowFilesInTree)
+                            {
+                                parentEntry.Children.Add(fileEntry);
+                            }
+
+                            fileEntryProcessingTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                            fileEntryProcessingAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                         }
                     }
 
@@ -181,6 +320,9 @@ namespace c2flux
 
                     if (processedNodes % ProgressReportIntervalNodes == 0)
                     {
+                        measurementStartTicks = Stopwatch.GetTimestamp();
+                        measurementStartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
                         progressReportCount++;
                         progress?.Report(new ScanProgress
                         {
@@ -190,6 +332,9 @@ namespace c2flux
                             ScannedFiles = scannedFiles,
                             LiveRootEntry = CreateLiveSnapshot(rootEntry)
                         });
+
+                        progressProcessingTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
+                        progressProcessingAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                     }
                 }
 
@@ -235,6 +380,7 @@ namespace c2flux
                         Environment.NewLine,
                         string.Format("Path: {0}", rootPath),
                         string.Format("NodesReturned: {0:N0}", nodes.Count),
+                        string.Format("FastNodeEnumerationUsed: {0}", fastNodeEnumerationUsed),
                         string.Format("ProcessedNodes: {0:N0}", processedNodes),
                         string.Format("Directories: {0:N0}", scannedDirectories),
                         string.Format("Files: {0:N0}", scannedFiles),
@@ -251,10 +397,117 @@ namespace c2flux
                         string.Format("Gen0Collections: {0:N0}", GC.CollectionCount(0) - gen0CollectionsBefore),
                         string.Format("Gen1Collections: {0:N0}", GC.CollectionCount(1) - gen1CollectionsBefore),
                         string.Format("Gen2Collections: {0:N0}", GC.CollectionCount(2) - gen2CollectionsBefore),
-                        string.Format("ProgressReports: {0:N0}", progressReportCount)));
+                        string.Format("ProgressReports: {0:N0}", progressReportCount),
+                        string.Format("Measure.PathPreparationMilliseconds: {0:N0}", pathPreparationTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.PathPreparationAllocatedBytes: {0:N0}", pathPreparationAllocatedBytes),
+                        string.Format("Measure.NodePathResolutionMilliseconds: {0:N0}", nodePathResolutionTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.NodePathResolutionAllocatedBytes: {0:N0}", nodePathResolutionAllocatedBytes),
+                        string.Format("Measure.NormalizePathMilliseconds: {0:N0}", normalizePathTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.NormalizePathAllocatedBytes: {0:N0}", normalizePathAllocatedBytes),
+                        string.Format("Measure.FilteringMilliseconds: {0:N0}", filteringTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.FilteringAllocatedBytes: {0:N0}", filteringAllocatedBytes),
+                        string.Format("Measure.DirectoryProcessingMilliseconds: {0:N0}", directoryProcessingTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.DirectoryProcessingAllocatedBytes: {0:N0}", directoryProcessingAllocatedBytes),
+                        string.Format("Measure.FileParentProcessingMilliseconds: {0:N0}", fileParentProcessingTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.FileParentProcessingAllocatedBytes: {0:N0}", fileParentProcessingAllocatedBytes),
+                        string.Format("Measure.FileEntryProcessingMilliseconds: {0:N0}", fileEntryProcessingTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.FileEntryProcessingAllocatedBytes: {0:N0}", fileEntryProcessingAllocatedBytes),
+                        string.Format("Measure.ProgressProcessingMilliseconds: {0:N0}", progressProcessingTicks * 1000.0 / Stopwatch.Frequency),
+                        string.Format("Measure.ProgressProcessingAllocatedBytes: {0:N0}", progressProcessingAllocatedBytes)));
 
                 return rootEntry;
             }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        private string ResolveFilePath(
+            INode node,
+            string normalizedRootPath,
+            Dictionary<uint, INode> directoryNodesByNodeIndex,
+            Dictionary<uint, string> directoryPathsByNodeIndex,
+            List<INode> directoryResolutionBuffer,
+            HashSet<uint> directoryResolutionVisitedNodeIndexes,
+            out string parentPath)
+        {
+            parentPath = ResolveDirectoryPath(
+                node.ParentNodeIndex,
+                normalizedRootPath,
+                directoryNodesByNodeIndex,
+                directoryPathsByNodeIndex,
+                directoryResolutionBuffer,
+                directoryResolutionVisitedNodeIndexes);
+
+            if (string.IsNullOrWhiteSpace(parentPath) ||
+                string.IsNullOrWhiteSpace(node.Name))
+            {
+                return string.Empty;
+            }
+
+            return Path.Combine(parentPath, node.Name);
+        }
+
+        private string ResolveDirectoryPath(
+            uint nodeIndex,
+            string normalizedRootPath,
+            Dictionary<uint, INode> directoryNodesByNodeIndex,
+            Dictionary<uint, string> directoryPathsByNodeIndex,
+            List<INode> directoryResolutionBuffer,
+            HashSet<uint> directoryResolutionVisitedNodeIndexes)
+        {
+            if (directoryPathsByNodeIndex.TryGetValue(nodeIndex, out string existingPath))
+            {
+                return existingPath;
+            }
+
+            directoryResolutionBuffer.Clear();
+            directoryResolutionVisitedNodeIndexes.Clear();
+
+            uint currentNodeIndex = nodeIndex;
+            string resolvedParentPath = string.Empty;
+
+            while (true)
+            {
+                if (directoryPathsByNodeIndex.TryGetValue(currentNodeIndex, out resolvedParentPath))
+                {
+                    break;
+                }
+
+                if (!directoryResolutionVisitedNodeIndexes.Add(currentNodeIndex) ||
+                    !directoryNodesByNodeIndex.TryGetValue(currentNodeIndex, out INode currentNode))
+                {
+                    return string.Empty;
+                }
+
+                directoryResolutionBuffer.Add(currentNode);
+
+                if (currentNode.NodeIndex == NtfsRootDirectoryNodeIndex)
+                {
+                    resolvedParentPath = normalizedRootPath;
+                    directoryPathsByNodeIndex[NtfsRootDirectoryNodeIndex] = normalizedRootPath;
+                    break;
+                }
+
+                currentNodeIndex = currentNode.ParentNodeIndex;
+            }
+
+            for (int index = directoryResolutionBuffer.Count - 1; index >= 0; index--)
+            {
+                INode directoryNode = directoryResolutionBuffer[index];
+
+                if (directoryNode.NodeIndex == NtfsRootDirectoryNodeIndex)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(directoryNode.Name))
+                {
+                    return string.Empty;
+                }
+
+                resolvedParentPath = NormalizeDirectoryPath(Path.Combine(resolvedParentPath, directoryNode.Name));
+                directoryPathsByNodeIndex[directoryNode.NodeIndex] = resolvedParentPath;
+            }
+
+            return resolvedParentPath;
         }
 
         private FileSystemEntry CreateRootEntry(string rootPath)
