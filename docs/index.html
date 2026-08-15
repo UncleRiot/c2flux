@@ -1,0 +1,76 @@
+{[c2flux.png]  c² flux Tree Scanner  }  {Overview} {Features} {Screenshots} {c²flux Scan} {Search} {History}  
+{Documentation ↗} {GitHub ↗} {Download latest } 
+Windows disk space analyzer
+
+See what takes
+your space.
+
+Scan drives, inspect usage and find files without waiting around. Fast regular scans, an even faster NTFS mode, and useful views without clutter.
+{Download latest release } {View source} 
+Windows 7+ x64 .NET 8 GPL-3.0 
+[c² flux showing the tree view, table and treemap visualization]    
+01 
+Built around the scan.
+
+No dashboard for the sake of having a dashboard. The interface stays close to the files and folders you are inspecting.
+A 
+Fast scanning
+
+Regular scans use caching for quick repeat runs. c²flux Scan reads NTFS metadata directly when administrator access is available.
+B 
+Four useful views
+
+Table, bar chart, sunburst and treemap. Change the view without changing the underlying scan.
+C 
+Search the result
+
+Search hundreds of thousands of entries and narrow results by size, date and file type.
+D 
+Keep history
+
+Store scans in SQLite, compare states and track free space over time.
+02 
+The app, not a mockup.
+
+Real c² flux views from the current desktop application.
+Treemap Bar chart Sunburst Analysis Storage history 
+[Treemap view]    
+03 
+
+c²flux Scan.
+Use the filesystem.
+
+On NTFS drives, c²flux Scan can use the Master File Table for a substantially faster full-drive scan. It requires administrator privileges; if the mode cannot be used, c² flux falls back to the regular scanner.
+{Read how it works →} 
+c² flux / scan NTFS 
+$ drive C:\
+$ mode  c²flux Scan
+
+reading MFT
+building tree
+refreshing view
+
+completed  675,978 files
+100.0%      2.3 s
+Timing shown is from the supplied screenshot and depends on hardware and drive contents. 
+04 
+Find it in the scan.
+
+Search by name and filter the result instead of digging through folders manually.
+[c² flux search window with filters and result list]  
+113 results in 1.11 seconds in the supplied example 
+  * Current scan or stored scan data 
+  * Contains and other match modes 
+  * Minimum and maximum size 
+  * Modified date filters 
+  * File type filters 
+05 
+Know what changed.
+
+Keep scan snapshots, compare them and see where storage use moved.
+[Scan history comparison showing growth, new files, changed files and deleted files] Scan comparison   [Storage history chart showing free space over time] Storage timeline  
+c² flux is free and open source.
+
+Windows x64 · GPL-3.0
+{Get the latest release}   c² flux — Tree Scanner 
+{Wiki} {Issues} {Support} 
