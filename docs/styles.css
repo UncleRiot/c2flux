@@ -465,6 +465,9 @@ h1 {
 
 .portrait-shot img {
   width: 100%;
+  height: 620px;
+  object-fit: cover;
+  object-position: top;
 }
 
 .metric {
