@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="c² flux — fast Windows disk space scanner with NTFS scanning, search, visualizations and scan history.">
+  <title>c² flux — Tree Scanner</title>
+  <link rel="icon" href="assets/c2flux.ico">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+
+  <aside class="sidebar">
+    <a class="brand" href="#top" aria-label="c² flux home">
+      <img src="assets/c2flux.png" alt="">
+      <span>
+        <strong>c² flux</strong>
+        <small>Tree Scanner</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Main navigation">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#scan">c²flux Scan</a>
+      <a href="#search">Search</a>
+      <a href="#history">History</a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a class="side-link" href="https://github.com/UncleRiot/c2flux/wiki">Documentation <span>↗</span></a>
+      <a class="side-link" href="https://github.com/UncleRiot/c2flux">GitHub <span>↗</span></a>
+      <a class="download-small" href="https://github.com/UncleRiot/c2flux/releases/latest">
+        Download
+        <span id="side-version">latest</span>
+      </a>
+    </div>
+  </aside>
+
+  <main id="top">
+    <section class="hero section" id="overview">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="dot"></span> Windows disk space analyzer</div>
+        <h1>See what takes<br>your space.</h1>
+        <p class="lead">Scan drives, inspect usage and find files without waiting around. Fast regular scans, an even faster NTFS mode, and useful views without clutter.</p>
+
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/UncleRiot/c2flux/releases/latest">
+            Download <span id="hero-version">latest release</span>
+          </a>
+          <a class="button secondary" href="https://github.com/UncleRiot/c2flux">View source</a>
+        </div>
+
+        <div class="requirements">
+          <span>Windows 7+</span>
+          <span>x64</span>
+          <span>.NET 8</span>
+          <span>GPL-3.0</span>
+        </div>
+      </div>
+
+      <figure class="hero-shot">
+        <img src="assets/treemap.png" alt="c² flux showing the tree view, table and treemap visualization" width="1691" height="1062">
+      </figure>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-heading">
+        <span>01</span>
+        <div>
+          <h2>Built around the scan.</h2>
+          <p>No dashboard for the sake of having a dashboard. The interface stays close to the files and folders you are inspecting.</p>
+        </div>
+      </div>
+
+      <div class="feature-list">
+        <article>
+          <span class="feature-index">A</span>
+          <div>
+            <h3>Fast scanning</h3>
+            <p>Regular scans use caching for quick repeat runs. c²flux Scan reads NTFS metadata directly when administrator access is available.</p>
+          </div>
+        </article>
+        <article>
+          <span class="feature-index">B</span>
+          <div>
+            <h3>Four useful views</h3>
+            <p>Table, bar chart, sunburst and treemap. Change the view without changing the underlying scan.</p>
+          </div>
+        </article>
+        <article>
+          <span class="feature-index">C</span>
+          <div>
+            <h3>Search the result</h3>
+            <p>Search hundreds of thousands of entries and narrow results by size, date and file type.</p>
+          </div>
+        </article>
+        <article>
+          <span class="feature-index">D</span>
+          <div>
+            <h3>Keep history</h3>
+            <p>Store scans in SQLite, compare states and track free space over time.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section screenshots" id="screenshots">
+      <div class="section-heading">
+        <span>02</span>
+        <div>
+          <h2>The app, not a mockup.</h2>
+          <p>Real c² flux views from the current desktop application.</p>
+        </div>
+      </div>
+
+      <div class="shot-switcher" role="tablist" aria-label="Screenshot selection">
+        <button class="shot-tab active" type="button" data-image="assets/treemap.png" data-alt="Treemap view" role="tab" aria-selected="true">Treemap</button>
+        <button class="shot-tab" type="button" data-image="assets/bar-chart.png" data-alt="Bar chart view" role="tab" aria-selected="false">Bar chart</button>
+        <button class="shot-tab" type="button" data-image="assets/sunburst.png" data-alt="Sunburst view" role="tab" aria-selected="false">Sunburst</button>
+        <button class="shot-tab" type="button" data-image="assets/analysis.png" data-alt="Analysis view" role="tab" aria-selected="false">Analysis</button>
+        <button class="shot-tab" type="button" data-image="assets/storage-history.png" data-alt="Storage history view" role="tab" aria-selected="false">Storage history</button>
+      </div>
+
+      <figure class="main-screenshot">
+        <img id="main-screenshot-image" src="assets/treemap.png" alt="Treemap view">
+      </figure>
+    </section>
+
+    <section class="section split" id="scan">
+      <div class="split-copy">
+        <span class="section-number">03</span>
+        <h2>c²flux Scan.<br>Use the filesystem.</h2>
+        <p>On NTFS drives, c²flux Scan can use the Master File Table for a substantially faster full-drive scan. It requires administrator privileges; if the mode cannot be used, c² flux falls back to the regular scanner.</p>
+        <a class="text-link" href="https://github.com/UncleRiot/c2flux/wiki/c%C2%B2flux-Scan-%28Hyperspeed%29">Read how it works <span>→</span></a>
+      </div>
+
+      <div class="terminal" aria-label="Illustrative scan output">
+        <div class="terminal-top">
+          <span>c² flux / scan</span>
+          <span>NTFS</span>
+        </div>
+        <pre><code><span class="muted">$</span> drive C:\
+<span class="muted">$</span> mode  c²flux Scan
+
+reading MFT
+building tree
+refreshing view
+
+<span class="ok">completed</span>  675,978 files
+<span class="ok">100.0%</span>      2.3 s</code></pre>
+        <small>Timing shown is from the supplied screenshot and depends on hardware and drive contents.</small>
+      </div>
+    </section>
+
+    <section class="section search-section" id="search">
+      <div class="section-heading">
+        <span>04</span>
+        <div>
+          <h2>Find it in the scan.</h2>
+          <p>Search by name and filter the result instead of digging through folders manually.</p>
+        </div>
+      </div>
+
+      <div class="media-row">
+        <figure class="portrait-shot">
+          <img src="assets/search.png" alt="c² flux search window with filters and result list" width="864" height="892">
+        </figure>
+        <div class="media-copy">
+          <div class="metric">
+            <strong>113</strong>
+            <span>results in 1.11 seconds in the supplied example</span>
+          </div>
+          <ul>
+            <li>Current scan or stored scan data</li>
+            <li>Contains and other match modes</li>
+            <li>Minimum and maximum size</li>
+            <li>Modified date filters</li>
+            <li>File type filters</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="history">
+      <div class="section-heading">
+        <span>05</span>
+        <div>
+          <h2>Know what changed.</h2>
+          <p>Keep scan snapshots, compare them and see where storage use moved.</p>
+        </div>
+      </div>
+
+      <div class="history-grid">
+        <figure>
+          <img src="assets/scan-history.png" alt="Scan history comparison showing growth, new files, changed files and deleted files">
+          <figcaption>Scan comparison</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/storage-history.png" alt="Storage history chart showing free space over time">
+          <figcaption>Storage timeline</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section final-cta">
+      <img src="assets/c2flux.png" alt="" class="cta-icon">
+      <div>
+        <h2>c² flux is free and open source.</h2>
+        <p>Windows x64 · GPL-3.0</p>
+      </div>
+      <a class="button primary" href="https://github.com/UncleRiot/c2flux/releases/latest">Get the latest release</a>
+    </section>
+
+    <footer>
+      <span>c² flux — Tree Scanner</span>
+      <div>
+        <a href="https://github.com/UncleRiot/c2flux/wiki">Wiki</a>
+        <a href="https://github.com/UncleRiot/c2flux/issues">Issues</a>
+        <a href="https://ko-fi.com/uncleriot">Support</a>
+      </div>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
