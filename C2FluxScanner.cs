@@ -466,6 +466,166 @@ namespace c2flux
             TaskScheduler.Default);
         }
 
+        public Task<FileSystemEntry> CaptureStorageHistoryDetailsSnapshotAsync(
+            string rootPath,
+            CancellationToken cancellationToken)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                string driveRoot = Path.GetPathRoot(rootPath);
+
+                if (string.IsNullOrWhiteSpace(driveRoot))
+                {
+                    throw new InvalidOperationException(
+                        LocalizationService.GetText("Alert.InvalidNtfsDrive"));
+                }
+
+                string normalizedDriveRoot =
+                    NormalizeDirectoryPath(driveRoot);
+
+                string normalizedRequestedPath =
+                    NormalizeDirectoryPath(rootPath);
+
+                if (!string.Equals(
+                        normalizedDriveRoot,
+                        normalizedRequestedPath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                DriveInfo driveInfo = new DriveInfo(driveRoot);
+
+                if (!string.Equals(
+                        driveInfo.DriveFormat,
+                        "NTFS",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                NtfsReader reader = new NtfsReader(
+                    driveInfo,
+                    RetrieveMode.Minimal,
+                    MftReadBufferSizeBytes);
+
+                List<INode> nodes = NtfsReaderFastNodeProvider.GetNodes(
+                    reader,
+                    driveRoot,
+                    out bool fastNodeEnumerationUsed);
+
+                FileSystemEntry snapshotRoot =
+                    CreateRootEntry(driveRoot);
+
+                Dictionary<uint, INode> directoryNodesByNodeIndex =
+                    new Dictionary<uint, INode>();
+
+                foreach (INode node in nodes)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (node != null &&
+                        node.Attributes.HasFlag(
+                            System.IO.Filesystem.Ntfs.Attributes.Directory))
+                    {
+                        directoryNodesByNodeIndex[node.NodeIndex] = node;
+                    }
+                }
+
+                Dictionary<uint, string> directoryPathsByNodeIndex =
+                    new Dictionary<uint, string>
+                    {
+                        [NtfsRootDirectoryNodeIndex] = normalizedDriveRoot
+                    };
+
+                List<INode> directoryResolutionBuffer =
+                    new List<INode>();
+
+                HashSet<uint> directoryResolutionVisitedNodeIndexes =
+                    new HashSet<uint>();
+
+                foreach (INode node in nodes)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (node == null ||
+                        node.Attributes.HasFlag(
+                            System.IO.Filesystem.Ntfs.Attributes.Directory) ||
+                        string.IsNullOrWhiteSpace(node.Name))
+                    {
+                        continue;
+                    }
+
+                    string parentPath = ResolveDirectoryPath(
+                        node.ParentNodeIndex,
+                        normalizedDriveRoot,
+                        directoryNodesByNodeIndex,
+                        directoryPathsByNodeIndex,
+                        directoryResolutionBuffer,
+                        directoryResolutionVisitedNodeIndexes);
+
+                    string filePath = string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(parentPath))
+                    {
+                        filePath = Path.Combine(
+                            parentPath,
+                            node.Name);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(node.FullName))
+                    {
+                        filePath = node.FullName;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(filePath))
+                        continue;
+
+                    snapshotRoot.AllFiles.Add(
+                        new FileSystemEntry
+                        {
+                            Name = node.Name,
+                            FullPath = filePath,
+                            SizeBytes = ConvertNodeSize(node.Size),
+                            IsDirectory = false
+                        });
+                }
+
+                stopwatch.Stop();
+
+                AppAlertLog.AddVerboseInformation(
+                    "Performance",
+                    string.Format(
+                        "Storage History details snapshot: {0:N0} ms",
+                        stopwatch.Elapsed.TotalMilliseconds),
+                    string.Join(
+                        Environment.NewLine,
+                        string.Format(
+                            "Path: {0}",
+                            rootPath),
+                        string.Format(
+                            "NodesReturned: {0:N0}",
+                            nodes.Count),
+                        string.Format(
+                            "FilesCaptured: {0:N0}",
+                            snapshotRoot.AllFiles.Count),
+                        string.Format(
+                            "FastNodeEnumerationUsed: {0}",
+                            fastNodeEnumerationUsed),
+                        string.Format(
+                            "TotalMilliseconds: {0:N0}",
+                            stopwatch.Elapsed.TotalMilliseconds)));
+
+                return snapshotRoot;
+            },
+            cancellationToken,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+        }
+
         private string ResolveFilePath(
             INode node,
             string normalizedRootPath,

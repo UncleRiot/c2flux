@@ -81,7 +81,7 @@ namespace c2flux
         public TreeSortMode TreeSortMode { get; set; } = TreeSortMode.SizeDescending;
         public AppLayout Layout { get; set; } = AppLayout.WindowsDarkMode;
         public ViewMode SelectedViewMode { get; set; } = ViewMode.Table;
-        public string LanguageCode { get; set; } = LocalizationService.EnglishLanguageCode;
+        public string LanguageCode { get; set; } = LocalizationService.GermanLanguageCode;
         public bool SaveScanHistory { get; set; }
         public string ScanHistoryDatabasePath { get; set; } = ScanHistoryService.DefaultDatabasePath;
         public int ScanHistoryMaximumScansPerPath { get; set; } = 30;
@@ -134,6 +134,10 @@ namespace c2flux
         public int StorageHistoryWindowWidth { get; set; }
         public int StorageHistoryWindowHeight { get; set; }
         public int StorageHistoryGradientIntensityPercent { get; set; } = 55;
+        public bool StorageHistoryDetailsEnabled { get; set; }
+        public string StorageHistoryRangeMode { get; set; } = "Last30Days";
+        public DateTime StorageHistoryCustomFromDate { get; set; } = DateTime.Today.AddDays(-29);
+        public DateTime StorageHistoryCustomToDate { get; set; } = DateTime.Today;
 
         public bool HasToolStripLayout { get; set; }
         public int ToolStripLayoutVersion { get; set; }
@@ -200,6 +204,7 @@ namespace c2flux
 
                 settings = settings ?? new AppSettings();
                 settings.EnsureToolbarButtonVisibilitySettings();
+                settings.Layout = AppLayout.WindowsDarkMode;
                 settings.LanguageCode = LocalizationService.NormalizeLanguageCode(settings.LanguageCode);
                 settings.StorageHistoryGradientIntensityPercent = Math.Max(
                     0,
@@ -390,6 +395,8 @@ namespace c2flux
             {
                 return;
             }
+
+            Layout = AppLayout.WindowsDarkMode;
 
             string temporaryFilePath = null;
 

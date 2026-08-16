@@ -13,12 +13,22 @@ namespace c2flux
 {
     public sealed class StorageHistoryForm : Form
     {
+        private const string RangeLast7Days = "Last7Days";
+        private const string RangeLast14Days = "Last14Days";
+        private const string RangeLast30Days = "Last30Days";
+        private const string RangeLast90Days = "Last90Days";
+        private const string RangeLast365Days = "Last365Days";
+        private const string RangeAll = "All";
+        private const string RangeCustom = "Custom";
+
         private readonly AppSettings _settings;
         private readonly bool _embeddedMode;
         private readonly AntdUI.Label labelPath;
         private readonly AntdUI.Select comboBoxPaths;
         private readonly AntdUI.Label labelDisplayMode;
         private readonly AntdUI.Select comboBoxDisplayMode;
+        private readonly AntdUI.Select comboBoxRange;
+        private readonly AntdUI.Button buttonCalendar;
         private readonly AntdUI.Label labelGradientIntensity;
         private readonly TableLayoutPanel pathLayout;
         private readonly DataGridView dataGridViewRecords;
@@ -27,8 +37,12 @@ namespace c2flux
         private readonly AntdUI.Label labelGradientIntensityValue;
         private readonly AntdUI.Button buttonDelete;
         private readonly AntdUI.Button buttonClose;
+        private readonly ContextMenuStrip contextMenuRecord;
+        private readonly ToolStripMenuItem contextMenuItemDetails;
+        private readonly ToolStripMenuItem contextMenuItemDeleteRecord;
         private IReadOnlyList<StorageHistoryRecord> _currentRecords = Array.Empty<StorageHistoryRecord>();
         private List<StorageHistoryRow> _currentRows = new List<StorageHistoryRow>();
+        private StorageHistoryRecord _contextMenuRecord;
         private string _sortColumnName = "ColumnDate";
         private SortOrder _sortOrder = SortOrder.Descending;
 
@@ -90,6 +104,7 @@ namespace c2flux
             comboBoxPaths =
                 AntdThemeService.CreateStorageHistoryPathSelect(
                     "comboBoxPaths");
+            comboBoxPaths.Margin = new Padding(0, 2, 0, 2);
             comboBoxPaths.SelectedIndexChanged +=
                 comboBoxPaths_SelectedIndexChanged;
 
@@ -106,6 +121,7 @@ namespace c2flux
                     "comboBoxDisplayMode",
                     AntdThemeService.StorageHistoryDisplaySelectWidth,
                     AntdThemeService.StorageHistoryDisplaySelectHeight);
+            comboBoxDisplayMode.Margin = new Padding(0, 2, 0, 2);
             comboBoxDisplayMode.Items.Add(new StorageHistoryDisplayModeItem(
                 StorageHistoryDisplayMode.UsedSpace,
                 LocalizationService.GetText("StorageHistory.Used")));
@@ -117,6 +133,27 @@ namespace c2flux
                 AntdThemeService.StorageHistoryDisplaySelectWidth,
                 240);
             comboBoxDisplayMode.SelectedIndexChanged += comboBoxDisplayMode_SelectedIndexChanged;
+
+            comboBoxRange =
+                AntdThemeService.CreateStorageHistorySelect(
+                    "comboBoxRange",
+                    AntdThemeService.StorageHistoryRangeSelectWidth,
+                    AntdThemeService.StorageHistoryRangeSelectHeight);
+            PopulateRangeItems();
+            AntdThemeService.AdjustStorageHistorySelectWidth(
+                comboBoxRange,
+                AntdThemeService.StorageHistoryRangeSelectWidth,
+                260);
+
+            buttonCalendar =
+                AntdThemeService.CreateStorageHistoryButton(
+                    "buttonCalendar",
+                    "📅",
+                    AntdThemeService.StorageHistoryCalendarButtonWidth,
+                    AntdThemeService.StorageHistoryCalendarButtonHeight,
+                    AntdUI.TTypeMini.Default);
+            buttonCalendar.Anchor = AnchorStyles.Left;
+            buttonCalendar.Click += buttonCalendar_Click;
 
             labelGradientIntensity =
                 AntdThemeService.CreateStorageHistoryLabel(
@@ -181,7 +218,7 @@ namespace c2flux
                 BackColor = windowBackColor,
                 ForeColor = textColor,
                 AutoSize = false,
-                ColumnCount = 8,
+                ColumnCount = 11,
                 RowCount = 1,
                 Padding = new Padding(
                     AntdThemeService.StorageHistoryHeaderPadding),
@@ -192,17 +229,37 @@ namespace c2flux
                     SizeType.Absolute,
                     AntdThemeService.StorageHistoryHeaderRowHeight));
             pathLayout.ColumnStyles.Add(
-                new ColumnStyle(SizeType.AutoSize));
+                new ColumnStyle(
+                    SizeType.Absolute,
+                    TextRenderer.MeasureText(
+                        labelPath.Text,
+                        //Drive 
+                        labelPath.Font).Width + 5));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(
                     SizeType.Absolute,
-                    AntdThemeService.StorageHistoryPathSelectWidth + 8));
+                    AntdThemeService.StorageHistoryPathSelectWidth + 15));
             pathLayout.ColumnStyles.Add(
-                new ColumnStyle(SizeType.AutoSize));
+                new ColumnStyle(
+                    SizeType.Absolute,
+                    TextRenderer.MeasureText(
+                        labelDisplayMode.Text,
+                        //Display
+                        labelDisplayMode.Font).Width + 0));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(
                     SizeType.Absolute,
                     comboBoxDisplayMode.Width + 8));
+            pathLayout.ColumnStyles.Add(
+                new ColumnStyle(
+                    SizeType.Absolute,
+                    AntdThemeService.StorageHistoryCalendarButtonWidth + 8));
+            pathLayout.ColumnStyles.Add(
+                new ColumnStyle(
+                    SizeType.Absolute,
+                    comboBoxRange.Width + 8));
+            pathLayout.ColumnStyles.Add(
+                new ColumnStyle(SizeType.Percent, 100F));
             pathLayout.ColumnStyles.Add(
                 new ColumnStyle(SizeType.AutoSize));
             pathLayout.ColumnStyles.Add(
@@ -219,10 +276,12 @@ namespace c2flux
             pathLayout.Controls.Add(comboBoxPaths, 1, 0);
             pathLayout.Controls.Add(labelDisplayMode, 2, 0);
             pathLayout.Controls.Add(comboBoxDisplayMode, 3, 0);
-            pathLayout.Controls.Add(labelGradientIntensity, 4, 0);
-            pathLayout.Controls.Add(trackBarGradientIntensity, 5, 0);
-            pathLayout.Controls.Add(labelGradientIntensityValue, 6, 0);
-            pathLayout.Controls.Add(buttonDelete, 7, 0);
+            pathLayout.Controls.Add(buttonCalendar, 4, 0);
+            pathLayout.Controls.Add(comboBoxRange, 5, 0);
+            pathLayout.Controls.Add(labelGradientIntensity, 7, 0);
+            pathLayout.Controls.Add(trackBarGradientIntensity, 8, 0);
+            pathLayout.Controls.Add(labelGradientIntensityValue, 9, 0);
+            pathLayout.Controls.Add(buttonDelete, 10, 0);
 
             dataGridViewRecords = new StorageHistoryDataGridView
             {
@@ -251,6 +310,18 @@ namespace c2flux
                 dataGridViewRecords);
             dataGridViewRecords.ColumnHeaderMouseClick += dataGridViewRecords_ColumnHeaderMouseClick;
             dataGridViewRecords.DataBindingComplete += dataGridViewRecords_DataBindingComplete;
+            dataGridViewRecords.CellMouseDown += dataGridViewRecords_CellMouseDown;
+
+            contextMenuRecord = new ContextMenuStrip();
+            contextMenuItemDetails = new ToolStripMenuItem(
+                LocalizationService.GetText("StorageHistory.Details.Menu"));
+            contextMenuItemDetails.Click += contextMenuItemDetails_Click;
+            contextMenuItemDeleteRecord = new ToolStripMenuItem(
+                LocalizationService.GetText("StorageHistory.DeleteRecord"));
+            contextMenuItemDeleteRecord.Click += contextMenuItemDeleteRecord_Click;
+            contextMenuRecord.Items.Add(contextMenuItemDetails);
+            contextMenuRecord.Items.Add(contextMenuItemDeleteRecord);
+            AntdThemeService.ConfigureContextMenu(contextMenuRecord);
 
             dataGridViewRecords.Columns.Add(new DataGridViewTextBoxColumn
             {
@@ -286,6 +357,7 @@ namespace c2flux
             };
             storageHistoryChart.ApplyTheme(useDarkMode);
             storageHistoryChart.SetGradientIntensity(trackBarGradientIntensity.Value);
+            storageHistoryChart.MouseDown += storageHistoryChart_MouseDown;
 
             SplitContainer splitContainer = new SplitContainer
             {
@@ -433,6 +505,9 @@ namespace c2flux
             ApplyHistoryGridScrollBarTheme();
 
             comboBoxDisplayMode.SelectedIndex = 1;
+            SelectRangeMode(
+                NormalizeRangeMode(
+                    _settings.StorageHistoryRangeMode));
             LoadPaths();
         }
 
@@ -490,6 +565,13 @@ namespace c2flux
         public void RefreshHistory()
         {
             LoadPaths();
+
+            string path = GetSelectedHistoryPath();
+
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            BindRecords(StorageHistoryService.GetRecords(path));
         }
 
         private void LoadPaths()
@@ -533,6 +615,12 @@ namespace c2flux
 
             comboBoxPaths.SelectedIndex = selectedIndex;
             buttonDelete.Enabled = true;
+
+            if (!IsHandleCreated)
+            {
+                string path = GetSelectedHistoryPath();
+                BindRecords(StorageHistoryService.GetRecords(path));
+            }
         }
 
         public void ApplyLocalizedTexts()
@@ -552,6 +640,11 @@ namespace c2flux
                 "StorageHistory.Delete");
             buttonClose.Text = LocalizationService.GetText(
                 "Common.Close");
+            contextMenuItemDetails.Text = LocalizationService.GetText(
+                "StorageHistory.Details.Menu");
+            contextMenuItemDeleteRecord.Text = LocalizationService.GetText(
+                "StorageHistory.DeleteRecord");
+            PopulateRangeItems();
 
             labelPath.AutoSize = true;
             labelDisplayMode.AutoSize = true;
@@ -612,7 +705,12 @@ namespace c2flux
         private void comboBoxPaths_SelectedIndexChanged(object sender, EventArgs e)
         {
             string path = GetSelectedHistoryPath();
-            BindRecords(StorageHistoryService.GetRecords(path));
+
+            if (!IsHandleCreated)
+                return;
+
+            BeginInvoke(new MethodInvoker(
+                () => BindRecords(StorageHistoryService.GetRecords(path))));
         }
 
         private void comboBoxDisplayMode_SelectedIndexChanged(
@@ -637,6 +735,297 @@ namespace c2flux
                 }));
         }
 
+        private void comboBoxRange_SelectedIndexChanged(
+            object sender,
+            EventArgs e)
+        {
+            string rangeMode = GetSelectedRangeMode();
+
+            _settings.StorageHistoryRangeMode = rangeMode;
+            _settings.Save();
+            BindRecords(_currentRecords);
+        }
+
+        private void buttonCalendar_Click(
+            object sender,
+            EventArgs e)
+        {
+            DateTime fromDate = _settings.StorageHistoryCustomFromDate.Date;
+            DateTime toDate = _settings.StorageHistoryCustomToDate.Date;
+
+            if (fromDate > toDate)
+            {
+                DateTime temporaryDate = fromDate;
+                fromDate = toDate;
+                toDate = temporaryDate;
+            }
+
+            bool useDarkMode = IsDarkMode();
+            Color windowBackColor = useDarkMode
+                ? Color.FromArgb(32, 32, 32)
+                : Color.White;
+            Color textColor = useDarkMode
+                ? Color.White
+                : Color.Black;
+
+            using Form rangeForm = new Form
+            {
+                Text = LocalizationService.GetText("StorageHistory.Calendar"),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MinimizeBox = false,
+                MaximizeBox = false,
+                ShowInTaskbar = false,
+                AutoScaleMode = AutoScaleMode.Dpi,
+                AutoScaleDimensions = new SizeF(96F, 96F),
+                ClientSize = new Size(430, 176),
+                BackColor = windowBackColor,
+                ForeColor = textColor
+            };
+
+            AntdUI.Label labelFrom = new AntdUI.Label
+            {
+                Text = LocalizationService.GetText("StorageHistory.From"),
+                Font = AntdThemeService.DefaultFont,
+                ForeColor = textColor,
+                BackColor = Color.Transparent,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Dock = DockStyle.Fill
+            };
+            AntdUI.Label labelTo = new AntdUI.Label
+            {
+                Text = LocalizationService.GetText("StorageHistory.To"),
+                Font = AntdThemeService.DefaultFont,
+                ForeColor = textColor,
+                BackColor = Color.Transparent,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Dock = DockStyle.Fill
+            };
+
+            AntdUI.DatePicker datePickerFrom =
+                AntdThemeService.CreateStorageHistoryDatePicker(
+                    "datePickerStorageHistoryFrom",
+                    fromDate);
+            AntdUI.DatePicker datePickerTo =
+                AntdThemeService.CreateStorageHistoryDatePicker(
+                    "datePickerStorageHistoryTo",
+                    toDate);
+
+            datePickerFrom.Dock = DockStyle.Fill;
+            datePickerTo.Dock = DockStyle.Fill;
+
+            AntdUI.Button buttonOk =
+                AntdThemeService.CreateStorageHistoryButton(
+                    "buttonStorageHistoryRangeOk",
+                    LocalizationService.GetText("Common.OK"),
+                    AntdThemeService.StorageHistoryCloseButtonWidth,
+                    AntdThemeService.StorageHistoryCloseButtonHeight,
+                    AntdUI.TTypeMini.Primary);
+            buttonOk.AutoSize = false;
+            buttonOk.Size = new Size(
+                AntdThemeService.StorageHistoryCloseButtonWidth,
+                AntdThemeService.StorageHistoryCloseButtonHeight);
+            buttonOk.MinimumSize = buttonOk.Size;
+            buttonOk.DialogResult = DialogResult.OK;
+
+            AntdUI.Button buttonCancel =
+                AntdThemeService.CreateStorageHistoryButton(
+                    "buttonStorageHistoryRangeCancel",
+                    LocalizationService.GetText("Common.Cancel"),
+                    AntdThemeService.StorageHistoryCloseButtonWidth,
+                    AntdThemeService.StorageHistoryCloseButtonHeight,
+                    AntdUI.TTypeMini.Default);
+            buttonCancel.AutoSize = false;
+            buttonCancel.Size = new Size(
+                AntdThemeService.StorageHistoryCloseButtonWidth,
+                AntdThemeService.StorageHistoryCloseButtonHeight);
+            buttonCancel.MinimumSize = buttonCancel.Size;
+            buttonCancel.DialogResult = DialogResult.Cancel;
+
+            FlowLayoutPanel buttonLayout = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                Dock = DockStyle.None,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Padding = new Padding(0),
+                Margin = new Padding(70, 8, 0, 0),
+                BackColor = windowBackColor
+            };
+            buttonLayout.Controls.Add(buttonCancel);
+            buttonLayout.Controls.Add(buttonOk);
+
+            TableLayoutPanel rangeLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 3,
+                Padding = new Padding(16),
+                BackColor = windowBackColor,
+                ForeColor = textColor
+            };
+            rangeLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
+            rangeLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            rangeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
+            rangeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
+            rangeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52F));
+            rangeLayout.Controls.Add(labelFrom, 0, 0);
+            rangeLayout.Controls.Add(datePickerFrom, 1, 0);
+            rangeLayout.Controls.Add(labelTo, 0, 1);
+            rangeLayout.Controls.Add(datePickerTo, 1, 1);
+            rangeLayout.Controls.Add(buttonLayout, 0, 2);
+            rangeLayout.SetColumnSpan(buttonLayout, 2);
+
+            rangeForm.Controls.Add(rangeLayout);
+            rangeForm.AcceptButton = buttonOk;
+            rangeForm.CancelButton = buttonCancel;
+
+            AntdThemeService.Apply(
+                rangeForm,
+                _settings.Layout);
+            AntdThemeService.ConfigureStorageHistoryDatePicker(datePickerFrom);
+            AntdThemeService.ConfigureStorageHistoryDatePicker(datePickerTo);
+            AntdThemeService.ConfigureStorageHistoryButton(buttonCancel);
+            AntdThemeService.ConfigureStorageHistoryButton(buttonOk);
+
+            if (rangeForm.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            fromDate = datePickerFrom.Value.GetValueOrDefault(fromDate).Date;
+            toDate = datePickerTo.Value.GetValueOrDefault(toDate).Date;
+
+            if (fromDate > toDate)
+            {
+                DateTime temporaryDate = fromDate;
+                fromDate = toDate;
+                toDate = temporaryDate;
+            }
+
+            _settings.StorageHistoryCustomFromDate = fromDate;
+            _settings.StorageHistoryCustomToDate = toDate;
+            _settings.StorageHistoryRangeMode = RangeCustom;
+            _settings.Save();
+
+            SelectRangeMode(RangeCustom);
+            BindRecords(_currentRecords);
+        }
+
+        private void PopulateRangeItems()
+        {
+            string selectedRangeMode = GetSelectedRangeMode();
+
+            comboBoxRange.SelectedIndexChanged -=
+                comboBoxRange_SelectedIndexChanged;
+
+            try
+            {
+                comboBoxRange.Items.Clear();
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeLast7Days,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.Last7Days")));
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeLast14Days,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.Last14Days")));
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeLast30Days,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.Last30Days")));
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeLast90Days,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.Last90Days")));
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeLast365Days,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.Last365Days")));
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeAll,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.All")));
+                comboBoxRange.Items.Add(
+                    new StorageHistoryRangeItem(
+                        RangeCustom,
+                        LocalizationService.GetText(
+                            "StorageHistory.Range.Custom")));
+
+                SelectRangeMode(
+                    string.IsNullOrWhiteSpace(selectedRangeMode)
+                        ? NormalizeRangeMode(_settings.StorageHistoryRangeMode)
+                        : selectedRangeMode);
+            }
+            finally
+            {
+                comboBoxRange.SelectedIndexChanged +=
+                    comboBoxRange_SelectedIndexChanged;
+            }
+        }
+
+        private void SelectRangeMode(string rangeMode)
+        {
+            string normalizedRangeMode = NormalizeRangeMode(rangeMode);
+
+            for (int index = 0; index < comboBoxRange.Items.Count; index++)
+            {
+                if (comboBoxRange.Items[index] is StorageHistoryRangeItem item &&
+                    string.Equals(
+                        item.RangeMode,
+                        normalizedRangeMode,
+                        StringComparison.Ordinal))
+                {
+                    comboBoxRange.SelectedIndex = index;
+                    return;
+                }
+            }
+
+            comboBoxRange.SelectedIndex = -1;
+        }
+
+        private string GetSelectedRangeMode()
+        {
+            int selectedIndex = comboBoxRange == null
+                ? -1
+                : comboBoxRange.SelectedIndex;
+
+            if (selectedIndex >= 0 &&
+                selectedIndex < comboBoxRange.Items.Count &&
+                comboBoxRange.Items[selectedIndex] is
+                    StorageHistoryRangeItem item)
+            {
+                return item.RangeMode;
+            }
+
+            return NormalizeRangeMode(
+                _settings.StorageHistoryRangeMode);
+        }
+
+        private static string NormalizeRangeMode(string rangeMode)
+        {
+            switch (rangeMode)
+            {
+                case RangeLast7Days:
+                case RangeLast14Days:
+                case RangeLast30Days:
+                case RangeLast90Days:
+                case RangeLast365Days:
+                case RangeAll:
+                case RangeCustom:
+                    return rangeMode;
+
+                default:
+                    return RangeLast30Days;
+            }
+        }
+
         private void trackBarGradientIntensity_ValueChanged(
             object sender,
             AntdUI.IntEventArgs e)
@@ -644,11 +1033,136 @@ namespace c2flux
             labelGradientIntensityValue.Text = trackBarGradientIntensity.Value.ToString() + "%";
             _settings.StorageHistoryGradientIntensityPercent = trackBarGradientIntensity.Value;
             storageHistoryChart.SetGradientIntensity(trackBarGradientIntensity.Value);
+            storageHistoryChart.Refresh();
         }
 
         private void dataGridViewRecords_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs e)
         {
             ApplyHistoryGridScrollBarTheme();
+        }
+
+        private void dataGridViewRecords_CellMouseDown(
+            object sender,
+            DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right ||
+                e.RowIndex < 0 ||
+                e.RowIndex >= dataGridViewRecords.Rows.Count)
+            {
+                return;
+            }
+
+            dataGridViewRecords.ClearSelection();
+            DataGridViewRow row = dataGridViewRecords.Rows[e.RowIndex];
+            row.Selected = true;
+            dataGridViewRecords.CurrentCell = row.Cells[
+                Math.Max(0, e.ColumnIndex)];
+
+            if (row.DataBoundItem is not StorageHistoryRow historyRow ||
+                historyRow.Record == null)
+            {
+                return;
+            }
+
+            _contextMenuRecord = historyRow.Record;
+            contextMenuRecord.Show(
+                dataGridViewRecords,
+                dataGridViewRecords.PointToClient(Cursor.Position));
+        }
+
+        private void storageHistoryChart_MouseDown(
+            object sender,
+            MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            StorageHistoryRecord record =
+                storageHistoryChart.GetRecordAt(e.Location);
+
+            if (record == null)
+                return;
+
+            _contextMenuRecord = record;
+            contextMenuRecord.Show(
+                storageHistoryChart,
+                e.Location);
+        }
+
+        private void contextMenuItemDetails_Click(
+            object sender,
+            EventArgs e)
+        {
+            StorageHistoryRecord record = _contextMenuRecord;
+            _contextMenuRecord = null;
+
+            if (record == null)
+                return;
+
+            string path =
+                string.IsNullOrWhiteSpace(record.Path)
+                    ? GetSelectedHistoryPath()
+                    : record.Path;
+
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            using StorageHistoryDetailsForm detailsForm =
+                new StorageHistoryDetailsForm(
+                    _settings,
+                    path,
+                    record,
+                    GetDisplayMode());
+
+            detailsForm.ShowDialog(this);
+        }
+
+        private void contextMenuItemDeleteRecord_Click(
+            object sender,
+            EventArgs e)
+        {
+            StorageHistoryRecord record = _contextMenuRecord;
+            _contextMenuRecord = null;
+
+            if (record == null)
+                return;
+
+            string path = GetSelectedHistoryPath();
+
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            DialogResult result = AppDialogs.ShowWarningYesNo(
+                this,
+                _settings,
+                LocalizationService.GetText(
+                    "StorageHistory.DeleteRecordConfirm"),
+                LocalizationService.GetText(
+                    "StorageHistory.Title"),
+                LocalizationService.GetText("Common.Yes"),
+                LocalizationService.GetText("Common.No"));
+
+            if (result != DialogResult.Yes)
+                return;
+
+            StorageHistoryService.DeleteRecord(
+                path,
+                record.RecordedAtUtc);
+            StorageHistoryDetailsService.DeleteRecord(
+                path,
+                record.RecordedAtUtc);
+
+            LoadPaths();
+
+            string selectedPath = GetSelectedHistoryPath();
+
+            if (string.IsNullOrWhiteSpace(selectedPath))
+            {
+                BindRecords(Array.Empty<StorageHistoryRecord>());
+                return;
+            }
+
+            BindRecords(StorageHistoryService.GetRecords(selectedPath));
         }
 
         private void dataGridViewRecords_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
@@ -679,7 +1193,7 @@ namespace c2flux
         {
             _currentRecords = records ?? Array.Empty<StorageHistoryRecord>();
 
-            List<StorageHistoryRecord> orderedRecords = _currentRecords
+            List<StorageHistoryRecord> orderedRecords = GetFilteredRecords(_currentRecords)
                 .OrderBy(record => record.RecordedAtUtc)
                 .ToList();
             List<StorageHistoryRow> rows = new List<StorageHistoryRow>();
@@ -693,6 +1207,7 @@ namespace c2flux
 
                 rows.Add(new StorageHistoryRow
                 {
+                    Record = record,
                     DateValue = record.RecordedAtUtc.ToLocalTime(),
                     SizeValue = currentSize,
                     ChangeValue = change,
@@ -730,6 +1245,78 @@ namespace c2flux
             finally
             {
                 storageHistoryChart.ResumeLayout(true);
+            }
+        }
+
+        private IEnumerable<StorageHistoryRecord> GetFilteredRecords(
+            IReadOnlyList<StorageHistoryRecord> records)
+        {
+            string rangeMode = GetSelectedRangeMode();
+
+            if (string.Equals(
+                    rangeMode,
+                    RangeAll,
+                    StringComparison.Ordinal))
+            {
+                return records;
+            }
+
+            DateTime rangeStart;
+            DateTime rangeEndExclusive;
+
+            if (string.Equals(
+                    rangeMode,
+                    RangeCustom,
+                    StringComparison.Ordinal))
+            {
+                DateTime fromDate = _settings.StorageHistoryCustomFromDate.Date;
+                DateTime toDate = _settings.StorageHistoryCustomToDate.Date;
+
+                if (fromDate > toDate)
+                {
+                    DateTime temporaryDate = fromDate;
+                    fromDate = toDate;
+                    toDate = temporaryDate;
+                }
+
+                rangeStart = fromDate;
+                rangeEndExclusive = toDate.AddDays(1);
+            }
+            else
+            {
+                int dayCount = GetRangeDayCount(rangeMode);
+                rangeStart = DateTime.Now.Date.AddDays(-(dayCount - 1));
+                rangeEndExclusive = DateTime.Now.AddTicks(1);
+            }
+
+            return records.Where(
+                record =>
+                {
+                    DateTime localRecordedAt = record.RecordedAtUtc.ToLocalTime();
+
+                    return localRecordedAt >= rangeStart &&
+                           localRecordedAt < rangeEndExclusive;
+                });
+        }
+
+        private static int GetRangeDayCount(string rangeMode)
+        {
+            switch (rangeMode)
+            {
+                case RangeLast7Days:
+                    return 7;
+
+                case RangeLast14Days:
+                    return 14;
+
+                case RangeLast90Days:
+                    return 90;
+
+                case RangeLast365Days:
+                    return 365;
+
+                default:
+                    return 30;
             }
         }
 
@@ -879,6 +1466,7 @@ namespace c2flux
                 return;
 
             StorageHistoryService.DeleteRecords(path);
+            StorageHistoryDetailsService.DeleteRecords(path);
             LoadPaths();
         }
 
@@ -955,9 +1543,12 @@ namespace c2flux
 
             AntdThemeService.ConfigureStorageHistorySelect(comboBoxPaths);
             AntdThemeService.ConfigureStorageHistorySelect(comboBoxDisplayMode);
+            AntdThemeService.ConfigureStorageHistorySelect(comboBoxRange);
+            AntdThemeService.ConfigureStorageHistoryButton(buttonCalendar);
             AntdThemeService.ConfigureStorageHistoryButton(buttonDelete);
             AntdThemeService.ConfigureStorageHistoryButton(buttonClose);
             AntdThemeService.ConfigureStorageHistoryGrid(dataGridViewRecords);
+            AntdThemeService.ConfigureContextMenu(contextMenuRecord);
 
             storageHistoryChart.ApplyTheme(useDarkMode);
 
@@ -1081,6 +1672,25 @@ namespace c2flux
             }
         }
 
+        private sealed class StorageHistoryRangeItem
+        {
+            public StorageHistoryRangeItem(
+                string rangeMode,
+                string text)
+            {
+                RangeMode = rangeMode;
+                Text = text;
+            }
+
+            public string RangeMode { get; }
+            public string Text { get; }
+
+            public override string ToString()
+            {
+                return Text;
+            }
+        }
+
         private sealed class StorageHistoryDisplayModeItem
         {
             public StorageHistoryDisplayModeItem(StorageHistoryDisplayMode displayMode, string text)
@@ -1100,6 +1710,7 @@ namespace c2flux
 
         private sealed class StorageHistoryRow
         {
+            public StorageHistoryRecord Record { get; set; }
             public DateTime DateValue { get; set; }
             public long SizeValue { get; set; }
             public long? ChangeValue { get; set; }

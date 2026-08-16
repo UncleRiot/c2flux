@@ -67,6 +67,8 @@ namespace c2flux
         private AntdUI.Input textBoxSunburstMaxItems;
         private AntdUI.Checkbox checkBoxSaveScanHistory;
         private AntdUI.Button buttonSaveScanHistoryHelp;
+        private AntdUI.Checkbox checkBoxStorageHistoryDetails;
+        private AntdUI.Button buttonStorageHistoryDetailsHelp;
         private AntdUI.Label labelScanHistoryDatabasePath;
         private AntdUI.Input textBoxScanHistoryDatabasePath;
         private AntdUI.Button buttonBrowseScanHistoryDatabasePath;
@@ -524,6 +526,7 @@ namespace c2flux
                 AntdThemeService.SettingsGeneralLayoutLabelTop,
                 AntdThemeService.SettingsGeneralLayoutLabelWidth,
                 AntdThemeService.SettingsGeneralLayoutLabelHeight);
+            labelLayout.Visible = false;
 
             comboBoxLayout = AntdThemeService.CreateSettingsSelect(
                 "comboBoxLayout",
@@ -533,13 +536,8 @@ namespace c2flux
                 new Size(
                     AntdThemeService.SettingsGeneralLayoutSelectWidth,
                     AntdThemeService.SettingsGeneralLayoutSelectHeight));
+            comboBoxLayout.Visible = false;
 
-            comboBoxLayout.Items.Add(new LayoutItem(
-                LocalizationService.GetText("Settings.LayoutWindowsDefault"),
-                AppLayout.WindowsDefault));
-            comboBoxLayout.Items.Add(new LayoutItem(
-                LocalizationService.GetText("Settings.LayoutWindowsLight"),
-                AppLayout.WindowsLightMode));
             comboBoxLayout.Items.Add(new LayoutItem(
                 LocalizationService.GetText("Settings.LayoutWindowsDark"),
                 AppLayout.WindowsDarkMode));
@@ -713,6 +711,16 @@ namespace c2flux
                 AntdThemeService.SettingsStatisticsSaveScanHistoryCheckboxWidth,
                 AntdThemeService.SettingsStatisticsSaveScanHistoryCheckboxHeight,
                 backgroundSecondary);
+            int saveScanHistoryTextWidth = TextRenderer.MeasureText(
+                checkBoxSaveScanHistory.Text ?? string.Empty,
+                checkBoxSaveScanHistory.Font,
+                Size.Empty,
+                TextFormatFlags.NoPadding).Width;
+            checkBoxSaveScanHistory.Width =
+                AntdThemeService.ScaleForDpi(
+                    this,
+                    28) +
+                saveScanHistoryTextWidth;
             checkBoxSaveScanHistory.CheckedChanged += checkBoxSaveScanHistory_CheckedChanged;
 
             buttonSaveScanHistoryHelp = new AntdUI.Button
@@ -720,8 +728,12 @@ namespace c2flux
                 Name = "buttonSaveScanHistoryHelp",
                 Text = "?",
                 Location = new Point(
-                    AntdThemeService.SettingsStatisticsSaveScanHistoryHelpButtonLeft,
-                    AntdThemeService.SettingsStatisticsSaveScanHistoryHelpButtonTop),
+                    checkBoxSaveScanHistory.Right,
+                    checkBoxSaveScanHistory.Top +
+                    Math.Max(
+                        0,
+                        (checkBoxSaveScanHistory.Height -
+                         AntdThemeService.SettingsStatisticsSaveScanHistoryHelpButtonHeight) / 2)),
                 Size = new Size(
                     AntdThemeService.SettingsStatisticsSaveScanHistoryHelpButtonWidth,
                     AntdThemeService.SettingsStatisticsSaveScanHistoryHelpButtonHeight),
@@ -734,6 +746,49 @@ namespace c2flux
                 AntdThemeService.WrapToolTipText(
                     LocalizationService.GetText("Settings.SaveScanHistoryHelp"),
                     AntdThemeService.SettingsStatisticsSaveScanHistoryHelpToolTipMaximumWidth));
+
+            checkBoxStorageHistoryDetails = AntdThemeService.CreateSettingsCheckBox(
+                "checkBoxStorageHistoryDetails",
+                LocalizationService.GetText("Settings.StorageHistoryDetails"),
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsCheckboxLeft,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsCheckboxTop,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsCheckboxWidth,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsCheckboxHeight,
+                backgroundSecondary);
+            int storageHistoryDetailsTextWidth = TextRenderer.MeasureText(
+                checkBoxStorageHistoryDetails.Text ?? string.Empty,
+                checkBoxStorageHistoryDetails.Font,
+                Size.Empty,
+                TextFormatFlags.NoPadding).Width;
+            checkBoxStorageHistoryDetails.Width =
+                AntdThemeService.ScaleForDpi(
+                    this,
+                    28) +
+                storageHistoryDetailsTextWidth;
+
+            buttonStorageHistoryDetailsHelp = new AntdUI.Button
+            {
+                Name = "buttonStorageHistoryDetailsHelp",
+                Text = "?",
+                Location = new Point(
+                    checkBoxStorageHistoryDetails.Right,
+                    checkBoxStorageHistoryDetails.Top +
+                    Math.Max(
+                        0,
+                        (checkBoxStorageHistoryDetails.Height -
+                         AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpButtonHeight) / 2)),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpButtonWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpButtonHeight),
+                Type = AntdUI.TTypeMini.Primary,
+                Radius = AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpButtonRadius,
+                TabStop = false
+            };
+            toolTip.SetToolTip(
+                buttonStorageHistoryDetailsHelp,
+                AntdThemeService.WrapToolTipText(
+                    LocalizationService.GetText("Settings.StorageHistoryDetailsHelp"),
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpToolTipMaximumWidth));
 
             labelScanHistoryDatabasePath = new AntdUI.Label
             {
@@ -933,6 +988,8 @@ namespace c2flux
 
             panelStatistics.Controls.Add(checkBoxSaveScanHistory);
             panelStatistics.Controls.Add(buttonSaveScanHistoryHelp);
+            panelStatistics.Controls.Add(checkBoxStorageHistoryDetails);
+            panelStatistics.Controls.Add(buttonStorageHistoryDetailsHelp);
             panelStatistics.Controls.Add(labelScanHistoryDatabasePath);
             panelStatistics.Controls.Add(textBoxScanHistoryDatabasePath);
             panelStatistics.Controls.Add(buttonBrowseScanHistoryDatabasePath);
@@ -1458,6 +1515,7 @@ namespace c2flux
             textBoxScanHistoryMaximumScansPerPath.Text =
                 _settings.ScanHistoryMaximumScansPerPath.ToString();
             checkBoxSaveScanHistory.Checked = _settings.SaveScanHistory;
+            checkBoxStorageHistoryDetails.Checked = _settings.StorageHistoryDetailsEnabled;
             comboBoxLogLevel.SelectedValue = _settings.LogLevel;
             if (comboBoxLogLevel.SelectedIndex < 0)
             {
@@ -1655,6 +1713,7 @@ namespace c2flux
             _settings.SunburstDepth = sunburstDepth;
             _settings.SunburstMaxItems = sunburstMaxItems;
             _settings.SaveScanHistory = checkBoxSaveScanHistory.Checked;
+            _settings.StorageHistoryDetailsEnabled = checkBoxStorageHistoryDetails.Checked;
             _settings.ScanHistoryDatabasePath = selectedScanHistoryDatabasePath;
             _settings.ScanHistoryMaximumScansPerPath = scanHistoryMaximumScansPerPath;
             ScanHistoryService.ConfigureRetention(scanHistoryMaximumScansPerPath);
@@ -1676,10 +1735,7 @@ namespace c2flux
                 LocalizationService.Load(_settings.LanguageCode);
             }
 
-            if (comboBoxLayout.SelectedValue is LayoutItem layoutItem)
-            {
-                _settings.Layout = layoutItem.Layout;
-            }
+            _settings.Layout = AppLayout.WindowsDarkMode;
 
             try
             {
@@ -1779,29 +1835,13 @@ namespace c2flux
 
         private void UpdatePartitionFillControlsVisibility()
         {
-            bool useDarkMode;
+            labelPartitionFillLight.Visible = false;
+            buttonPartitionFillLightColor.Visible = false;
+            panelPartitionFillLightPreview.Visible = false;
 
-            if (comboBoxLayout.SelectedValue is LayoutItem selectedLayoutItem)
-            {
-                useDarkMode = selectedLayoutItem.Layout switch
-                {
-                    AppLayout.WindowsDarkMode => true,
-                    AppLayout.WindowsLightMode => false,
-                    _ => AntdThemeService.BackgroundPrimary.GetBrightness() < 0.5f
-                };
-            }
-            else
-            {
-                useDarkMode = AntdThemeService.BackgroundPrimary.GetBrightness() < 0.5f;
-            }
-
-            labelPartitionFillLight.Visible = !useDarkMode;
-            buttonPartitionFillLightColor.Visible = !useDarkMode;
-            panelPartitionFillLightPreview.Visible = !useDarkMode;
-
-            labelPartitionFillDark.Visible = useDarkMode;
-            buttonPartitionFillDarkColor.Visible = useDarkMode;
-            panelPartitionFillDarkPreview.Visible = useDarkMode;
+            labelPartitionFillDark.Visible = true;
+            buttonPartitionFillDarkColor.Visible = true;
+            panelPartitionFillDarkPreview.Visible = true;
         }
 
         private void UpdateColorPreviews()

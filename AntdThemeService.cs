@@ -172,7 +172,7 @@ namespace c2flux
             field?.SetValue(subForm, value);
         }
 
-        private static bool _useDarkMode = IsWindowsAppDarkModeEnabled();
+        private static bool _useDarkMode = true;
         private static readonly ToolTip MainToolTip = new ToolTip
         {
             AutoPopDelay = 10000,
@@ -557,12 +557,12 @@ namespace c2flux
         public const int StorageHistoryHeaderRowHeight = 36;
 
         // Text Drive
-        public const int StorageHistoryPathLabelWidth = 58;
+        public const int StorageHistoryPathLabelWidth = 50;
         public const int StorageHistoryPathLabelHeight = 32;
         public const int StorageHistoryPathLabelMarginRight = 0;
 
         // Auswahlfeld Drive
-        public const int StorageHistoryPathSelectWidth = 260;
+        public const int StorageHistoryPathSelectWidth = 200;
         public const int StorageHistoryPathSelectHeight = 32;
         public const int StorageHistoryPathSelectDropDownWidth = 260;
         public const int StorageHistoryPathSelectItemHeight = 24;
@@ -575,6 +575,14 @@ namespace c2flux
         // Auswahlfeld Display
         public const int StorageHistoryDisplaySelectWidth = 150;
         public const int StorageHistoryDisplaySelectHeight = 32;
+
+        // Zeitraum
+        public const int StorageHistoryRangeSelectWidth = 190;
+        public const int StorageHistoryRangeSelectHeight = 32;
+        public const int StorageHistoryCalendarButtonWidth = 40;
+        public const int StorageHistoryCalendarButtonHeight = 32;
+        public const int StorageHistoryDatePickerWidth = 140;
+        public const int StorageHistoryDatePickerHeight = 32;
 
         // Text Intensity
         public const int StorageHistoryIntensityLabelWidth = 70;
@@ -602,6 +610,13 @@ namespace c2flux
         // Tabelle
         public const int StorageHistoryGridHeaderHeight = 32;
         public const int StorageHistoryGridRowHeight = 28;
+
+        // Storage History Details
+        public const int StorageHistoryDetailsWindowWidth = 980;
+        public const int StorageHistoryDetailsWindowHeight = 440;
+        public const int StorageHistoryDetailsWindowMinimumWidth = 760;
+        public const int StorageHistoryDetailsWindowMinimumHeight = 320;
+        public const int StorageHistoryDetailsFooterHeight = 52;
 
         // Aufteilung Tabelle / Diagramm
         public const int StorageHistoryEmbeddedGridWidth = 416;
@@ -941,19 +956,35 @@ namespace c2flux
 
         // Checkbox Save scan history
         public const int SettingsStatisticsSaveScanHistoryCheckboxLeft = 24;
-        public const int SettingsStatisticsSaveScanHistoryCheckboxTop = 24;
-        public const int SettingsStatisticsSaveScanHistoryCheckboxWidth = 148;
+        public const int SettingsStatisticsSaveScanHistoryCheckboxTop = 60;
+        public const int SettingsStatisticsSaveScanHistoryCheckboxWidth = 250;
         public const int SettingsStatisticsSaveScanHistoryCheckboxHeight = 24;
 
         // Button Save scan history help
-        public const int SettingsStatisticsSaveScanHistoryHelpButtonLeft = 177;
-        public const int SettingsStatisticsSaveScanHistoryHelpButtonTop = 25;
+        public const int SettingsStatisticsSaveScanHistoryHelpButtonLeft = 279;
+        public const int SettingsStatisticsSaveScanHistoryHelpButtonTop = 61;
         public const int SettingsStatisticsSaveScanHistoryHelpButtonWidth = 24;
         public const int SettingsStatisticsSaveScanHistoryHelpButtonHeight = 22;
         public const int SettingsStatisticsSaveScanHistoryHelpButtonRadius = 12;
 
         // Tooltip Save scan history help
         public const int SettingsStatisticsSaveScanHistoryHelpToolTipMaximumWidth = 500;
+
+        // Checkbox Storage History details
+        public const int SettingsStatisticsStorageHistoryDetailsCheckboxLeft = 24;
+        public const int SettingsStatisticsStorageHistoryDetailsCheckboxTop = 24;
+        public const int SettingsStatisticsStorageHistoryDetailsCheckboxWidth = 170;
+        public const int SettingsStatisticsStorageHistoryDetailsCheckboxHeight = 24;
+
+        // Button Storage History details help
+        public const int SettingsStatisticsStorageHistoryDetailsHelpButtonLeft = 199;
+        public const int SettingsStatisticsStorageHistoryDetailsHelpButtonTop = 25;
+        public const int SettingsStatisticsStorageHistoryDetailsHelpButtonWidth = 24;
+        public const int SettingsStatisticsStorageHistoryDetailsHelpButtonHeight = 22;
+        public const int SettingsStatisticsStorageHistoryDetailsHelpButtonRadius = 12;
+
+        // Tooltip Storage History details help
+        public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipMaximumWidth = 500;
 
         // Text Database path
         public const int SettingsStatisticsDatabasePathLabelLeft = 32;
@@ -1235,7 +1266,7 @@ namespace c2flux
             select.Margin = new Padding(4, 2, 4, 2);
             select.MinimumSize = new Size(width, height);
             select.Size = new Size(width, height);
-            select.ListAutoWidth = true;
+            select.ListAutoWidth = false;
             select.MaxCount = 8;
             ConfigureStorageHistorySelect(select);
 
@@ -1290,6 +1321,51 @@ namespace c2flux
                 adjustedWidth,
                 select.MinimumSize.Height);
             select.Width = adjustedWidth;
+        }
+
+        public static AntdUI.DatePicker CreateStorageHistoryDatePicker(
+            string name,
+            DateTime value)
+        {
+            AntdUI.DatePicker datePicker = new AntdUI.DatePicker
+            {
+                Name = name,
+                Format = "d",
+                ShowIcon = true,
+                DropDownArrow = true,
+                Value = value.Date,
+                MinimumSize = new Size(
+                    StorageHistoryDatePickerWidth,
+                    StorageHistoryDatePickerHeight),
+                Size = new Size(
+                    StorageHistoryDatePickerWidth,
+                    StorageHistoryDatePickerHeight),
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(4, 2, 4, 2)
+            };
+
+            ConfigureStorageHistoryDatePicker(datePicker);
+            datePicker.ExpandDropChanged += (_, _) =>
+                ApplyDatePickerLocalization(datePicker);
+
+            return datePicker;
+        }
+
+        public static void ConfigureStorageHistoryDatePicker(
+            AntdUI.DatePicker datePicker)
+        {
+            if (datePicker == null)
+                return;
+
+            datePicker.Font = DefaultFont;
+            datePicker.BackColor = InputBackground;
+            datePicker.ForeColor = TextPrimary;
+            datePicker.BorderWidth = 1F;
+            datePicker.BorderColor = Border;
+            datePicker.Radius = 6;
+            datePicker.DropDownArrow = true;
+            datePicker.ShowIcon = true;
+            datePicker.Invalidate();
         }
 
         public static AntdUI.Slider CreateStorageHistoryIntensitySlider(
@@ -3317,13 +3393,7 @@ namespace c2flux
 
         private static bool ShouldUseDarkMode(AppLayout layout)
         {
-            if (layout == AppLayout.WindowsDarkMode)
-                return true;
-
-            if (layout == AppLayout.WindowsLightMode)
-                return false;
-
-            return IsWindowsAppDarkModeEnabled();
+            return true;
         }
 
         private static bool IsWindowsAppDarkModeEnabled()

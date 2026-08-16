@@ -1714,9 +1714,146 @@ namespace c2flux
                 session.LatestProgress = null;
 
                 uiTransitionPhaseStopwatch.Restart();
-                StorageHistoryService.AddRecord(
-                    rootEntry.FullPath,
-                    rootEntry.SizeBytes);
+
+                FileSystemEntry storageHistoryDetailsSnapshot = null;
+                float storageHistoryPostProcessingAnimationValue = 0F;
+
+                using System.Windows.Forms.Timer storageHistoryPostProcessingTimer =
+                    new System.Windows.Forms.Timer
+                    {
+                        Interval = 50
+                    };
+
+                storageHistoryPostProcessingTimer.Tick += (_, _) =>
+                {
+                    if (!IsCurrentScanSession(session) ||
+                        !IsSelectedScanPath(session.RootPath))
+                    {
+                        return;
+                    }
+
+                    storageHistoryPostProcessingAnimationValue += 0.02F;
+
+                    if (storageHistoryPostProcessingAnimationValue > 1F)
+                    {
+                        storageHistoryPostProcessingAnimationValue = 0F;
+                    }
+
+                    _statusMainFormController.SetStorageHistoryPostProcessingProgress(
+                        storageHistoryPostProcessingAnimationValue,
+                        session.ScanStopwatch?.Elapsed,
+                        true);
+                };
+
+                if (_settings.StorageHistoryDetailsEnabled &&
+                    IsSelectedScanPath(session.RootPath))
+                {
+                    _statusMainFormController.SetStorageHistoryPostProcessingProgress(
+                        storageHistoryPostProcessingAnimationValue,
+                        session.ScanStopwatch?.Elapsed,
+                        true);
+                    storageHistoryPostProcessingTimer.Start();
+                }
+
+                try
+                {
+                    if (_settings.StorageHistoryDetailsEnabled)
+                    {
+                        storageHistoryDetailsSnapshot = rootEntry;
+
+                        try
+                        {
+                            C2FluxScanner storageHistoryDetailsScanner =
+                                new C2FluxScanner(_settings);
+
+                            FileSystemEntry ntfsStorageHistoryDetailsSnapshot =
+                                await storageHistoryDetailsScanner
+                                    .CaptureStorageHistoryDetailsSnapshotAsync(
+                                        rootEntry.FullPath,
+                                        session.CancellationTokenSource.Token);
+
+                            if (ntfsStorageHistoryDetailsSnapshot != null)
+                            {
+                                storageHistoryDetailsSnapshot =
+                                    ntfsStorageHistoryDetailsSnapshot;
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch (Exception exception)
+                        {
+                            try
+                            {
+                                NtQueryDirectoryScanner storageHistoryDetailsFallbackScanner =
+                                    new NtQueryDirectoryScanner(_settings);
+
+                                FileSystemEntry fallbackStorageHistoryDetailsSnapshot =
+                                    await storageHistoryDetailsFallbackScanner.ScanAsync(
+                                        rootEntry.FullPath,
+                                        null,
+                                        session.CancellationTokenSource.Token,
+                                        session.PauseTokenSource.Token);
+
+                                if (fallbackStorageHistoryDetailsSnapshot != null)
+                                {
+                                    storageHistoryDetailsSnapshot =
+                                        fallbackStorageHistoryDetailsSnapshot;
+                                }
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                throw;
+                            }
+                            catch (Exception fallbackException)
+                            {
+                                AppAlertLog.AddError(
+                                    "StorageHistory",
+                                    "Storage History details snapshot could not be captured.",
+                                    "Path: " + rootEntry.FullPath +
+                                    Environment.NewLine +
+                                    "MFT snapshot error:" +
+                                    Environment.NewLine +
+                                    exception +
+                                    Environment.NewLine +
+                                    Environment.NewLine +
+                                    "Fallback snapshot error:" +
+                                    Environment.NewLine +
+                                    fallbackException);
+                            }
+                        }
+                    }
+
+                    DateTime? storageHistoryRecordedAtUtc =
+                        StorageHistoryService.AddRecord(
+                            rootEntry.FullPath,
+                            rootEntry.SizeBytes);
+
+                    if (storageHistoryRecordedAtUtc.HasValue &&
+                        _settings.StorageHistoryDetailsEnabled &&
+                        storageHistoryDetailsSnapshot != null)
+                    {
+                        await Task.Run(
+                            () =>
+                                StorageHistoryDetailsService.AddSnapshot(
+                                    rootEntry.FullPath,
+                                    storageHistoryRecordedAtUtc.Value,
+                                    storageHistoryDetailsSnapshot));
+                    }
+
+                    if (storageHistoryRecordedAtUtc.HasValue &&
+                        storageHistoryView != null &&
+                        !storageHistoryView.IsDisposed)
+                    {
+                        storageHistoryView.RefreshHistory();
+                    }
+                }
+                finally
+                {
+                    storageHistoryPostProcessingTimer.Stop();
+                }
+
                 uiTransitionPhaseStopwatch.Stop();
 
                 TimeSpan storageHistoryRecordElapsed =
@@ -2195,6 +2332,8 @@ namespace c2flux
             menuItemAdvancedFeatures.Enabled = false;
             toolStripButtonAnalysis.Enabled = false;
             toolStripButtonExportCsv.Enabled = false;
+            toolStripButtonExportCsv.ForeColor =
+                AntdThemeService.MainDisabledButtonTextColor;
         }
 
         private void SetScanningState(bool scanning)
@@ -2220,6 +2359,10 @@ namespace c2flux
             menuItemAdvancedFeatures.Enabled = !scanning && _currentRootEntry != null;
             toolStripButtonAnalysis.Enabled = !scanning && _currentRootEntry != null;
             toolStripButtonExportCsv.Enabled = !scanning && _currentRootEntry != null;
+            toolStripButtonExportCsv.ForeColor =
+                toolStripButtonExportCsv.Enabled
+                    ? AntdThemeService.TextPrimary
+                    : AntdThemeService.MainDisabledButtonTextColor;
             splitContainerMain.IsSplitterFixed = false;
             splitContainerLeft.IsSplitterFixed = false;
         }

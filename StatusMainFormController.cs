@@ -194,6 +194,7 @@ namespace c2flux
 
             _scanProgress.UseSystemText = true;
             _scanProgress.Animation = 0;
+            _scanProgress.Fill = AntdThemeService.Accent;
             _scanProgress.Text = string.Format(
                 "{0:0.0} % | {1:0.0} s",
                 value,
@@ -232,6 +233,7 @@ namespace c2flux
 
             _scanProgress.UseSystemText = false;
             _scanProgress.Animation = 0;
+            _scanProgress.Fill = AntdThemeService.Accent;
             _scanProgress.Text = string.Format(
                 "{0:0.0} s",
                 elapsedValue.TotalSeconds);
@@ -240,6 +242,53 @@ namespace c2flux
             _scanProgress.Refresh();
 
             SetMainWindowTitle(null);
+        }
+
+        public void SetStorageHistoryPostProcessingProgress(
+            float value,
+            TimeSpan? elapsed,
+            bool visible)
+        {
+            if (_scanProgress == null)
+                return;
+
+            if (_scanProgress.InvokeRequired)
+            {
+                _scanProgress.BeginInvoke(
+                    new Action(
+                        () => SetStorageHistoryPostProcessingProgress(
+                            value,
+                            elapsed,
+                            visible)));
+                return;
+            }
+
+            float normalizedValue = Math.Max(0F, Math.Min(1F, value));
+            TimeSpan elapsedValue = elapsed.GetValueOrDefault();
+
+            _scanProgress.UseSystemText = false;
+            _scanProgress.Animation = 0;
+            _scanProgress.Fill = Color.Orange;
+            _scanProgress.Text = string.Format(
+                "{0:0.0} s",
+                elapsedValue.TotalSeconds);
+            _scanProgress.Value = normalizedValue;
+            _scanProgress.Visible = visible;
+            _scanProgress.Refresh();
+
+            _statusLabel.Text =
+                LocalizationService.GetText(
+                    "Settings.StorageHistoryDetails");
+
+            _owner.Text =
+                AppConstants.FullApplicationName +
+                " - " +
+                LocalizationService.GetText(
+                    "Settings.StorageHistoryDetails") +
+                " - " +
+                string.Format(
+                    "{0:0.0} s",
+                    elapsedValue.TotalSeconds);
         }
 
         public void UpdateStatusStripForDrive(string rootPath)

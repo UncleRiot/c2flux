@@ -17,6 +17,7 @@ namespace c2flux
             Application.SetCompatibleTextRenderingDefault(false);
 
             AppSettings settings = AppSettings.Load();
+            AntdThemeService.Apply(settings.Layout);
 
             AppAlertLog.Configure(
                 settings.LogLevel,

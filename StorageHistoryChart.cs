@@ -32,6 +32,7 @@ namespace c2flux
             DoubleBuffered = true;
             ResizeRedraw = true;
             BackColor = SystemColors.Window;
+            toolTip.ShowAlways = true;
         }
 
         public void SetRecords(IReadOnlyList<StorageHistoryRecord> records, StorageHistoryDisplayMode displayMode)
@@ -43,6 +44,39 @@ namespace c2flux
             _hoveredPointIndex = -1;
             toolTip.Hide(this);
             Invalidate();
+        }
+
+        public StorageHistoryRecord GetRecordAt(Point location)
+        {
+            if (_points.Length == 0 ||
+                _records.Count != _points.Length)
+            {
+                return null;
+            }
+
+            int nearestIndex = -1;
+            double nearestDistance = double.MaxValue;
+
+            for (int index = 0; index < _points.Length; index++)
+            {
+                double deltaX = _points[index].X - location.X;
+                double deltaY = _points[index].Y - location.Y;
+                double distance = deltaX * deltaX + deltaY * deltaY;
+
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestIndex = index;
+                }
+            }
+
+            if (nearestIndex < 0 ||
+                nearestDistance > 144D)
+            {
+                return null;
+            }
+
+            return _records[nearestIndex];
         }
 
         public void SetGradientIntensity(int gradientIntensityPercent)

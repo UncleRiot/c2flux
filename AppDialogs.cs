@@ -378,6 +378,7 @@ namespace c2flux
 
                 InitializeComponent();
                 AntdThemeService.Apply(this, _settings.Layout);
+                ApplyThemeColors();
                 ApplyImportantLabelStyle();
                 Shown += Dialog_Shown;
             }
@@ -610,6 +611,17 @@ namespace c2flux
 
                 AcceptButton = buttonYes;
                 CancelButton = buttonNo;
+            }
+
+            private void ApplyThemeColors()
+            {
+                BackColor = AntdThemeService.BackgroundPrimary;
+                ForeColor = AntdThemeService.TextPrimary;
+
+                labelMessage.ForeColor = AntdThemeService.TextPrimary;
+
+                checkBoxOption.BackColor = AntdThemeService.BackgroundPrimary;
+                checkBoxOption.ForeColor = AntdThemeService.TextPrimary;
             }
 
             private void ApplyImportantLabelStyle()

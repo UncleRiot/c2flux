@@ -23,12 +23,12 @@ namespace c2flux
         private static bool IsWriteBlocked;
         private static bool HasShownWarning;
 
-        public static void AddRecord(string path, long sizeBytes)
+        public static DateTime? AddRecord(string path, long sizeBytes)
         {
             if (string.IsNullOrWhiteSpace(path) ||
                 IsWriteBlocked)
             {
-                return;
+                return null;
             }
 
             GetDriveSpace(path, out long totalCapacityBytes, out long freeSpaceBytes);
@@ -36,18 +36,21 @@ namespace c2flux
             lock (SyncRoot)
             {
                 if (!TryLoadInternal(out List<StorageHistoryRecord> records))
-                    return;
+                    return null;
+
+                DateTime recordedAtUtc = DateTime.UtcNow;
 
                 records.Add(new StorageHistoryRecord
                 {
                     Path = NormalizePath(path),
-                    RecordedAtUtc = DateTime.UtcNow,
+                    RecordedAtUtc = recordedAtUtc,
                     SizeBytes = Math.Max(0L, sizeBytes),
                     TotalCapacityBytes = totalCapacityBytes,
                     FreeSpaceBytes = freeSpaceBytes
                 });
 
                 SaveInternal(records);
+                return recordedAtUtc;
             }
         }
 
@@ -108,6 +111,39 @@ namespace c2flux
                     .Where(record => !string.Equals(record.Path, normalizedPath, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
+                SaveInternal(records);
+            }
+        }
+
+        public static void DeleteRecord(
+            string path,
+            DateTime recordedAtUtc)
+        {
+            if (string.IsNullOrWhiteSpace(path) ||
+                IsWriteBlocked)
+            {
+                return;
+            }
+
+            string normalizedPath = NormalizePath(path);
+
+            lock (SyncRoot)
+            {
+                if (!TryLoadInternal(out List<StorageHistoryRecord> records))
+                    return;
+
+                int recordIndex = records.FindIndex(
+                    record =>
+                        string.Equals(
+                            record.Path,
+                            normalizedPath,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        record.RecordedAtUtc == recordedAtUtc);
+
+                if (recordIndex < 0)
+                    return;
+
+                records.RemoveAt(recordIndex);
                 SaveInternal(records);
             }
         }
