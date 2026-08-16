@@ -2,21 +2,31 @@
 
 # c² flux – Tree Scanner
 
+**1st a big thankyou:**
+
+A huge thank you to everyone behind these projects — you’re amazing! Thanks for making such great work available to the community. ❤️
+
+- [itsWindows11.NtfsReader](https://github.com/itsWindows11/NtfsReader)
+- [AntdUI](https://github.com/AntdUI/AntdUI)
+
+---
 **Scan your drives, get an overview of used disk space, find everything. Fast. Faster. c²flux!**
 
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.1.10--beta.1-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.1.10-beta.1/c2flux-v1.1.10-beta.1-win-x64.zip)
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.38-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.38/c2flux-v1.2.38-win-x64.zip)
 <br>
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.1.9-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.1.9/c2flux-v1.1.9-win-x64.zip)
+
 <br>
 <br>
 
-<img width="1618" height="935" alt="grafik" src="https://github.com/user-attachments/assets/e4d5fafc-5eb6-4df0-ae99-4bf45a44da13" />
+<img width="1268" height="796" alt="grafik" src="https://github.com/user-attachments/assets/19ef93b8-8ccc-4a85-a7f2-dce0ab2ad6bb" />
+
 
 <br><br>
 ✨ Treemap view
 
-   <img width="1475" height="936" alt="grafik" src="https://github.com/user-attachments/assets/02029d53-caa9-4442-a2b8-9f87e107daa3" />
+   <img width="1268" height="796" alt="grafik" src="https://github.com/user-attachments/assets/9cda7f94-926f-44d6-acd5-a3f14b8a98d1" />
+
 
 <br><br>
 
