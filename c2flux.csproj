@@ -55,6 +55,7 @@
 		<EmbeddedResource Include="Ressources\c2flux.png" />
 		<EmbeddedResource Include="Ressources\ko-fi.png" />
 		<EmbeddedResource Include="Ressources\molotov.jpg" />
+		<EmbeddedResource Include="Ressources\storage-history-details.png" />
 	</ItemGroup>
 
 

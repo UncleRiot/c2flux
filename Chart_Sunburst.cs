@@ -10,22 +10,6 @@ namespace c2flux
 {
     public sealed class Chart_Sunburst : Control
     {
-        private static readonly Color[] ChartColors =
-        {
-            Color.FromArgb(86, 180, 233),
-            Color.FromArgb(230, 159, 0),
-            Color.FromArgb(0, 158, 115),
-            Color.FromArgb(204, 121, 167),
-            Color.FromArgb(240, 228, 66),
-            Color.FromArgb(0, 114, 178),
-            Color.FromArgb(213, 94, 0),
-            Color.FromArgb(128, 128, 128),
-            Color.FromArgb(102, 194, 165),
-            Color.FromArgb(252, 141, 98),
-            Color.FromArgb(141, 160, 203),
-            Color.FromArgb(231, 138, 195)
-        };
-
         private readonly ToolTip _toolTip;
         private readonly List<SunburstHitArea> _hitAreas;
         private readonly ContextMenuStrip _contextMenu;
@@ -35,9 +19,17 @@ namespace c2flux
         private int _depth;
         private int _maxItems;
 
+        private const double FamilySplitMinimumShare = 0.10D;
+        private const double FamilyPromotionMinimumShare = 0.50D;
+        private const double DominantChildMinimumShare = 0.60D;
+        private const int FamilyPromotionMaximumDepth = 8;
+
         public Chart_Sunburst()
         {
             DoubleBuffered = true;
+            BackColor = AntdThemeService.BackgroundPrimary;
+            ForeColor = AntdThemeService.TextPrimary;
+            Font = AntdThemeService.DefaultFont;
             _toolTip = new ToolTip();
             _hitAreas = new List<SunburstHitArea>();
 
@@ -228,6 +220,7 @@ namespace c2flux
                 ringWidth = 3F;
 
             int remainingItems = _maxItems;
+
             DrawChildren(
                 e.Graphics,
                 _entry,
@@ -238,7 +231,9 @@ namespace c2flux
                 visibleDepth,
                 -90F,
                 360F,
-                ref remainingItems);
+                ref remainingItems,
+                AntdThemeService.GetChartFamilyColor(0),
+                false);
 
             DrawCenter(e.Graphics, outerBounds, centerRadius);
         }
@@ -253,7 +248,9 @@ namespace c2flux
             int visibleDepth,
             float startAngle,
             float sweepAngle,
-            ref int remainingItems)
+            ref int remainingItems,
+            Color inheritedFamilyColor,
+            bool familyLocked)
         {
             if (level >= visibleDepth || remainingItems <= 0)
                 return;
@@ -268,15 +265,27 @@ namespace c2flux
             if (totalSize <= 0)
                 return;
 
+            bool createFamilies =
+                !familyLocked &&
+                HasMeaningfulFamilySplit(
+                    parent,
+                    children);
+
+            int familyIndex =
+                AntdThemeService.GetChartFamilyStartIndex(
+                    parent.Name);
+
             float currentAngle = startAngle;
-            int colorIndex = 0;
 
             foreach (FileSystemEntry child in children)
             {
                 if (remainingItems <= 0)
                     break;
 
-                float childSweep = sweepAngle * child.SizeBytes / totalSize;
+                float childSweep =
+                    sweepAngle *
+                    child.SizeBytes /
+                    totalSize;
 
                 if (childSweep < 0.15F)
                 {
@@ -284,10 +293,52 @@ namespace c2flux
                     continue;
                 }
 
-                float innerRadius = centerRadius + level * ringWidth;
-                float outerRadius = innerRadius + ringWidth;
-                Color baseColor = ChartColors[colorIndex % ChartColors.Length];
-                Color fillColor = AdjustColor(baseColor, level);
+                Color childFamilyColor =
+                    inheritedFamilyColor;
+
+                bool childFamilyLocked =
+                    familyLocked;
+
+                if (createFamilies)
+                {
+                    bool promoteDescendantFamilies =
+                        ShouldPromoteDescendantFamilies(
+                            parent,
+                            child);
+
+                    if (!promoteDescendantFamilies)
+                    {
+                        childFamilyColor =
+                            AntdThemeService.GetChartFamilyColor(
+                                familyIndex);
+
+                        familyIndex++;
+                        childFamilyLocked = true;
+                    }
+                }
+
+                float innerRadius =
+                    centerRadius +
+                    level * ringWidth;
+                float outerRadius =
+                    innerRadius +
+                    ringWidth;
+
+                Color fillColor =
+                    AntdThemeService.GetChartFamilyShade(
+                        childFamilyColor,
+                        child.Name,
+                        level);
+
+                Color gradientTopColor =
+                    AntdThemeService.LightenChartColor(
+                        fillColor,
+                        AntdThemeService.ChartFamilyGradientTopFactor);
+
+                Color gradientBottomColor =
+                    AntdThemeService.DarkenChartColor(
+                        fillColor,
+                        AntdThemeService.ChartFamilyGradientBottomFactor);
 
                 using GraphicsPath path = CreateRingSegmentPath(
                     outerBounds,
@@ -296,16 +347,51 @@ namespace c2flux
                     currentAngle,
                     childSweep);
 
-                using SolidBrush brush = new SolidBrush(fillColor);
-                using Pen borderPen = new Pen(BackColor, 1F);
+                using (PathGradientBrush fillBrush =
+                       new PathGradientBrush(path))
+                {
+                    fillBrush.CenterColor =
+                        gradientTopColor;
+                    fillBrush.SurroundColors =
+                        new[]
+                        {
+                            gradientBottomColor
+                        };
 
-                graphics.FillPath(brush, path);
-                graphics.DrawPath(borderPen, path);
+                    graphics.FillPath(
+                        fillBrush,
+                        path);
+                }
 
-                _hitAreas.Add(new SunburstHitArea(path, child));
+                using (Pen borderPen =
+                       new Pen(
+                           AntdThemeService.BackgroundPrimary,
+                           1F))
+                {
+                    graphics.DrawPath(
+                        borderPen,
+                        path);
+                }
+
+                DrawSegmentLabel(
+                    graphics,
+                    path,
+                    child,
+                    outerBounds,
+                    innerRadius,
+                    outerRadius,
+                    currentAngle,
+                    childSweep);
+
+                _hitAreas.Add(
+                    new SunburstHitArea(
+                        path,
+                        child));
+
                 remainingItems--;
 
-                if (child.IsDirectory && child.Children.Count > 0)
+                if (child.IsDirectory &&
+                    child.Children.Count > 0)
                 {
                     DrawChildren(
                         graphics,
@@ -317,12 +403,135 @@ namespace c2flux
                         visibleDepth,
                         currentAngle,
                         childSweep,
-                        ref remainingItems);
+                        ref remainingItems,
+                        childFamilyColor,
+                        childFamilyLocked);
                 }
 
                 currentAngle += childSweep;
-                colorIndex++;
             }
+        }
+
+        private static bool HasMeaningfulFamilySplit(
+            FileSystemEntry parent,
+            List<FileSystemEntry> children)
+        {
+            if (parent == null ||
+                children == null ||
+                parent.SizeBytes <= 0)
+            {
+                return false;
+            }
+
+            int significantCount = 0;
+
+            foreach (FileSystemEntry child in children)
+            {
+                if (child == null ||
+                    child.SizeBytes <= 0)
+                {
+                    continue;
+                }
+
+                double share =
+                    child.SizeBytes /
+                    (double)parent.SizeBytes;
+
+                if (share >= FamilySplitMinimumShare)
+                {
+                    significantCount++;
+                }
+
+                if (significantCount >= 2)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool ShouldPromoteDescendantFamilies(
+            FileSystemEntry parent,
+            FileSystemEntry child)
+        {
+            if (parent == null ||
+                child == null ||
+                !child.IsDirectory ||
+                parent.SizeBytes <= 0 ||
+                child.SizeBytes <= 0)
+            {
+                return false;
+            }
+
+            double share =
+                child.SizeBytes /
+                (double)parent.SizeBytes;
+
+            if (share < FamilyPromotionMinimumShare)
+                return false;
+
+            return HasDescendantMeaningfulFamilySplit(
+                child,
+                0);
+        }
+
+        private static bool HasDescendantMeaningfulFamilySplit(
+            FileSystemEntry entry,
+            int depth)
+        {
+            if (entry == null ||
+                entry.Children.Count == 0 ||
+                entry.SizeBytes <= 0 ||
+                depth >= FamilyPromotionMaximumDepth)
+            {
+                return false;
+            }
+
+            List<FileSystemEntry> children =
+                entry.Children
+                    .Where(
+                        child =>
+                            child != null &&
+                            child.SizeBytes > 0)
+                    .OrderByDescending(
+                        child =>
+                            child.SizeBytes)
+                    .ToList();
+
+            int significantCount = 0;
+
+            foreach (FileSystemEntry child in children)
+            {
+                double share =
+                    child.SizeBytes /
+                    (double)entry.SizeBytes;
+
+                if (share >= FamilySplitMinimumShare)
+                {
+                    significantCount++;
+                }
+
+                if (significantCount >= 2)
+                    return true;
+            }
+
+            FileSystemEntry dominantChild =
+                children
+                    .Where(
+                        child =>
+                            child.IsDirectory)
+                    .FirstOrDefault();
+
+            if (dominantChild == null ||
+                dominantChild.SizeBytes /
+                    (double)entry.SizeBytes <
+                    DominantChildMinimumShare)
+            {
+                return false;
+            }
+
+            return HasDescendantMeaningfulFamilySplit(
+                dominantChild,
+                depth + 1);
         }
 
         private void DrawCenter(
@@ -340,8 +549,13 @@ namespace c2flux
                 centerRadius * 2F,
                 centerRadius * 2F);
 
-            using SolidBrush centerBrush = new SolidBrush(BackColor);
-            using Pen centerPen = new Pen(AntdThemeService.TextPrimary, 1F);
+            using SolidBrush centerBrush =
+                new SolidBrush(
+                    AntdThemeService.BackgroundPrimary);
+            using Pen centerPen =
+                new Pen(
+                    AntdThemeService.Border,
+                    1F);
             graphics.FillEllipse(centerBrush, centerBounds);
             graphics.DrawEllipse(centerPen, centerBounds);
 
@@ -353,7 +567,9 @@ namespace c2flux
                 Trimming = StringTrimming.EllipsisCharacter
             };
 
-            using SolidBrush textBrush = new SolidBrush(AntdThemeService.TextPrimary);
+            using SolidBrush textBrush =
+                new SolidBrush(
+                    AntdThemeService.TextPrimary);
             graphics.DrawString(
                 centerText,
                 Font,
@@ -409,32 +625,169 @@ namespace c2flux
             return path;
         }
 
-        private static Color AdjustColor(Color color, int level)
+        private void DrawSegmentLabel(
+            Graphics graphics,
+            GraphicsPath segmentPath,
+            FileSystemEntry entry,
+            RectangleF outerBounds,
+            float innerRadius,
+            float outerRadius,
+            float startAngle,
+            float sweepAngle)
         {
-            if (level <= 0)
-                return color;
+            if (entry == null ||
+                segmentPath == null)
+            {
+                return;
+            }
 
-            float factor = Math.Max(
-                0.72F,
-                1F - level * 0.07F);
+            float middleRadius =
+                (innerRadius + outerRadius) / 2F;
 
-            return Color.FromArgb(
-                color.A,
-                Math.Max(
-                    0,
-                    Math.Min(
-                        255,
-                        (int)(color.R * factor))),
-                Math.Max(
-                    0,
-                    Math.Min(
-                        255,
-                        (int)(color.G * factor))),
-                Math.Max(
-                    0,
-                    Math.Min(
-                        255,
-                        (int)(color.B * factor))));
+            float arcLength =
+                Math.Abs(sweepAngle) *
+                (float)Math.PI /
+                180F *
+                middleRadius;
+
+            float radialHeight =
+                outerRadius -
+                innerRadius;
+
+            if (arcLength < 58F ||
+                radialHeight < 18F)
+            {
+                return;
+            }
+
+            string name =
+                entry.Name ??
+                string.Empty;
+
+            if (string.IsNullOrWhiteSpace(name))
+                return;
+
+            string sizeText =
+                SizeFormatter.Format(
+                    entry.SizeBytes);
+
+            bool drawTwoLines =
+                radialHeight >= 36F &&
+                arcLength >= 84F;
+
+            float labelWidth =
+                Math.Min(
+                    Math.Max(
+                        0F,
+                        arcLength - 12F),
+                    180F);
+
+            float labelHeight =
+                drawTwoLines
+                    ? 34F
+                    : 18F;
+
+            if (labelWidth < 48F)
+                return;
+
+            float middleAngle =
+                startAngle +
+                sweepAngle / 2F;
+
+            double radians =
+                middleAngle *
+                Math.PI /
+                180D;
+
+            PointF center =
+                new PointF(
+                    outerBounds.Left +
+                    outerBounds.Width / 2F,
+                    outerBounds.Top +
+                    outerBounds.Height / 2F);
+
+            PointF labelCenter =
+                new PointF(
+                    center.X +
+                    middleRadius *
+                    (float)Math.Cos(radians),
+                    center.Y +
+                    middleRadius *
+                    (float)Math.Sin(radians));
+
+            RectangleF labelBounds =
+                new RectangleF(
+                    labelCenter.X -
+                    labelWidth / 2F,
+                    labelCenter.Y -
+                    labelHeight / 2F,
+                    labelWidth,
+                    labelHeight);
+
+            GraphicsState state =
+                graphics.Save();
+
+            try
+            {
+                graphics.SetClip(
+                    segmentPath,
+                    CombineMode.Intersect);
+
+                using SolidBrush textBrush =
+                    new SolidBrush(
+                        AntdThemeService.ChartSegmentTextColor);
+
+                using StringFormat format =
+                    new StringFormat
+                    {
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Center,
+                        Trimming = StringTrimming.EllipsisCharacter,
+                        FormatFlags = StringFormatFlags.NoWrap
+                    };
+
+                RectangleF nameBounds =
+                    new RectangleF(
+                        labelBounds.X + 4F,
+                        labelBounds.Y,
+                        Math.Max(
+                            0F,
+                            labelBounds.Width - 8F),
+                        drawTwoLines
+                            ? 17F
+                            : labelBounds.Height);
+
+                graphics.DrawString(
+                    name,
+                    Font,
+                    textBrush,
+                    nameBounds,
+                    format);
+
+                if (!drawTwoLines)
+                    return;
+
+                RectangleF sizeBounds =
+                    new RectangleF(
+                        labelBounds.X + 4F,
+                        labelBounds.Y + 17F,
+                        Math.Max(
+                            0F,
+                            labelBounds.Width - 8F),
+                        17F);
+
+                graphics.DrawString(
+                    sizeText,
+                    Font,
+                    textBrush,
+                    sizeBounds,
+                    format);
+            }
+            finally
+            {
+                graphics.Restore(
+                    state);
+            }
         }
 
         private static int GetAvailableDepth(FileSystemEntry entry)

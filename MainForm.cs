@@ -1,4 +1,10 @@
-﻿using System;
+﻿// Reminder to myself: Only use centralized settings in AntdThemeServices.cs, no local configuration/positioning of buttons/tables/etc
+// Sign temporal "workarounds" in classes before and after the corresponding functions - syntax:
+// Don't forget to add notices!!!!!
+// "// Local workaround Start: Description"
+// "// Local workaround End: Description"
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -463,7 +469,7 @@ namespace c2flux
             MaximizeBox = true;
             SizeGripStyle = SizeGripStyle.Show;
 
-            menuStripMain = new MenuStrip();
+            menuStripMain = AntdThemeService.CreateMainMenuStrip();
             menuStripMain.Padding = new Padding(0, 2, 0, 2);
 
             menuItemFile = new ToolStripMenuItem(LocalizationService.GetText("Menu.File"));
@@ -2897,11 +2903,22 @@ namespace c2flux
         private async void menuItemSettings_Click(object sender, EventArgs e)
         {
             bool previousShowFilesInTree = _settings.ShowFilesInTree;
+            string previousLanguageCode = _settings.LanguageCode;
+            AppLayout previousLayout = _settings.Layout;
 
             using SettingsForm settingsForm = new SettingsForm(_settings);
 
             if (settingsForm.ShowDialog(this) != DialogResult.OK)
                 return;
+
+            bool languageChanged =
+                !string.Equals(
+                    previousLanguageCode,
+                    _settings.LanguageCode,
+                    StringComparison.OrdinalIgnoreCase);
+
+            bool layoutChanged =
+                previousLayout != _settings.Layout;
 
             if (previousShowFilesInTree != _settings.ShowFilesInTree)
             {
@@ -2937,34 +2954,44 @@ namespace c2flux
             }
 
             _settings.Save();
-            LocalizationService.Load(_settings.LanguageCode);
-            AntdThemeService.Apply(_settings.Layout);
-            ApplyLocalizedTexts();
+
+            if (languageChanged)
+            {
+                LocalizationService.Load(_settings.LanguageCode);
+                ApplyLocalizedTexts();
+            }
+
             await _driveComboBoxController.LoadDrivesAsync();
-            AntdThemeService.ApplyMainForm(
-                this,
-                _settings.Layout,
-                menuStripMain,
-                toolStripPanelMain,
-                toolStripComboBoxDrives,
-                contextMenuStripTreeEntries,
-                splitContainerMain,
-                splitContainerLeft,
-                panelRightViewHost,
-                statusStripAlerts,
-                statusPanelMain,
-                statusLabelMain,
-                statusScanProgress,
-                listViewPartitions,
-                dataGridViewEntries,
-                toolStripMain,
-                toolStripViewMode,
-                toolStripExport,
-                toolStripFeatures);
+
+            if (layoutChanged)
+            {
+                AntdThemeService.Apply(_settings.Layout);
+                AntdThemeService.ApplyMainForm(
+                    this,
+                    _settings.Layout,
+                    menuStripMain,
+                    toolStripPanelMain,
+                    toolStripComboBoxDrives,
+                    contextMenuStripTreeEntries,
+                    splitContainerMain,
+                    splitContainerLeft,
+                    panelRightViewHost,
+                    statusStripAlerts,
+                    statusPanelMain,
+                    statusLabelMain,
+                    statusScanProgress,
+                    listViewPartitions,
+                    dataGridViewEntries,
+                    toolStripMain,
+                    toolStripViewMode,
+                    toolStripExport,
+                    toolStripFeatures);
+                AntdThemeService.ApplyTreeEntryView(
+                    treeViewEntries);
+                ApplyDriveComboBoxTheme();
+            }
+
             UpdateCompareScansAvailability();
-            AntdThemeService.ApplyTreeEntryView(
-                treeViewEntries);
-            ApplyDriveComboBoxTheme();
             treeViewEntries.Invalidate();
             listViewPartitions.Invalidate();
             dataGridViewEntries.Invalidate();

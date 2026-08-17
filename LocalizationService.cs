@@ -1033,7 +1033,7 @@ namespace c2flux
                 ["Settings.SaveScanHistory"] = "Save scan history (deprecated)",
                 ["Settings.SaveScanHistoryHelp"] = "Saves scan data so changes in storage usage (growth or shrinkage) can be tracked. Only the top 10 changes are stored.",
                 ["Settings.StorageHistoryDetails"] = "Storage History details",
-                ["Settings.StorageHistoryDetailsHelp"] = "Captures a compact NTFS file snapshot after a drive scan for the Storage History details view. This reads the MFT one additional time. On very large drives, scan completion may take longer.",
+                ["Settings.StorageHistoryDetailsHelp"] = "Enable this to save a small snapshot after each scan so that details can be displayed under \"Storage History\".",
                 ["Settings.ScanHistoryDatabasePath"] = "Database path:",
                 ["Settings.MoveDatabase"] = "Browse...",
                 ["Settings.DatabaseSize"] = "Database size: {0}",

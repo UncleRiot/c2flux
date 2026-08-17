@@ -8,6 +8,7 @@ namespace c2flux
     {
         private static Icon _applicationIcon;
         private static Bitmap _applicationImage;
+        private static Bitmap _storageHistoryDetailsPreviewImage;
 
         public static Icon ApplicationIcon
         {
@@ -32,6 +33,20 @@ namespace c2flux
                 }
 
                 return _applicationImage;
+            }
+        }
+
+        public static Bitmap StorageHistoryDetailsPreviewImage
+        {
+            get
+            {
+                if (_storageHistoryDetailsPreviewImage == null)
+                {
+                    _storageHistoryDetailsPreviewImage = LoadBitmap(
+                        "c2flux.Ressources.storage-history-details.png");
+                }
+
+                return _storageHistoryDetailsPreviewImage;
             }
         }
 

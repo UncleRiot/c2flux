@@ -10,21 +10,6 @@ namespace c2flux
 {
     public sealed class Chart_PieChart : Control
     {
-        private static readonly Color[] ChartColors =
-{
-    Color.FromArgb(102, 192, 244),
-    Color.FromArgb(244, 159, 67),
-    Color.FromArgb(120, 220, 140),
-    Color.FromArgb(190, 140, 255),
-    Color.FromArgb(255, 120, 120),
-    Color.FromArgb(120, 210, 210),
-    Color.FromArgb(255, 210, 90),
-    Color.FromArgb(170, 190, 255),
-    Color.FromArgb(210, 160, 120),
-    Color.FromArgb(150, 220, 180),
-    Color.FromArgb(220, 150, 210)
-};
-
         private readonly ToolTip _toolTip;
         private readonly List<ChartHitArea> _hitAreas;
         private readonly ContextMenuStrip _contextMenu;
@@ -229,8 +214,43 @@ namespace c2flux
                 ChartItem item = chartItems[index];
                 float sweepAngle = (float)((double)item.SizeBytes * 360D / totalSize);
 
-                using SolidBrush brush = new SolidBrush(ChartColors[index % ChartColors.Length]);
-                e.Graphics.FillPie(brush, chartBounds, startAngle, sweepAngle);
+                Color segmentColor =
+                    AntdThemeService.GetChartFamilyColor(
+                        index);
+
+                Color segmentGradientTopColor =
+                    AntdThemeService.LightenChartColor(
+                        segmentColor,
+                        AntdThemeService.ChartFamilyGradientTopFactor);
+
+                Color segmentGradientBottomColor =
+                    AntdThemeService.DarkenChartColor(
+                        segmentColor,
+                        AntdThemeService.ChartFamilyGradientBottomFactor);
+
+                using (GraphicsPath segmentPath =
+                       new GraphicsPath())
+                {
+                    segmentPath.AddPie(
+                        chartBounds,
+                        startAngle,
+                        sweepAngle);
+
+                    RectangleF segmentBounds =
+                        segmentPath.GetBounds();
+
+                    using (LinearGradientBrush brush =
+                           new LinearGradientBrush(
+                               segmentBounds,
+                               segmentGradientTopColor,
+                               segmentGradientBottomColor,
+                               LinearGradientMode.Vertical))
+                    {
+                        e.Graphics.FillPath(
+                            brush,
+                            segmentPath);
+                    }
+                }
 
                 if (item.Entry != null)
                 {
@@ -326,7 +346,10 @@ namespace c2flux
             {
                 ChartItem item = chartItems[index];
 
-                using SolidBrush colorBrush = new SolidBrush(ChartColors[index % ChartColors.Length]);
+                using SolidBrush colorBrush =
+                    new SolidBrush(
+                        AntdThemeService.GetChartFamilyColor(
+                            index));
                 int legendMarkerSize =
                     ScaleForDpi(14);
                 int legendMarkerTop =

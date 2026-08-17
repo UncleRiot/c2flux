@@ -93,12 +93,10 @@ namespace c2flux
         public void ApplyTheme(bool useDarkMode)
         {
             _useDarkMode = useDarkMode;
-            BackColor = useDarkMode
-                ? Color.FromArgb(32, 32, 32)
-                : Color.White;
-            ForeColor = useDarkMode
-                ? Color.White
-                : Color.Black;
+            BackColor =
+                AntdThemeService.StorageHistoryChartBackgroundColor;
+            ForeColor =
+                AntdThemeService.StorageHistoryChartTextColor;
             Invalidate();
         }
 
@@ -397,17 +395,27 @@ namespace c2flux
 
         private LinearGradientBrush CreateBackgroundBrush(Rectangle plotArea, long axisMaximum)
         {
+            Color backgroundColor =
+                AntdThemeService.StorageHistoryChartBackgroundColor;
+
             LinearGradientBrush backgroundBrush = new LinearGradientBrush(
                 plotArea,
-                Color.White,
-                Color.White,
+                backgroundColor,
+                backgroundColor,
                 LinearGradientMode.Vertical);
 
-            Color pastelGreen = BlendWithWhite(Color.FromArgb(120, 190, 120), _gradientIntensityPercent);
-            Color pastelRed = BlendWithWhite(Color.FromArgb(225, 140, 140), _gradientIntensityPercent);
-            Color strongRed = BlendWithWhite(
-                Color.FromArgb(210, 70, 70),
-                Math.Min(100, _gradientIntensityPercent + 35));
+            Color pastelGreen =
+                AntdThemeService.GetStorageHistoryChartGradientColor(
+                    AntdThemeService.StorageHistoryChartHealthyColor,
+                    _gradientIntensityPercent);
+            Color pastelRed =
+                AntdThemeService.GetStorageHistoryChartGradientColor(
+                    AntdThemeService.StorageHistoryChartWarningColor,
+                    _gradientIntensityPercent);
+            Color strongRed =
+                AntdThemeService.GetStorageHistoryChartGradientColor(
+                    AntdThemeService.StorageHistoryChartCriticalColor,
+                    _gradientIntensityPercent);
 
             if (_displayMode == StorageHistoryDisplayMode.FreeSpace)
             {
@@ -519,15 +527,6 @@ namespace c2flux
                 ? Color.White
                 : Color.Black;
             return Color.FromArgb(Clamp(alpha, 0, 255), baseColor);
-        }
-
-        private static Color BlendWithWhite(Color baseColor, int intensityPercent)
-        {
-            double ratio = Clamp(intensityPercent, 0, 100) / 100D;
-            int red = (int)Math.Round(255D - (255D - baseColor.R) * ratio);
-            int green = (int)Math.Round(255D - (255D - baseColor.G) * ratio);
-            int blue = (int)Math.Round(255D - (255D - baseColor.B) * ratio);
-            return Color.FromArgb(red, green, blue);
         }
 
         private static int Clamp(int value, int minimum, int maximum)

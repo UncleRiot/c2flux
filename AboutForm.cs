@@ -381,7 +381,7 @@ namespace c2flux
                 Text = LocalizationService.GetText("Common.OK"),
                 Size = new Size(90, 32),
                 Location = new Point(365, 254),
-                Type = AntdUI.TTypeMini.Primary,
+                Type = AntdUI.TTypeMini.Default,
                 DialogResult = DialogResult.OK
             };
 

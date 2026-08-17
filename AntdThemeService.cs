@@ -1,4 +1,10 @@
-﻿using System;
+﻿// Reminder to myself: Only use centralized settings in AntdThemeServices.cs, no local configuration/positioning of buttons/tables/etc
+// Sign temporal "workarounds" in classes before and after the corresponding functions - syntax:
+// Don't forget to add notices!!!!!
+// "// Local workaround Start: Description"
+// "// Local workaround End: Description"
+
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
@@ -10,6 +16,42 @@ namespace c2flux
 {
     public static class AntdThemeService
     {
+        private sealed class ClickThroughToolStrip : ToolStrip
+        {
+            private const int WM_MOUSEACTIVATE = 0x0021;
+            private const int MA_ACTIVATE = 1;
+            private const int MA_ACTIVATEANDEAT = 2;
+
+            protected override void WndProc(ref Message m)
+            {
+                base.WndProc(ref m);
+
+                if (m.Msg == WM_MOUSEACTIVATE &&
+                    m.Result == (IntPtr)MA_ACTIVATEANDEAT)
+                {
+                    m.Result = (IntPtr)MA_ACTIVATE;
+                }
+            }
+        }
+
+        private sealed class ClickThroughMenuStrip : MenuStrip
+        {
+            private const int WM_MOUSEACTIVATE = 0x0021;
+            private const int MA_ACTIVATE = 1;
+            private const int MA_ACTIVATEANDEAT = 2;
+
+            protected override void WndProc(ref Message m)
+            {
+                base.WndProc(ref m);
+
+                if (m.Msg == WM_MOUSEACTIVATE &&
+                    m.Result == (IntPtr)MA_ACTIVATEANDEAT)
+                {
+                    m.Result = (IntPtr)MA_ACTIVATE;
+                }
+            }
+        }
+
         private sealed class AntdUiCultureLocalization : AntdUI.ILocalization
         {
             public string GetLocalizedString(string key)
@@ -985,6 +1027,8 @@ namespace c2flux
 
         // Tooltip Storage History details help
         public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipMaximumWidth = 500;
+        public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipPadding = 10;
+        public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipTextImageSpacing = 8;
 
         // Text Database path
         public const int SettingsStatisticsDatabasePathLabelLeft = 32;
@@ -1077,6 +1121,198 @@ namespace c2flux
 
         public static Color TextPrimary =>
             _useDarkMode ? Color.White : SystemColors.ControlText;
+
+        private static readonly Color[] ChartFamilyColors =
+        {
+            Color.FromArgb(232, 126, 36),
+            Color.FromArgb(190, 185, 0),
+            Color.FromArgb(205, 54, 113),
+            Color.FromArgb(99, 88, 214),
+            Color.FromArgb(29, 142, 207),
+            Color.FromArgb(89, 170, 72),
+            Color.FromArgb(150, 72, 196),
+            Color.FromArgb(220, 75, 75),
+            Color.FromArgb(25, 175, 157),
+            Color.FromArgb(210, 143, 38),
+            Color.FromArgb(76, 127, 215),
+            Color.FromArgb(175, 74, 155)
+        };
+
+        public const double ChartFamilyGradientTopFactor = 1.12D;
+        public const double ChartFamilyGradientBottomFactor = 0.88D;
+        public const int ChartSegmentLabelBackgroundAlpha = 110;
+
+        public static int ChartFamilyColorCount =>
+            ChartFamilyColors.Length;
+
+        public static Color ChartSegmentTextColor =>
+            Color.White;
+
+        public static Color ChartSegmentLabelBackgroundColor =>
+            Color.FromArgb(
+                ChartSegmentLabelBackgroundAlpha,
+                0,
+                0,
+                0);
+
+        public static Color GetChartFamilyColor(
+            int index)
+        {
+            if (ChartFamilyColors.Length == 0)
+                return TextPrimary;
+
+            int normalizedIndex =
+                index %
+                ChartFamilyColors.Length;
+
+            if (normalizedIndex < 0)
+            {
+                normalizedIndex +=
+                    ChartFamilyColors.Length;
+            }
+
+            return ChartFamilyColors[
+                normalizedIndex];
+        }
+
+        public static int GetChartFamilyStartIndex(
+            string familyName)
+        {
+            if (ChartFamilyColors.Length == 0)
+                return 0;
+
+            int hash =
+                StringComparer.OrdinalIgnoreCase
+                    .GetHashCode(
+                        familyName ??
+                        string.Empty);
+
+            return Math.Abs(
+                hash %
+                ChartFamilyColors.Length);
+        }
+
+        public static Color GetChartFamilyShade(
+            Color familyColor,
+            string name,
+            int depth)
+        {
+            int nameHash =
+                StringComparer.OrdinalIgnoreCase
+                    .GetHashCode(
+                        name ??
+                        string.Empty);
+
+            double factor =
+                0.72D +
+                Math.Min(
+                    0.2D,
+                    depth * 0.03D) +
+                Math.Abs(
+                    nameHash % 11) /
+                100D;
+
+            return Color.FromArgb(
+                ScaleChartColor(
+                    familyColor.R,
+                    factor),
+                ScaleChartColor(
+                    familyColor.G,
+                    factor),
+                ScaleChartColor(
+                    familyColor.B,
+                    factor));
+        }
+
+        public static Color LightenChartColor(
+            Color color,
+            double factor)
+        {
+            return Color.FromArgb(
+                Math.Min(
+                    255,
+                    (int)Math.Round(
+                        color.R * factor)),
+                Math.Min(
+                    255,
+                    (int)Math.Round(
+                        color.G * factor)),
+                Math.Min(
+                    255,
+                    (int)Math.Round(
+                        color.B * factor)));
+        }
+
+        public static Color DarkenChartColor(
+            Color color,
+            double factor)
+        {
+            return Color.FromArgb(
+                color.A,
+                Math.Max(
+                    0,
+                    (int)Math.Round(
+                        color.R * factor)),
+                Math.Max(
+                    0,
+                    (int)Math.Round(
+                        color.G * factor)),
+                Math.Max(
+                    0,
+                    (int)Math.Round(
+                        color.B * factor)));
+        }
+
+        private static int ScaleChartColor(
+            int value,
+            double factor)
+        {
+            return Math.Max(
+                24,
+                Math.Min(
+                    235,
+                    (int)Math.Round(
+                        value * factor)));
+        }
+
+        public static Color StorageHistoryChartBackgroundColor =>
+            BackgroundPrimary;
+
+        public static Color StorageHistoryChartTextColor =>
+            TextPrimary;
+
+        public static Color StorageHistoryChartHealthyColor =>
+            Color.FromArgb(120, 190, 120);
+
+        public static Color StorageHistoryChartWarningColor =>
+            Color.FromArgb(225, 140, 140);
+
+        public static Color StorageHistoryChartCriticalColor =>
+            Color.FromArgb(210, 70, 70);
+
+        public static Color GetStorageHistoryChartGradientColor(
+            Color targetColor,
+            int intensityPercent)
+        {
+            double ratio = Math.Max(
+                0D,
+                Math.Min(100D, intensityPercent)) / 100D;
+
+            Color backgroundColor =
+                StorageHistoryChartBackgroundColor;
+
+            int red = (int)Math.Round(
+                backgroundColor.R +
+                (targetColor.R - backgroundColor.R) * ratio);
+            int green = (int)Math.Round(
+                backgroundColor.G +
+                (targetColor.G - backgroundColor.G) * ratio);
+            int blue = (int)Math.Round(
+                backgroundColor.B +
+                (targetColor.B - backgroundColor.B) * ratio);
+
+            return Color.FromArgb(red, green, blue);
+        }
 
         public static Color MainDisabledButtonTextColor =>
             _useDarkMode ? Color.FromArgb(128, 128, 128) : SystemColors.ControlText;
@@ -1405,18 +1641,24 @@ namespace c2flux
     int height,
     AntdUI.TTypeMini type)
         {
+            int requiredWidth = Math.Max(
+                width,
+                TextRenderer.MeasureText(
+                    text ?? string.Empty,
+                    DefaultFont).Width + 24);
+
             AntdUI.Button button = new AntdUI.Button
             {
                 Name = name,
                 Text = text,
-                AutoSize = true,
-                MinimumSize = new Size(width, height),
-                Height = height,
+                AutoSize = false,
+                MinimumSize = new Size(requiredWidth, height),
+                Size = new Size(requiredWidth, height),
                 Type = type,
                 Radius = 6,
                 BorderWidth = 1F,
                 Anchor = AnchorStyles.None,
-                Margin = new Padding(4, 0, 4, 4)
+                Margin = new Padding(4, 2, 4, 2)
             };
 
             ConfigureStorageHistoryButton(button);
@@ -1511,6 +1753,136 @@ namespace c2flux
             }
 
             grid.Invalidate(true);
+        }
+
+        public static Size GetStorageHistoryDetailsHelpToolTipSize(
+            Control owner,
+            string text,
+            Image previewImage)
+        {
+            int maximumWidth = ScaleForDpi(
+                owner,
+                SettingsStatisticsStorageHistoryDetailsHelpToolTipMaximumWidth);
+            int padding = ScaleForDpi(
+                owner,
+                SettingsStatisticsStorageHistoryDetailsHelpToolTipPadding);
+            int spacing = ScaleForDpi(
+                owner,
+                SettingsStatisticsStorageHistoryDetailsHelpToolTipTextImageSpacing);
+
+            Size textSize = TextRenderer.MeasureText(
+                text ?? string.Empty,
+                DefaultFont,
+                new Size(maximumWidth, int.MaxValue),
+                TextFormatFlags.WordBreak |
+                TextFormatFlags.NoPadding);
+
+            int imageWidth = 0;
+            int imageHeight = 0;
+
+            if (previewImage != null &&
+                previewImage.Width > 0 &&
+                previewImage.Height > 0)
+            {
+                imageWidth = Math.Min(
+                    maximumWidth,
+                    ScaleForDpi(
+                        owner,
+                        previewImage.Width));
+
+                imageHeight = (int)Math.Round(
+                    previewImage.Height *
+                    (imageWidth / (double)previewImage.Width));
+            }
+
+            int contentWidth = Math.Max(
+                textSize.Width,
+                imageWidth);
+            int contentHeight =
+                textSize.Height +
+                (imageHeight > 0 ? spacing + imageHeight : 0);
+
+            return new Size(
+                contentWidth + padding * 2,
+                contentHeight + padding * 2);
+        }
+
+        public static void DrawStorageHistoryDetailsHelpToolTip(
+            DrawToolTipEventArgs e,
+            Image previewImage)
+        {
+            if (e == null)
+                return;
+
+            e.Graphics.Clear(BackgroundSecondary);
+
+            using (Pen borderPen = new Pen(Border))
+            {
+                e.Graphics.DrawRectangle(
+                    borderPen,
+                    0,
+                    0,
+                    Math.Max(0, e.Bounds.Width - 1),
+                    Math.Max(0, e.Bounds.Height - 1));
+            }
+
+            int padding = ScaleForDpi(
+                e.AssociatedControl,
+                SettingsStatisticsStorageHistoryDetailsHelpToolTipPadding);
+            int spacing = ScaleForDpi(
+                e.AssociatedControl,
+                SettingsStatisticsStorageHistoryDetailsHelpToolTipTextImageSpacing);
+            int contentWidth = Math.Max(
+                0,
+                e.Bounds.Width - padding * 2);
+
+            Size textSize = TextRenderer.MeasureText(
+                e.ToolTipText ?? string.Empty,
+                DefaultFont,
+                new Size(contentWidth, int.MaxValue),
+                TextFormatFlags.WordBreak |
+                TextFormatFlags.NoPadding);
+
+            Rectangle textBounds = new Rectangle(
+                padding,
+                padding,
+                contentWidth,
+                textSize.Height);
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                e.ToolTipText ?? string.Empty,
+                DefaultFont,
+                textBounds,
+                TextPrimary,
+                TextFormatFlags.WordBreak |
+                TextFormatFlags.NoPadding);
+
+            if (previewImage == null ||
+                previewImage.Width <= 0 ||
+                previewImage.Height <= 0)
+            {
+                return;
+            }
+
+            int imageWidth = Math.Min(
+                contentWidth,
+                ScaleForDpi(
+                    e.AssociatedControl,
+                    previewImage.Width));
+            int imageHeight = (int)Math.Round(
+                previewImage.Height *
+                (imageWidth / (double)previewImage.Width));
+
+            Rectangle imageBounds = new Rectangle(
+                padding,
+                textBounds.Bottom + spacing,
+                imageWidth,
+                imageHeight);
+
+            e.Graphics.DrawImage(
+                previewImage,
+                imageBounds);
         }
 
         public static string WrapToolTipText(
@@ -2610,9 +2982,14 @@ namespace c2flux
             return toolbarPanel;
         }
 
+        public static MenuStrip CreateMainMenuStrip()
+        {
+            return new ClickThroughMenuStrip();
+        }
+
         public static ToolStrip CreateMainToolStrip()
         {
-            ToolStrip toolStrip = new ToolStrip
+            ToolStrip toolStrip = new ClickThroughToolStrip
             {
                 Dock = DockStyle.None,
                 GripStyle = ToolStripGripStyle.Visible,
@@ -4520,7 +4897,7 @@ namespace c2flux
             if (grid == null)
                 return;
 
-            Color headerBackColor = ControlPaint.Dark(BackgroundSecondary, 0.08f);
+            Color headerBackColor = BackgroundSecondary;
             Color gridColor = ControlPaint.Dark(BackgroundSecondary, 0.2f);
 
             grid.BackgroundColor = BackgroundPrimary;

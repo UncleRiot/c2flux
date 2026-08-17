@@ -918,22 +918,6 @@ namespace c2flux
             private const double MinimumChildPixelArea = 30D;
             private const int MaximumVisibleChildren = 160;
 
-            private static readonly Color[] FamilyColors =
-            {
-                Color.FromArgb(232, 126, 36),
-                Color.FromArgb(190, 185, 0),
-                Color.FromArgb(205, 54, 113),
-                Color.FromArgb(99, 88, 214),
-                Color.FromArgb(29, 142, 207),
-                Color.FromArgb(89, 170, 72),
-                Color.FromArgb(150, 72, 196),
-                Color.FromArgb(220, 75, 75),
-                Color.FromArgb(25, 175, 157),
-                Color.FromArgb(210, 143, 38),
-                Color.FromArgb(76, 127, 215),
-                Color.FromArgb(175, 74, 155)
-            };
-
             private readonly ToolTip _toolTip;
             private readonly Timer _resizeTimer;
             private readonly List<TreemapHitArea> _hitAreas =
@@ -1293,7 +1277,7 @@ namespace c2flux
                         rootNode,
                         bounds,
                         0,
-                        FamilyColors[0],
+                        AntdThemeService.GetChartFamilyColor(0),
                         false,
                         false,
                         false);
@@ -1310,7 +1294,7 @@ namespace c2flux
                         rootNode,
                         rootLayout,
                         0,
-                        FamilyColors[0],
+                        AntdThemeService.GetChartFamilyColor(0),
                         false);
                 }
 
@@ -1627,12 +1611,8 @@ namespace c2flux
                         layout);
 
                 int familyIndex =
-                    Math.Abs(
-                        StringComparer.OrdinalIgnoreCase
-                            .GetHashCode(
-                                parentNode?.DisplayName ??
-                                string.Empty)) %
-                    FamilyColors.Length;
+                    AntdThemeService.GetChartFamilyStartIndex(
+                        parentNode?.DisplayName);
 
                 foreach (TreemapLayoutItem item in layout)
                 {
@@ -1656,9 +1636,8 @@ namespace c2flux
                         if (!promoteDescendantFamilies)
                         {
                             childFamilyColor =
-                                FamilyColors[
-                                    familyIndex %
-                                    FamilyColors.Length];
+                                AntdThemeService.GetChartFamilyColor(
+                                    familyIndex);
 
                             familyIndex++;
 
@@ -1740,28 +1719,28 @@ namespace c2flux
                     node.IsAggregate
                         ? GetAggregateColor(
                             familyColor)
-                        : GetFamilyShade(
+                        : AntdThemeService.GetChartFamilyShade(
                             familyColor,
-                            node,
+                            node.DisplayName,
                             depth);
 
                 Color gradientTopColor =
                     node.IsAggregate
-                        ? LightenColor(
+                        ? AntdThemeService.LightenChartColor(
                             nodeColor,
                             1.05D)
-                        : LightenColor(
+                        : AntdThemeService.LightenChartColor(
                             nodeColor,
-                            1.12D);
+                            AntdThemeService.ChartFamilyGradientTopFactor);
 
                 Color gradientBottomColor =
                     node.IsAggregate
-                        ? DarkenColor(
+                        ? AntdThemeService.DarkenChartColor(
                             nodeColor,
                             0.94D)
-                        : DarkenColor(
+                        : AntdThemeService.DarkenChartColor(
                             nodeColor,
-                            0.88D);
+                            AntdThemeService.ChartFamilyGradientBottomFactor);
 
                 using (LinearGradientBrush fillBrush =
                        new LinearGradientBrush(
@@ -2204,7 +2183,6 @@ namespace c2flux
 
                 const int horizontalPadding = 3;
                 const int lineHeight = 17;
-                const int labelBackgroundAlpha = 110;
 
                 string sizeText =
                     SizeFormatter.Format(
@@ -2279,11 +2257,7 @@ namespace c2flux
 
                     using (SolidBrush titleBackgroundBrush =
                            new SolidBrush(
-                               Color.FromArgb(
-                                   labelBackgroundAlpha,
-                                   0,
-                                   0,
-                                   0)))
+                               AntdThemeService.ChartSegmentLabelBackgroundColor))
                     {
                         graphics.FillRectangle(
                             titleBackgroundBrush,
@@ -2323,11 +2297,7 @@ namespace c2flux
 
                 using (SolidBrush sizeBackgroundBrush =
                        new SolidBrush(
-                           Color.FromArgb(
-                               labelBackgroundAlpha,
-                               0,
-                               0,
-                               0)))
+                           AntdThemeService.ChartSegmentLabelBackgroundColor))
                 {
                     graphics.FillRectangle(
                         sizeBackgroundBrush,
@@ -2424,7 +2394,7 @@ namespace c2flux
                        new SolidBrush(
                            Color.FromArgb(
                                245,
-                               DarkenColor(
+                               AntdThemeService.DarkenChartColor(
                                    nodeColor,
                                    0.72D))))
                 {
@@ -2437,7 +2407,7 @@ namespace c2flux
                        new Pen(
                            Color.FromArgb(
                                170,
-                               LightenColor(
+                               AntdThemeService.LightenChartColor(
                                    nodeColor,
                                    1.28D)),
                            1F))
@@ -2554,7 +2524,7 @@ namespace c2flux
 
                 using (Pen headerBorder =
                        new Pen(
-                           LightenColor(
+                           AntdThemeService.LightenChartColor(
                                familyColor,
                                1.18D),
                            1F))
@@ -2635,11 +2605,11 @@ namespace c2flux
 
                 Color borderColor =
                     isFamilyRoot
-                        ? LightenColor(
+                        ? AntdThemeService.LightenChartColor(
                             familyColor,
                             1.35D)
                         : isLeafNode
-                            ? DarkenColor(
+                            ? AntdThemeService.DarkenChartColor(
                                 nodeColor,
                                 0.58D)
                             : AntdThemeService.Border;
@@ -2673,7 +2643,7 @@ namespace c2flux
                         new Pen(
                             Color.FromArgb(
                                 92,
-                                LightenColor(
+                                AntdThemeService.LightenChartColor(
                                     nodeColor,
                                     1.65D)));
 
@@ -2699,7 +2669,7 @@ namespace c2flux
                         new Pen(
                             Color.FromArgb(
                                 70,
-                                DarkenColor(
+                                AntdThemeService.DarkenChartColor(
                                     nodeColor,
                                     0.42D)));
 
@@ -2803,38 +2773,6 @@ namespace c2flux
                 return null;
             }
 
-            private static Color GetFamilyShade(
-                Color familyColor,
-                TreemapNode node,
-                int depth)
-            {
-                int nameHash =
-                    StringComparer.OrdinalIgnoreCase
-                        .GetHashCode(
-                            node.DisplayName ??
-                            string.Empty);
-
-                double factor =
-                    0.72D +
-                    Math.Min(
-                        0.2D,
-                        depth * 0.03D) +
-                    Math.Abs(
-                        nameHash % 11) /
-                    100D;
-
-                return Color.FromArgb(
-                    ScaleColor(
-                        familyColor.R,
-                        factor),
-                    ScaleColor(
-                        familyColor.G,
-                        factor),
-                    ScaleColor(
-                        familyColor.B,
-                        factor));
-            }
-
             private static Color GetAggregateColor(
                 Color familyColor)
             {
@@ -2848,45 +2786,6 @@ namespace c2flux
                     ScaleColor(
                         familyColor.B,
                         0.78D));
-            }
-
-            private static Color LightenColor(
-                Color color,
-                double factor)
-            {
-                return Color.FromArgb(
-                    Math.Min(
-                        255,
-                        (int)Math.Round(
-                            color.R * factor)),
-                    Math.Min(
-                        255,
-                        (int)Math.Round(
-                            color.G * factor)),
-                    Math.Min(
-                        255,
-                        (int)Math.Round(
-                            color.B * factor)));
-            }
-
-            private static Color DarkenColor(
-                Color color,
-                double factor)
-            {
-                return Color.FromArgb(
-                    color.A,
-                    Math.Max(
-                        0,
-                        (int)Math.Round(
-                            color.R * factor)),
-                    Math.Max(
-                        0,
-                        (int)Math.Round(
-                            color.G * factor)),
-                    Math.Max(
-                        0,
-                        (int)Math.Round(
-                            color.B * factor)));
             }
 
             private static int ScaleColor(

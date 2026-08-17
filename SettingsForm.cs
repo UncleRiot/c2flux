@@ -42,6 +42,7 @@ namespace c2flux
         private AntdUI.Button buttonAddLanguage;
         private AntdUI.Button buttonDeleteLanguage;
         private ToolTip toolTip;
+        private ToolTip storageHistoryDetailsToolTip;
         private AntdUI.Label labelLayout;
         private AntdUI.Select comboBoxLayout;
         private AntdUI.Checkbox checkBoxExportPath;
@@ -199,6 +200,30 @@ namespace c2flux
                     (checkBoxC2FluxScan.Height - buttonC2FluxScanHelp.Height) / 2));
 
             buttonC2FluxScanHelp.BringToFront();
+        }
+
+        private void storageHistoryDetailsToolTip_Popup(
+            object sender,
+            PopupEventArgs e)
+        {
+            if (e.AssociatedControl != buttonStorageHistoryDetailsHelp)
+                return;
+
+            e.ToolTipSize =
+                AntdThemeService.GetStorageHistoryDetailsHelpToolTipSize(
+                    buttonStorageHistoryDetailsHelp,
+                    LocalizationService.GetText(
+                        "Settings.StorageHistoryDetailsHelp"),
+                    AppResources.StorageHistoryDetailsPreviewImage);
+        }
+
+        private void storageHistoryDetailsToolTip_Draw(
+            object sender,
+            DrawToolTipEventArgs e)
+        {
+            AntdThemeService.DrawStorageHistoryDetailsHelpToolTip(
+                e,
+                AppResources.StorageHistoryDetailsPreviewImage);
         }
 
         private void InitializeComponent()
@@ -784,11 +809,18 @@ namespace c2flux
                 Radius = AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpButtonRadius,
                 TabStop = false
             };
-            toolTip.SetToolTip(
+            storageHistoryDetailsToolTip = new ToolTip
+            {
+                OwnerDraw = true
+            };
+            storageHistoryDetailsToolTip.Popup +=
+                storageHistoryDetailsToolTip_Popup;
+            storageHistoryDetailsToolTip.Draw +=
+                storageHistoryDetailsToolTip_Draw;
+            storageHistoryDetailsToolTip.SetToolTip(
                 buttonStorageHistoryDetailsHelp,
-                AntdThemeService.WrapToolTipText(
-                    LocalizationService.GetText("Settings.StorageHistoryDetailsHelp"),
-                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsHelpToolTipMaximumWidth));
+                LocalizationService.GetText(
+                    "Settings.StorageHistoryDetailsHelp"));
 
             labelScanHistoryDatabasePath = new AntdUI.Label
             {
