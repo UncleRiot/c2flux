@@ -3691,6 +3691,33 @@ namespace c2flux
             System.Text.StringBuilder lpClassName,
             int nMaxCount);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern int GetWindowLong(
+            IntPtr hWnd,
+            int nIndex);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ShowScrollBar(
+            IntPtr hWnd,
+            int wBar,
+            bool bShow);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetClientRect(
+            IntPtr hWnd,
+            out RECT lpRect);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
         private enum PreferredAppMode
         {
             Default = 0,
@@ -3715,6 +3742,9 @@ namespace c2flux
 
         private const int WH_CBT = 5;
         private const int HCBT_ACTIVATE = 5;
+        private const int GWL_STYLE = -16;
+        private const int WS_VSCROLL = 0x00200000;
+        private const int SB_HORZ = 0;
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
@@ -4010,6 +4040,18 @@ namespace c2flux
                 appFileDialogListEntries_DrawSubItem;
             listEntries.DrawSubItem +=
                 appFileDialogListEntries_DrawSubItem;
+            listEntries.ColumnWidthChanging -=
+                appFileDialogListEntries_ColumnWidthChanging;
+            listEntries.ColumnWidthChanging +=
+                appFileDialogListEntries_ColumnWidthChanging;
+            listEntries.ColumnWidthChanged -=
+                appFileDialogListEntries_ColumnWidthChanged;
+            listEntries.ColumnWidthChanged +=
+                appFileDialogListEntries_ColumnWidthChanged;
+            listEntries.SizeChanged -=
+                appFileDialogListEntries_SizeChanged;
+            listEntries.SizeChanged +=
+                appFileDialogListEntries_SizeChanged;
 
             textBoxAddress.BackColor =
                 InputBackground;
@@ -4440,10 +4482,8 @@ namespace c2flux
             if (listEntries.Columns.Count >= 4)
             {
                 int availableWidth =
-                    Math.Max(
-                        240,
-                        listEntries.ClientSize.Width -
-                        SystemInformation.VerticalScrollBarWidth);
+                    GetAppFileDialogListEntriesAvailableWidth(
+                        listEntries);
 
                 listEntries.Columns[0].Width =
                     Math.Max(
@@ -4460,13 +4500,9 @@ namespace c2flux
                         110,
                         (int)Math.Round(
                             availableWidth * 0.20D));
-                listEntries.Columns[3].Width =
-                    Math.Max(
-                        90,
-                        availableWidth -
-                        listEntries.Columns[0].Width -
-                        listEntries.Columns[1].Width -
-                        listEntries.Columns[2].Width);
+
+                FitAppFileDialogListEntriesLastColumn(
+                    listEntries);
             }
         }
 
@@ -4607,6 +4643,221 @@ namespace c2flux
                 TextFormatFlags.VerticalCenter |
                 TextFormatFlags.EndEllipsis |
                 TextFormatFlags.NoPadding);
+        }
+
+        private static void appFileDialogListEntries_ColumnWidthChanging(
+            object sender,
+            ColumnWidthChangingEventArgs e)
+        {
+            if (sender is not ListView listEntries ||
+                listEntries.Columns.Count < 4)
+            {
+                return;
+            }
+
+            int lastColumnIndex =
+                listEntries.Columns.Count - 1;
+
+            if (e.ColumnIndex == lastColumnIndex)
+            {
+                e.Cancel = true;
+                e.NewWidth =
+                    listEntries.Columns[lastColumnIndex].Width;
+                return;
+            }
+
+            int availableWidth =
+                GetAppFileDialogListEntriesAvailableWidth(
+                    listEntries);
+
+            int otherColumnsWidth = 0;
+
+            for (int index = 0;
+                 index < lastColumnIndex;
+                 index++)
+            {
+                if (index == e.ColumnIndex)
+                    continue;
+
+                otherColumnsWidth +=
+                    listEntries.Columns[index].Width;
+            }
+
+            int maximumWidth =
+                Math.Max(
+                    1,
+                    availableWidth -
+                    otherColumnsWidth -
+                    1);
+
+            if (e.NewWidth > maximumWidth)
+            {
+                e.NewWidth =
+                    maximumWidth;
+            }
+        }
+
+        private static void appFileDialogListEntries_ColumnWidthChanged(
+            object sender,
+            ColumnWidthChangedEventArgs e)
+        {
+            if (sender is ListView listEntries)
+            {
+                FitAppFileDialogListEntriesLastColumn(
+                    listEntries);
+            }
+        }
+
+        private static void appFileDialogListEntries_SizeChanged(
+            object sender,
+            EventArgs e)
+        {
+            if (sender is ListView listEntries)
+            {
+                FitAppFileDialogListEntriesLastColumn(
+                    listEntries);
+            }
+        }
+
+        private static int GetAppFileDialogListEntriesAvailableWidth(
+            ListView listEntries)
+        {
+            if (listEntries == null)
+                return 0;
+
+            int availableWidth =
+                listEntries.ClientSize.Width;
+
+            if (listEntries.IsHandleCreated)
+            {
+                int windowStyle =
+                    GetWindowLong(
+                        listEntries.Handle,
+                        GWL_STYLE);
+
+                if ((windowStyle &
+                     WS_VSCROLL) != 0)
+                {
+                    availableWidth -=
+                        SystemInformation.VerticalScrollBarWidth;
+                }
+            }
+
+            return Math.Max(
+                1,
+                availableWidth - 1);
+        }
+
+        private static void FitAppFileDialogListEntriesLastColumn(
+            ListView listEntries)
+        {
+            if (listEntries == null ||
+                listEntries.Columns.Count < 4)
+            {
+                return;
+            }
+
+            int lastColumnIndex =
+                listEntries.Columns.Count - 1;
+
+            int availableWidth =
+                GetAppFileDialogListEntriesAvailableWidth(
+                    listEntries);
+
+            int usedWidth = 0;
+
+            for (int index = 0;
+                 index < lastColumnIndex;
+                 index++)
+            {
+                usedWidth +=
+                    listEntries.Columns[index].Width;
+            }
+
+            int lastColumnWidth =
+                Math.Max(
+                    1,
+                    availableWidth -
+                    usedWidth);
+
+            if (listEntries.Columns[lastColumnIndex].Width !=
+                lastColumnWidth)
+            {
+                listEntries.Columns[lastColumnIndex].Width =
+                    lastColumnWidth;
+            }
+
+            if (listEntries.IsHandleCreated)
+            {
+                ShowScrollBar(
+                    listEntries.Handle,
+                    SB_HORZ,
+                    false);
+            }
+
+            listEntries.Invalidate();
+        }
+
+        internal static void PaintAppFileDialogHeaderRemainder(
+            ListView listEntries,
+            IntPtr headerHandle)
+        {
+            if (listEntries == null ||
+                headerHandle == IntPtr.Zero ||
+                listEntries.Columns.Count == 0)
+            {
+                return;
+            }
+
+            if (!GetClientRect(
+                    headerHandle,
+                    out RECT clientRect))
+            {
+                return;
+            }
+
+            int usedWidth = 0;
+
+            foreach (ColumnHeader column
+                     in listEntries.Columns)
+            {
+                usedWidth +=
+                    column.Width;
+            }
+
+            int remainderLeft =
+                Math.Max(
+                    clientRect.Left,
+                    Math.Min(
+                        clientRect.Right,
+                        usedWidth));
+
+            if (remainderLeft >=
+                clientRect.Right)
+            {
+                return;
+            }
+
+            Rectangle remainderBounds =
+                new Rectangle(
+                    remainderLeft,
+                    clientRect.Top,
+                    clientRect.Right -
+                    remainderLeft,
+                    clientRect.Bottom -
+                    clientRect.Top);
+
+            using Graphics graphics =
+                Graphics.FromHwnd(
+                    headerHandle);
+
+            using SolidBrush backBrush =
+                new SolidBrush(
+                    BackgroundSecondary);
+
+            graphics.FillRectangle(
+                backBrush,
+                remainderBounds);
         }
 
         private static void appFileDialogListEntries_DrawColumnHeader(
@@ -4755,6 +5006,18 @@ namespace c2flux
                 textBounds,
                 foreColor,
                 flags);
+
+            using Pen borderPen =
+                new Pen(
+                    Border);
+
+            e.Graphics.DrawLine(
+                borderPen,
+                e.Bounds.Right - 1,
+                e.Bounds.Top,
+                e.Bounds.Right - 1,
+                e.Bounds.Bottom);
+
         }
 
         public static void ConfigureUpdateAvailableForm(

@@ -167,7 +167,7 @@ namespace c2flux
             {
                 ImageList = _shellImageList
             };
-            listEntries = new ListView
+            listEntries = new DoubleBufferedListView
             {
                 View = View.Details,
                 FullRowSelect = true,
@@ -1434,6 +1434,111 @@ namespace c2flux
 
         private const uint SHGFI_ICON = 0x000000100;
         private const uint SHGFI_SMALLICON = 0x000000001;
+
+        private sealed class DoubleBufferedListView : ListView
+        {
+            private const int LVM_FIRST = 0x1000;
+            private const int LVM_GETHEADER = LVM_FIRST + 31;
+            private readonly HeaderNativeWindow _headerNativeWindow;
+
+            public DoubleBufferedListView()
+            {
+                _headerNativeWindow =
+                    new HeaderNativeWindow(
+                        this);
+
+                DoubleBuffered = true;
+                SetStyle(
+                    ControlStyles.AllPaintingInWmPaint |
+                    ControlStyles.OptimizedDoubleBuffer,
+                    true);
+                UpdateStyles();
+            }
+
+            protected override void OnHandleCreated(
+                EventArgs e)
+            {
+                base.OnHandleCreated(e);
+
+                IntPtr headerHandle =
+                    SendMessage(
+                        Handle,
+                        LVM_GETHEADER,
+                        IntPtr.Zero,
+                        IntPtr.Zero);
+
+                if (headerHandle != IntPtr.Zero)
+                {
+                    _headerNativeWindow.AssignHeaderHandle(
+                        headerHandle);
+                }
+            }
+
+            protected override void OnHandleDestroyed(
+                EventArgs e)
+            {
+                _headerNativeWindow.ReleaseHeaderHandle();
+
+                base.OnHandleDestroyed(e);
+            }
+
+            [DllImport(
+                "user32.dll",
+                CharSet = CharSet.Auto)]
+            private static extern IntPtr SendMessage(
+                IntPtr hWnd,
+                int msg,
+                IntPtr wParam,
+                IntPtr lParam);
+
+            private sealed class HeaderNativeWindow : NativeWindow
+            {
+                private const int WM_PAINT = 0x000F;
+                private readonly DoubleBufferedListView _owner;
+
+                public HeaderNativeWindow(
+                    DoubleBufferedListView owner)
+                {
+                    _owner =
+                        owner ??
+                        throw new ArgumentNullException(
+                            nameof(owner));
+                }
+
+                public void AssignHeaderHandle(
+                    IntPtr headerHandle)
+                {
+                    if (Handle == headerHandle)
+                        return;
+
+                    ReleaseHeaderHandle();
+                    AssignHandle(
+                        headerHandle);
+                }
+
+                public void ReleaseHeaderHandle()
+                {
+                    if (Handle != IntPtr.Zero)
+                    {
+                        ReleaseHandle();
+                    }
+                }
+
+                protected override void WndProc(
+                    ref Message m)
+                {
+                    base.WndProc(
+                        ref m);
+
+                    if (m.Msg == WM_PAINT)
+                    {
+                        AntdThemeService.PaintAppFileDialogHeaderRemainder(
+                            _owner,
+                            Handle);
+                    }
+                }
+            }
+        }
 
         private sealed class FileDialogFilter
         {
