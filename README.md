@@ -190,7 +190,7 @@ Only continue if you downloaded c² flux from the official GitHub repository.
 
 ## Security and Packaging
 
-> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
+> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: https://github.com/UncleRiot/c2flux/wiki/Security-scanner-findings-and-release-packaging
 
 <br>
 
