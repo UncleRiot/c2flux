@@ -13,7 +13,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 **Scan your drives, get an overview of used disk space, find everything. Fast. Faster. c²flux!**
 
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.38-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.38/c2flux-v1.2.38-win-x64.zip)
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.80--beta.2-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.80-beta.2/c2flux-v1.2.80-beta.2-win-x64.zip)
 
 <br>
 <br>
@@ -32,7 +32,17 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 <br><br>
    <img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/02a4e251-8e44-45d7-afe7-78b588d54823" />
 
+<br>
+<br>
+<br>
+
+✨ Analysis
 <br><br>
+   <img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/036d3c31-742a-4268-a011-c85d93d3da66" />
+
+<br>
+<br>
+<br>
 
 ✨ Storage History - see, why your free drive space gets smaller and smaller
 <br><br>
