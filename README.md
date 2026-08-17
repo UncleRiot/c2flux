@@ -13,22 +13,44 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 **Scan your drives, get an overview of used disk space, find everything. Fast. Faster. c²flux!**
 
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.38-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.38/c2flux-v1.2.38-win-x64.zip)
-<br>
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.80--beta.2-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.80-beta.2/c2flux-v1.2.80-beta.2-win-x64.zip)
 
 <br>
 <br>
+<br>
 
-<img width="1268" height="796" alt="grafik" src="https://github.com/user-attachments/assets/19ef93b8-8ccc-4a85-a7f2-dce0ab2ad6bb" />
+✨ Bar Chart
+
+   <img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/08a7f8db-efa2-4adc-a022-bf3d24faa8f9" />
+
+<br>
+<br>
+<br>
 
 
+✨ Treemap
 <br><br>
-✨ Treemap view
+   <img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/02a4e251-8e44-45d7-afe7-78b588d54823" />
 
-   <img width="1268" height="796" alt="grafik" src="https://github.com/user-attachments/assets/9cda7f94-926f-44d6-acd5-a3f14b8a98d1" />
+<br>
+<br>
+<br>
 
-
+✨ Analysis
 <br><br>
+   <img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/036d3c31-742a-4268-a011-c85d93d3da66" />
+
+<br>
+<br>
+<br>
+
+✨ Storage History - see, why your free drive space gets smaller and smaller
+<br><br>
+   <img width="1481" height="840" alt="grafik" src="https://github.com/user-attachments/assets/a896b664-70d4-40bc-bc54-a99b1382876a" />
+
+<br>
+<br>
+<br>
 
 🚀 Find files at lightspeed (example, more than 700k files):
 <br><br>
