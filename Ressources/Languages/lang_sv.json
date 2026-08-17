@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Svenska",
   "Search.Title": "Sök",
   "Search.Source": "Sökkälla",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Spara skanningshistorik (deprecated)",
   "Settings.SaveScanHistoryHelp": "Sparar skanningsdata så att förändringar i lagringsanvändningen (ökning eller minskning) kan följas. Endast de 10 största förändringarna sparas.",
   "Settings.StorageHistoryDetails": "Detaljer för lagringshistorik",
-  "Settings.StorageHistoryDetailsHelp": "Tar en kompakt NTFS-filsnapshot efter en enhetsskanning för detaljvyn i lagringshistoriken. MFT läses en extra gång. På mycket stora enheter kan det ta längre tid att slutföra skanningen.",
+  "Settings.StorageHistoryDetailsHelp": "Aktivera detta för att spara en liten ögonblicksbild efter varje skanning, så att detaljer kan visas under \"Lagringshistorik\".",
   "Settings.ScanHistoryDatabasePath": "Databassökväg:",
   "Settings.MoveDatabase": "Bläddra...",
   "Settings.DatabaseSize": "Databasstorlek: {0}",

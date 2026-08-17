@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Suomi",
   "Search.Title": "Haku",
   "Search.Source": "Haun lähde",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Tallenna tarkistushistoria (deprecated)",
   "Settings.SaveScanHistoryHelp": "Tallentaa tarkistustiedot, jotta tallennustilan käytön muutoksia (kasvua tai pienenemistä) voidaan seurata. Vain 10 suurinta muutosta tallennetaan.",
   "Settings.StorageHistoryDetails": "Tallennushistorian tiedot",
-  "Settings.StorageHistoryDetailsHelp": "Ottaa aseman tarkistuksen jälkeen kompaktin NTFS-tiedostovedoksen tallennushistorian tietonäkymää varten. MFT luetaan tätä varten vielä kerran. Erittäin suurilla asemilla tarkistuksen valmistuminen voi kestää kauemmin.",
+  "Settings.StorageHistoryDetailsHelp": "Ota tämä käyttöön, jotta jokaisen tarkistuksen jälkeen tallennetaan pieni tilannevedos ja tiedot voidaan näyttää kohdassa \"Tallennustilan historia\".",
   "Settings.ScanHistoryDatabasePath": "Tietokannan polku:",
   "Settings.MoveDatabase": "Selaa...",
   "Settings.DatabaseSize": "Tietokannan koko: {0}",

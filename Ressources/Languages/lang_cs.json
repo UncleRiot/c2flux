@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Čeština",
   "Search.Title": "Hledat",
   "Search.Source": "Zdroj hledání",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Ukládat historii skenů (deprecated)",
   "Settings.SaveScanHistoryHelp": "Ukládá data skenů, aby bylo možné sledovat změny využití úložiště (růst nebo zmenšení). Ukládá se pouze 10 největších změn.",
   "Settings.StorageHistoryDetails": "Podrobnosti historie úložiště",
-  "Settings.StorageHistoryDetailsHelp": "Po skenu jednotky pořídí kompaktní snímek souborů NTFS pro zobrazení podrobností historie úložiště. MFT se kvůli tomu načte ještě jednou. U velmi velkých jednotek může dokončení skenu trvat déle.",
+  "Settings.StorageHistoryDetailsHelp": "Povolte tuto možnost, aby se po každém skenu uložil malý snímek a bylo možné zobrazit podrobnosti v části „Historie úložiště“.",
   "Settings.ScanHistoryDatabasePath": "Cesta k databázi:",
   "Settings.MoveDatabase": "Procházet...",
   "Settings.DatabaseSize": "Velikost databáze: {0}",

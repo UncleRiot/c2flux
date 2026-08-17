@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "한국어",
   "Search.Title": "검색",
   "Search.Source": "검색 소스",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "스캔 기록 저장 (deprecated)",
   "Settings.SaveScanHistoryHelp": "저장 공간 사용량의 변화(증가 또는 감소)를 추적할 수 있도록 스캔 데이터를 저장합니다. 가장 큰 변화 10개만 저장됩니다.",
   "Settings.StorageHistoryDetails": "저장 공간 기록 세부 정보",
-  "Settings.StorageHistoryDetailsHelp": "저장 공간 기록 세부 정보 보기를 위해 드라이브 스캔 후 간단한 NTFS 파일 스냅샷을 캡처합니다. 이 과정에서 MFT를 한 번 더 읽습니다. 매우 큰 드라이브에서는 스캔 완료 시간이 더 길어질 수 있습니다.",
+  "Settings.StorageHistoryDetailsHelp": "각 스캔 후 작은 스냅샷을 저장하여 \"저장소 기록\"에서 세부 정보를 표시할 수 있도록 이 옵션을 활성화합니다.",
   "Settings.ScanHistoryDatabasePath": "데이터베이스 경로:",
   "Settings.MoveDatabase": "찾아보기...",
   "Settings.DatabaseSize": "데이터베이스 크기: {0}",

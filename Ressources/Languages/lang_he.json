@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "עברית",
   "Search.Title": "חיפוש",
   "Search.Source": "מקור החיפוש",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "שמור היסטוריית סריקות (deprecated)",
   "Settings.SaveScanHistoryHelp": "שומר נתוני סריקה כדי שניתן יהיה לעקוב אחר שינויים בשימוש באחסון (גדילה או הצטמצמות). נשמרים רק 10 השינויים הגדולים ביותר.",
   "Settings.StorageHistoryDetails": "פרטי היסטוריית האחסון",
-  "Settings.StorageHistoryDetailsHelp": "יוצר תמונת מצב קומפקטית של קובצי NTFS לאחר סריקת כונן עבור תצוגת פרטי היסטוריית האחסון. פעולה זו קוראת את ה-MFT פעם נוספת. בכוננים גדולים מאוד השלמת הסריקה עשויה להימשך זמן רב יותר.",
+  "Settings.StorageHistoryDetailsHelp": "הפעל אפשרות זו כדי לשמור תמונת מצב קטנה לאחר כל סריקה, כך שניתן יהיה להציג פרטים תחת \"היסטוריית אחסון\".",
   "Settings.ScanHistoryDatabasePath": "נתיב מסד הנתונים:",
   "Settings.MoveDatabase": "עיון...",
   "Settings.DatabaseSize": "גודל מסד הנתונים: {0}",

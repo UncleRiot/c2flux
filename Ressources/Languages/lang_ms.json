@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Bahasa Melayu",
   "Search.Title": "Cari",
   "Search.Source": "Sumber carian",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Simpan sejarah imbasan (deprecated)",
   "Settings.SaveScanHistoryHelp": "Menyimpan data imbasan supaya perubahan penggunaan storan (bertambah atau berkurang) dapat dijejaki. Hanya 10 perubahan terbesar disimpan.",
   "Settings.StorageHistoryDetails": "Butiran sejarah storan",
-  "Settings.StorageHistoryDetailsHelp": "Mengambil petikan fail NTFS yang padat selepas imbasan pemacu untuk paparan butiran sejarah storan. Ini membaca MFT sekali lagi. Pada pemacu yang sangat besar, penyelesaian imbasan mungkin mengambil masa lebih lama.",
+  "Settings.StorageHistoryDetailsHelp": "Aktifkan ini untuk menyimpan petikan kecil selepas setiap imbasan supaya butiran boleh dipaparkan di bawah \"Sejarah storan\".",
   "Settings.ScanHistoryDatabasePath": "Laluan pangkalan data:",
   "Settings.MoveDatabase": "Semak imbas...",
   "Settings.DatabaseSize": "Saiz pangkalan data: {0}",

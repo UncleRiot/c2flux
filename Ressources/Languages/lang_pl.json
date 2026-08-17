@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Polski",
   "Search.Title": "Szukaj",
   "Search.Source": "Źródło wyszukiwania",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Zapisuj historię skanów (deprecated)",
   "Settings.SaveScanHistoryHelp": "Zapisuje dane skanowania, aby można było śledzić zmiany wykorzystania przestrzeni dyskowej (wzrost lub spadek). Zapisywanych jest tylko 10 największych zmian.",
   "Settings.StorageHistoryDetails": "Szczegóły historii przestrzeni dyskowej",
-  "Settings.StorageHistoryDetailsHelp": "Po skanowaniu dysku tworzy kompaktową migawkę plików NTFS dla widoku szczegółów historii przestrzeni dyskowej. W tym celu MFT jest odczytywana jeszcze raz. Na bardzo dużych dyskach zakończenie skanowania może potrwać dłużej.",
+  "Settings.StorageHistoryDetailsHelp": "Włącz tę opcję, aby po każdym skanowaniu zapisywać małą migawkę i móc wyświetlać szczegóły w sekcji „Historia pamięci”.",
   "Settings.ScanHistoryDatabasePath": "Ścieżka bazy danych:",
   "Settings.MoveDatabase": "Przeglądaj...",
   "Settings.DatabaseSize": "Rozmiar bazy danych: {0}",

@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Français",
   "Search.Title": "Rechercher",
   "Search.Source": "Source de recherche",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Enregistrer l’historique des analyses (deprecated)",
   "Settings.SaveScanHistoryHelp": "Enregistre les données d’analyse afin de suivre les variations d’utilisation du stockage (augmentation ou diminution). Seules les 10 variations les plus importantes sont conservées.",
   "Settings.StorageHistoryDetails": "Détails de l’historique du stockage",
-  "Settings.StorageHistoryDetailsHelp": "Capture un instantané compact des fichiers NTFS après l’analyse d’un lecteur pour la vue détaillée de l’historique du stockage. La MFT est lue une fois de plus. Sur les très grands lecteurs, la fin de l’analyse peut prendre plus de temps.",
+  "Settings.StorageHistoryDetailsHelp": "Activez cette option pour enregistrer un petit instantané après chaque analyse afin que les détails puissent être affichés dans « Historique du stockage ».",
   "Settings.ScanHistoryDatabasePath": "Chemin de la base de données :",
   "Settings.MoveDatabase": "Parcourir...",
   "Settings.DatabaseSize": "Taille de la base de données : {0}",

@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Magyar",
   "Search.Title": "Keresés",
   "Search.Source": "Keresés forrása",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Vizsgálati előzmények mentése (deprecated)",
   "Settings.SaveScanHistoryHelp": "Elmenti a vizsgálati adatokat, hogy követhetők legyenek a tárhelyhasználat változásai (növekedés vagy csökkenés). Csak a 10 legnagyobb változás kerül mentésre.",
   "Settings.StorageHistoryDetails": "Tárhelyelőzmények részletei",
-  "Settings.StorageHistoryDetailsHelp": "A meghajtó vizsgálata után kompakt NTFS-fájlpillanatképet készít a tárhelyelőzmények részletes nézetéhez. Ehhez az MFT még egyszer beolvasásra kerül. Nagyon nagy meghajtóknál a vizsgálat befejezése tovább tarthat.",
+  "Settings.StorageHistoryDetailsHelp": "Engedélyezze ezt, hogy minden vizsgálat után egy kis pillanatkép legyen mentve, és a részletek megjeleníthetők legyenek a „Tárhelyelőzmények” alatt.",
   "Settings.ScanHistoryDatabasePath": "Adatbázis elérési útja:",
   "Settings.MoveDatabase": "Tallózás...",
   "Settings.DatabaseSize": "Adatbázis mérete: {0}",

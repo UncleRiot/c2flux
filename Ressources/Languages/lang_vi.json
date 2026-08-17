@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Tiếng Việt",
   "Search.Title": "Tìm kiếm",
   "Search.Source": "Nguồn tìm kiếm",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Lưu lịch sử quét (deprecated)",
   "Settings.SaveScanHistoryHelp": "Lưu dữ liệu quét để có thể theo dõi các thay đổi về mức sử dụng bộ nhớ (tăng hoặc giảm). Chỉ lưu 10 thay đổi lớn nhất.",
   "Settings.StorageHistoryDetails": "Chi tiết lịch sử lưu trữ",
-  "Settings.StorageHistoryDetailsHelp": "Chụp ảnh nhanh tệp NTFS dạng gọn sau khi quét ổ đĩa để dùng cho chế độ xem chi tiết lịch sử lưu trữ. Việc này đọc MFT thêm một lần. Với ổ đĩa rất lớn, quá trình hoàn tất quét có thể lâu hơn.",
+  "Settings.StorageHistoryDetailsHelp": "Bật tùy chọn này để lưu một ảnh chụp nhanh nhỏ sau mỗi lần quét, nhờ đó có thể hiển thị chi tiết trong \"Lịch sử lưu trữ\".",
   "Settings.ScanHistoryDatabasePath": "Đường dẫn cơ sở dữ liệu:",
   "Settings.MoveDatabase": "Duyệt...",
   "Settings.DatabaseSize": "Kích thước cơ sở dữ liệu: {0}",

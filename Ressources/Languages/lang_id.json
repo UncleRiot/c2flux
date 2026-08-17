@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Bahasa Indonesia",
   "Search.Title": "Cari",
   "Search.Source": "Sumber pencarian",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Simpan riwayat pemindaian (deprecated)",
   "Settings.SaveScanHistoryHelp": "Menyimpan data pemindaian agar perubahan penggunaan penyimpanan (bertambah atau berkurang) dapat dilacak. Hanya 10 perubahan terbesar yang disimpan.",
   "Settings.StorageHistoryDetails": "Detail riwayat penyimpanan",
-  "Settings.StorageHistoryDetailsHelp": "Mengambil snapshot file NTFS ringkas setelah pemindaian drive untuk tampilan detail riwayat penyimpanan. Ini membaca MFT satu kali tambahan. Pada drive yang sangat besar, penyelesaian pemindaian mungkin memerlukan waktu lebih lama.",
+  "Settings.StorageHistoryDetailsHelp": "Aktifkan ini untuk menyimpan snapshot kecil setelah setiap pemindaian agar detail dapat ditampilkan di bawah \"Riwayat penyimpanan\".",
   "Settings.ScanHistoryDatabasePath": "Jalur basis data:",
   "Settings.MoveDatabase": "Telusuri...",
   "Settings.DatabaseSize": "Ukuran basis data: {0}",

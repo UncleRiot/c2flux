@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Español",
   "Search.Title": "Buscar",
   "Search.Source": "Origen de búsqueda",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Guardar historial de análisis (deprecated)",
   "Settings.SaveScanHistoryHelp": "Guarda los datos de análisis para poder seguir los cambios en el uso del almacenamiento (aumento o reducción). Solo se guardan los 10 cambios más grandes.",
   "Settings.StorageHistoryDetails": "Detalles del historial de almacenamiento",
-  "Settings.StorageHistoryDetailsHelp": "Captura una instantánea compacta de archivos NTFS después de analizar una unidad para la vista de detalles del historial de almacenamiento. Esto lee la MFT una vez más. En unidades muy grandes, la finalización del análisis puede tardar más.",
+  "Settings.StorageHistoryDetailsHelp": "Activa esta opción para guardar una pequeña instantánea después de cada análisis y poder mostrar los detalles en \"Historial de almacenamiento\".",
   "Settings.ScanHistoryDatabasePath": "Ruta de la base de datos:",
   "Settings.MoveDatabase": "Examinar...",
   "Settings.DatabaseSize": "Tamaño de la base de datos: {0}",

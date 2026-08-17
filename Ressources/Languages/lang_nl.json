@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Nederlands",
   "Search.Title": "Zoeken",
   "Search.Source": "Zoekbron",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Scangeschiedenis opslaan (deprecated)",
   "Settings.SaveScanHistoryHelp": "Slaat scangegevens op zodat veranderingen in opslaggebruik (groei of krimp) kunnen worden gevolgd. Alleen de 10 grootste veranderingen worden opgeslagen.",
   "Settings.StorageHistoryDetails": "Details opslaggeschiedenis",
-  "Settings.StorageHistoryDetailsHelp": "Maakt na een stationsscan een compacte NTFS-bestandssnapshot voor de detailweergave van de opslaggeschiedenis. Hiervoor wordt de MFT één extra keer gelezen. Op zeer grote stations kan het voltooien van de scan langer duren.",
+  "Settings.StorageHistoryDetailsHelp": "Schakel dit in om na elke scan een kleine momentopname op te slaan, zodat details onder \"Opslaggeschiedenis\" kunnen worden weergegeven.",
   "Settings.ScanHistoryDatabasePath": "Databasepad:",
   "Settings.MoveDatabase": "Bladeren...",
   "Settings.DatabaseSize": "Databasegrootte: {0}",

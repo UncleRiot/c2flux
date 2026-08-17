@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "فارسی",
   "Search.Title": "جستجو",
   "Search.Source": "منبع جستجو",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "ذخیرهٔ تاریخچهٔ اسکن (deprecated)",
   "Settings.SaveScanHistoryHelp": "داده‌های اسکن را ذخیره می‌کند تا تغییرات مصرف فضای ذخیره‌سازی (افزایش یا کاهش) قابل ردیابی باشد. فقط ۱۰ تغییر بزرگ‌تر ذخیره می‌شوند.",
   "Settings.StorageHistoryDetails": "جزئیات تاریخچهٔ ذخیره‌سازی",
-  "Settings.StorageHistoryDetailsHelp": "پس از اسکن درایو، یک تصویر فشرده از فایل‌های NTFS برای نمای جزئیات تاریخچهٔ ذخیره‌سازی ثبت می‌کند. برای این کار MFT یک بار دیگر خوانده می‌شود. در درایوهای بسیار بزرگ ممکن است تکمیل اسکن بیشتر طول بکشد.",
+  "Settings.StorageHistoryDetailsHelp": "این گزینه را فعال کنید تا پس از هر اسکن یک تصویر لحظه‌ای کوچک ذخیره شود و جزئیات در بخش «تاریخچه ذخیره‌سازی» نمایش داده شوند.",
   "Settings.ScanHistoryDatabasePath": "مسیر پایگاه داده:",
   "Settings.MoveDatabase": "مرور...",
   "Settings.DatabaseSize": "اندازه پایگاه داده: {0}",

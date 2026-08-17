@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "繁體中文",
   "Search.Title": "搜尋",
   "Search.Source": "搜尋來源",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "儲存掃描歷程 (deprecated)",
   "Settings.SaveScanHistoryHelp": "儲存掃描資料，以便追蹤儲存空間使用量的變化（增加或減少）。只會儲存變化最大的 10 項。",
   "Settings.StorageHistoryDetails": "儲存歷程詳細資料",
-  "Settings.StorageHistoryDetailsHelp": "在磁碟機掃描後擷取精簡的 NTFS 檔案快照，用於儲存歷程詳細資料檢視。此程序會額外讀取一次 MFT。對於非常大的磁碟機，掃描完成可能需要更長時間。",
+  "Settings.StorageHistoryDetailsHelp": "啟用此選項可在每次掃描後儲存一個小型快照，以便在「儲存歷史」中顯示詳細資料。",
   "Settings.ScanHistoryDatabasePath": "資料庫路徑:",
   "Settings.MoveDatabase": "瀏覽...",
   "Settings.DatabaseSize": "資料庫大小: {0}",

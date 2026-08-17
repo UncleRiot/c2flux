@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "日本語",
   "Search.Title": "検索",
   "Search.Source": "検索元",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "スキャン履歴を保存 (deprecated)",
   "Settings.SaveScanHistoryHelp": "ストレージ使用量の変化（増加または減少）を追跡できるようにスキャンデータを保存します。保存されるのは変化量の大きい上位10件のみです。",
   "Settings.StorageHistoryDetails": "ストレージ履歴の詳細",
-  "Settings.StorageHistoryDetailsHelp": "ストレージ履歴の詳細表示用に、ドライブのスキャン後にコンパクトな NTFS ファイルスナップショットを取得します。このため MFT を追加でもう1回読み取ります。非常に大きなドライブでは、スキャン完了までの時間が長くなる場合があります。",
+  "Settings.StorageHistoryDetailsHelp": "各スキャン後に小さなスナップショットを保存し、「ストレージ履歴」に詳細を表示できるようにするには、このオプションを有効にします。",
   "Settings.ScanHistoryDatabasePath": "データベースのパス:",
   "Settings.MoveDatabase": "参照...",
   "Settings.DatabaseSize": "データベースサイズ: {0}",

@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "اردو",
   "Search.Title": "تلاش",
   "Search.Source": "تلاش کا ماخذ",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "اسکین کی تاریخ محفوظ کریں (deprecated)",
   "Settings.SaveScanHistoryHelp": "اسٹوریج کے استعمال میں تبدیلیوں (اضافہ یا کمی) کو ٹریک کرنے کے لیے اسکین ڈیٹا محفوظ کرتا ہے۔ صرف 10 سب سے بڑی تبدیلیاں محفوظ کی جاتی ہیں۔",
   "Settings.StorageHistoryDetails": "اسٹوریج ہسٹری کی تفصیلات",
-  "Settings.StorageHistoryDetailsHelp": "اسٹوریج ہسٹری کی تفصیلی منظر کے لیے ڈرائیو اسکین کے بعد NTFS فائلوں کا مختصر اسنیپ شاٹ لیتا ہے۔ اس کے لیے MFT کو ایک اضافی بار پڑھا جاتا ہے۔ بہت بڑی ڈرائیوز پر اسکین مکمل ہونے میں زیادہ وقت لگ سکتا ہے۔",
+  "Settings.StorageHistoryDetailsHelp": "اسے فعال کریں تاکہ ہر اسکین کے بعد ایک چھوٹا اسنیپ شاٹ محفوظ ہو اور تفصیلات \"اسٹوریج کی تاریخ\" کے تحت دکھائی جا سکیں۔",
   "Settings.ScanHistoryDatabasePath": "ڈیٹا بیس کا راستہ:",
   "Settings.MoveDatabase": "براؤز کریں...",
   "Settings.DatabaseSize": "ڈیٹا بیس کا حجم: {0}",

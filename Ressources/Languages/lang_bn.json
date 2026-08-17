@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "বাংলা",
   "Search.Title": "অনুসন্ধান",
   "Search.Source": "অনুসন্ধানের উৎস",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "স্ক্যানের ইতিহাস সংরক্ষণ করুন (deprecated)",
   "Settings.SaveScanHistoryHelp": "স্টোরেজ ব্যবহারের পরিবর্তন (বৃদ্ধি বা হ্রাস) ট্র্যাক করতে স্ক্যানের ডেটা সংরক্ষণ করে। শুধুমাত্র সবচেয়ে বড় ১০টি পরিবর্তন সংরক্ষণ করা হয়।",
   "Settings.StorageHistoryDetails": "স্টোরেজ ইতিহাসের বিস্তারিত",
-  "Settings.StorageHistoryDetailsHelp": "স্টোরেজ ইতিহাসের বিস্তারিত দেখার জন্য ড্রাইভ স্ক্যানের পরে একটি সংক্ষিপ্ত NTFS ফাইল স্ন্যাপশট নেয়। এতে MFT আরও একবার পড়া হয়। খুব বড় ড্রাইভে স্ক্যান শেষ হতে বেশি সময় লাগতে পারে।",
+  "Settings.StorageHistoryDetailsHelp": "প্রতিটি স্ক্যানের পরে একটি ছোট স্ন্যাপশট সংরক্ষণ করতে এটি সক্রিয় করুন, যাতে \"স্টোরেজ ইতিহাস\"-এর অধীনে বিস্তারিত দেখানো যায়।",
   "Settings.ScanHistoryDatabasePath": "ডেটাবেস পাথ:",
   "Settings.MoveDatabase": "ব্রাউজ...",
   "Settings.DatabaseSize": "ডেটাবেসের আকার: {0}",

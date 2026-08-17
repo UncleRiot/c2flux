@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Română",
   "Search.Title": "Căutare",
   "Search.Source": "Sursa căutării",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Salvare istoric scanări (deprecated)",
   "Settings.SaveScanHistoryHelp": "Salvează datele scanării pentru a putea urmări modificările utilizării spațiului de stocare (creștere sau scădere). Sunt salvate doar cele mai mari 10 modificări.",
   "Settings.StorageHistoryDetails": "Detalii istoric stocare",
-  "Settings.StorageHistoryDetailsHelp": "Capturează un instantaneu compact al fișierelor NTFS după scanarea unei unități pentru vizualizarea detaliilor istoricului de stocare. MFT este citit încă o dată. Pe unități foarte mari, finalizarea scanării poate dura mai mult.",
+  "Settings.StorageHistoryDetailsHelp": "Activați această opțiune pentru a salva un mic instantaneu după fiecare scanare, astfel încât detaliile să poată fi afișate în „Istoric stocare”.",
   "Settings.ScanHistoryDatabasePath": "Calea bazei de date:",
   "Settings.MoveDatabase": "Răsfoire...",
   "Settings.DatabaseSize": "Dimensiune bază de date: {0}",

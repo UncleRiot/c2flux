@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "简体中文",
   "Search.Title": "搜索",
   "Search.Source": "搜索来源",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "保存扫描历史记录 (deprecated)",
   "Settings.SaveScanHistoryHelp": "保存扫描数据，以便跟踪存储使用量的变化（增加或减少）。仅保存变化最大的 10 项。",
   "Settings.StorageHistoryDetails": "存储历史记录详细信息",
-  "Settings.StorageHistoryDetailsHelp": "在驱动器扫描后捕获精简的 NTFS 文件快照，用于存储历史记录详细信息视图。此过程会额外读取一次 MFT。对于非常大的驱动器，扫描完成可能需要更长时间。",
+  "Settings.StorageHistoryDetailsHelp": "启用此选项可在每次扫描后保存一个小型快照，以便在“存储历史”中显示详细信息。",
   "Settings.ScanHistoryDatabasePath": "数据库路径:",
   "Settings.MoveDatabase": "浏览...",
   "Settings.DatabaseSize": "数据库大小: {0}",

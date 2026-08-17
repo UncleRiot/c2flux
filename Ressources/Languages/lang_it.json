@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Italiano",
   "Search.Title": "Cerca",
   "Search.Source": "Origine ricerca",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Salva cronologia scansioni (deprecated)",
   "Settings.SaveScanHistoryHelp": "Salva i dati delle scansioni per tenere traccia delle variazioni nell'uso dello spazio di archiviazione (aumento o diminuzione). Vengono salvate solo le 10 variazioni più grandi.",
   "Settings.StorageHistoryDetails": "Dettagli cronologia archiviazione",
-  "Settings.StorageHistoryDetailsHelp": "Acquisisce uno snapshot compatto dei file NTFS dopo la scansione di un'unità per la vista dettagli della cronologia di archiviazione. La MFT viene letta una volta in più. Su unità molto grandi, il completamento della scansione può richiedere più tempo.",
+  "Settings.StorageHistoryDetailsHelp": "Attiva questa opzione per salvare un piccolo snapshot dopo ogni scansione, così da poter visualizzare i dettagli in \"Cronologia archiviazione\".",
   "Settings.ScanHistoryDatabasePath": "Percorso database:",
   "Settings.MoveDatabase": "Sfoglia...",
   "Settings.DatabaseSize": "Dimensione database: {0}",

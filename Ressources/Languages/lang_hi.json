@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "हिन्दी",
   "Search.Title": "खोज",
   "Search.Source": "खोज स्रोत",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "स्कैन इतिहास सहेजें (deprecated)",
   "Settings.SaveScanHistoryHelp": "स्कैन डेटा सहेजता है ताकि संग्रहण उपयोग में बदलाव (वृद्धि या कमी) को ट्रैक किया जा सके। केवल 10 सबसे बड़े बदलाव सहेजे जाते हैं।",
   "Settings.StorageHistoryDetails": "स्टोरेज इतिहास विवरण",
-  "Settings.StorageHistoryDetailsHelp": "स्टोरेज इतिहास के विवरण दृश्य के लिए ड्राइव स्कैन के बाद एक कॉम्पैक्ट NTFS फ़ाइल स्नैपशॉट बनाता है। इसके लिए MFT को एक अतिरिक्त बार पढ़ा जाता है। बहुत बड़ी ड्राइव पर स्कैन पूरा होने में अधिक समय लग सकता है।",
+  "Settings.StorageHistoryDetailsHelp": "हर स्कैन के बाद एक छोटा स्नैपशॉट सहेजने के लिए इसे सक्षम करें, ताकि विवरण \"स्टोरेज इतिहास\" के अंतर्गत दिखाए जा सकें।",
   "Settings.ScanHistoryDatabasePath": "डेटाबेस पथ:",
   "Settings.MoveDatabase": "ब्राउज़ करें...",
   "Settings.DatabaseSize": "डेटाबेस आकार: {0}",

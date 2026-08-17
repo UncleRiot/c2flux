@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "العربية",
   "Search.Title": "بحث",
   "Search.Source": "مصدر البحث",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "حفظ سجل الفحص (deprecated)",
   "Settings.SaveScanHistoryHelp": "يحفظ بيانات الفحص لتتبّع تغيّرات استخدام مساحة التخزين (الزيادة أو النقصان). يتم حفظ أكبر 10 تغيّرات فقط.",
   "Settings.StorageHistoryDetails": "تفاصيل سجل التخزين",
-  "Settings.StorageHistoryDetailsHelp": "يلتقط لقطة مضغوطة لملفات NTFS بعد فحص محرك الأقراص لعرض تفاصيل سجل التخزين. يتطلب ذلك قراءة MFT مرة إضافية. قد يستغرق إكمال الفحص وقتًا أطول على محركات الأقراص الكبيرة جدًا.",
+  "Settings.StorageHistoryDetailsHelp": "فعّل هذا الخيار لحفظ لقطة صغيرة بعد كل فحص، حتى يمكن عرض التفاصيل ضمن \"سجل التخزين\".",
   "Settings.ScanHistoryDatabasePath": "مسار قاعدة البيانات:",
   "Settings.MoveDatabase": "استعراض...",
   "Settings.DatabaseSize": "حجم قاعدة البيانات: {0}",

@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Norsk",
   "Search.Title": "Søk",
   "Search.Source": "Søkekilde",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Lagre skannehistorikk (deprecated)",
   "Settings.SaveScanHistoryHelp": "Lagrer skannedata slik at endringer i lagringsbruk (økning eller reduksjon) kan spores. Bare de 10 største endringene lagres.",
   "Settings.StorageHistoryDetails": "Detaljer for lagringshistorikk",
-  "Settings.StorageHistoryDetailsHelp": "Tar et kompakt NTFS-filsnapshot etter en diskskanning for detaljvisningen av lagringshistorikk. Dette leser MFT én ekstra gang. På svært store disker kan det ta lengre tid å fullføre skanningen.",
+  "Settings.StorageHistoryDetailsHelp": "Aktiver dette for å lagre et lite øyeblikksbilde etter hver skanning, slik at detaljer kan vises under \"Lagringshistorikk\".",
   "Settings.ScanHistoryDatabasePath": "Databasebane:",
   "Settings.MoveDatabase": "Bla gjennom...",
   "Settings.DatabaseSize": "Databasestørrelse: {0}",

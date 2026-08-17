@@ -1,4 +1,4 @@
-{
+﻿{
   "Language.Name": "Türkçe",
   "Search.Title": "Ara",
   "Search.Source": "Arama kaynağı",
@@ -175,7 +175,7 @@
   "Settings.SaveScanHistory": "Tarama geçmişini kaydet (deprecated)",
   "Settings.SaveScanHistoryHelp": "Depolama kullanımındaki değişikliklerin (artış veya azalış) izlenebilmesi için tarama verilerini kaydeder. Yalnızca en büyük 10 değişiklik saklanır.",
   "Settings.StorageHistoryDetails": "Depolama geçmişi ayrıntıları",
-  "Settings.StorageHistoryDetailsHelp": "Depolama geçmişi ayrıntı görünümü için sürücü taramasından sonra kompakt bir NTFS dosya anlık görüntüsü oluşturur. Bunun için MFT bir kez daha okunur. Çok büyük sürücülerde taramanın tamamlanması daha uzun sürebilir.",
+  "Settings.StorageHistoryDetailsHelp": "Her taramadan sonra küçük bir anlık görüntü kaydetmek ve ayrıntıların \"Depolama geçmişi\" altında gösterilebilmesini sağlamak için bu seçeneği etkinleştirin.",
   "Settings.ScanHistoryDatabasePath": "Veritabanı yolu:",
   "Settings.MoveDatabase": "Gözat...",
   "Settings.DatabaseSize": "Veritabanı boyutu: {0}",
