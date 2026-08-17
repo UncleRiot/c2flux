@@ -27,17 +27,25 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 <br>
 <br>
 
-
 ✨ Treemap
-<br><br>
+
    <img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/02a4e251-8e44-45d7-afe7-78b588d54823" />
 
 <br>
 <br>
 <br>
 
+✨ Sunburst
+
+   <img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/be2ad86f-e7df-48bc-aaf3-04a08d1533eb" />
+
+
+<br>
+<br>
+<br>
+
 ✨ Analysis
-<br><br>
+
    <img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/036d3c31-742a-4268-a011-c85d93d3da66" />
 
 <br>
@@ -45,7 +53,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 <br>
 
 ✨ Storage History - see, why your free drive space gets smaller and smaller
-<br><br>
+
    <img width="1481" height="840" alt="grafik" src="https://github.com/user-attachments/assets/a896b664-70d4-40bc-bc54-a99b1382876a" />
 
 <br>
@@ -53,6 +61,12 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 <br>
 
 🚀 Find files at lightspeed (example, more than 700k files):
+
+Search from everywhere, directly!
+
+   <img width="500" height="193" alt="grafik" src="https://github.com/user-attachments/assets/1606aee2-6b9a-4965-be65-ef40e1551530" />
+
+
 <br><br>
 <img width="453" height="30" alt="grafik" src="https://github.com/user-attachments/assets/7a2fe76e-b99e-43f7-962d-78eb7d964108" />
 <br>
@@ -176,7 +190,7 @@ Only continue if you downloaded c² flux from the official GitHub repository.
 
 ## Security and Packaging
 
-> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: [Security scanner findings and release packaging](Security-scanner-findings-and-release-packaging).
+> **Security and packaging note:** VirusTotal and other automated analysis platforms may report heuristic findings for c² flux. A short explanation of these findings and the current evaluation of single-file versus multi-file releases is available here: https://github.com/UncleRiot/c2flux/wiki/Security-scanner-findings-and-release-packaging
 
 <br>
 
