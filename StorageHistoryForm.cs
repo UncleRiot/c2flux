@@ -45,6 +45,8 @@ namespace c2flux
         private StorageHistoryRecord _contextMenuRecord;
         private string _sortColumnName = "ColumnDate";
         private SortOrder _sortOrder = SortOrder.Descending;
+        private readonly System.Windows.Forms.Timer _mouseHitTestDiagnosticTimer;
+        private IntPtr _lastMouseHitTestHandle = IntPtr.Zero;
 
         public StorageHistoryForm(AppSettings settings, bool embeddedMode = false)
         {
@@ -420,6 +422,23 @@ namespace c2flux
             mainLayout.Controls.Add(splitContainer, 0, 1);
 
             Controls.Add(mainLayout);
+
+            _mouseHitTestDiagnosticTimer =
+                new System.Windows.Forms.Timer
+                {
+                    Interval = 250
+                };
+            _mouseHitTestDiagnosticTimer.Tick +=
+                mouseHitTestDiagnosticTimer_Tick;
+            _mouseHitTestDiagnosticTimer.Start();
+
+            FormClosed +=
+                (sender, e) =>
+                {
+                    _mouseHitTestDiagnosticTimer.Stop();
+                    _mouseHitTestDiagnosticTimer.Dispose();
+                };
+
             if (!_embeddedMode)
             {
                 AcceptButton = buttonClose;
@@ -702,6 +721,78 @@ namespace c2flux
             pathLayout.Invalidate(true);
         }
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(
+            Point point);
+
+        [DllImport(
+            "user32.dll",
+            CharSet = CharSet.Unicode)]
+        private static extern int GetClassName(
+            IntPtr hWnd,
+            System.Text.StringBuilder lpClassName,
+            int nMaxCount);
+
+        [DllImport(
+            "user32.dll",
+            CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(
+            IntPtr hWnd,
+            System.Text.StringBuilder lpString,
+            int nMaxCount);
+
+        private void mouseHitTestDiagnosticTimer_Tick(
+            object sender,
+            EventArgs e)
+        {
+            Point cursorPosition =
+                Cursor.Position;
+
+            IntPtr windowHandle =
+                WindowFromPoint(
+                    cursorPosition);
+
+            if (windowHandle == _lastMouseHitTestHandle)
+                return;
+
+            _lastMouseHitTestHandle =
+                windowHandle;
+
+            System.Text.StringBuilder className =
+                new System.Text.StringBuilder(
+                    256);
+            System.Text.StringBuilder windowText =
+                new System.Text.StringBuilder(
+                    256);
+
+            if (windowHandle != IntPtr.Zero)
+            {
+                GetClassName(
+                    windowHandle,
+                    className,
+                    className.Capacity);
+                GetWindowText(
+                    windowHandle,
+                    windowText,
+                    windowText.Capacity);
+            }
+
+            Control managedControl =
+                windowHandle == IntPtr.Zero
+                    ? null
+                    : Control.FromHandle(
+                        windowHandle);
+
+            System.Diagnostics.Debug.WriteLine(
+                "StorageHistory MouseHitTest: " +
+                $"Point={cursorPosition.X},{cursorPosition.Y}; " +
+                $"Handle=0x{windowHandle.ToInt64():X}; " +
+                $"Class={className}; " +
+                $"Text={windowText}; " +
+                $"ManagedType={managedControl?.GetType().FullName ?? "<none>"}; " +
+                $"ManagedName={managedControl?.Name ?? "<none>"}");
+        }
+
         private void comboBoxPaths_SelectedIndexChanged(object sender, EventArgs e)
         {
             string path = GetSelectedHistoryPath();
@@ -710,7 +801,11 @@ namespace c2flux
                 return;
 
             BeginInvoke(new MethodInvoker(
-                () => BindRecords(StorageHistoryService.GetRecords(path))));
+                () =>
+                {
+                    BindRecords(StorageHistoryService.GetRecords(path));
+                    ActiveControl = buttonDelete;
+                }));
         }
 
         private void comboBoxDisplayMode_SelectedIndexChanged(
@@ -1033,7 +1128,6 @@ namespace c2flux
             labelGradientIntensityValue.Text = trackBarGradientIntensity.Value.ToString() + "%";
             _settings.StorageHistoryGradientIntensityPercent = trackBarGradientIntensity.Value;
             storageHistoryChart.SetGradientIntensity(trackBarGradientIntensity.Value);
-            storageHistoryChart.Refresh();
         }
 
         private void dataGridViewRecords_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs e)
@@ -1238,9 +1332,6 @@ namespace c2flux
                 storageHistoryChart.SetRecords(
                     orderedRecords,
                     displayMode);
-                storageHistoryChart.Invalidate(true);
-                storageHistoryChart.Refresh();
-                storageHistoryChart.Update();
             }
             finally
             {

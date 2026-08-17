@@ -24,10 +24,10 @@
 		<Product>c² flux - Tree Scanner</Product>
 		<Copyright>Copyright © Daniel Capilla</Copyright>
 
-		<Version>1.2.81</Version>
-		<AssemblyVersion>1.2.81</AssemblyVersion>
-		<FileVersion>1.2.81</FileVersion>
-		<InformationalVersion>1.2.81</InformationalVersion>
+		<Version>1.2.82</Version>
+		<AssemblyVersion>1.2.82</AssemblyVersion>
+		<FileVersion>1.2.82</FileVersion>
+		<InformationalVersion>1.2.82</InformationalVersion>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	</PropertyGroup>
 

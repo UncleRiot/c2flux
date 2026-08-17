@@ -115,8 +115,11 @@ namespace c2flux
         {
             base.OnMouseMove(e);
 
-            if (_points.Length == 0)
+            if (_points.Length == 0 ||
+                _records.Count != _points.Length)
+            {
                 return;
+            }
 
             int nearestIndex = -1;
             double nearestDistance = double.MaxValue;
