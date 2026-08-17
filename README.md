@@ -10,7 +10,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 - [AntdUI](https://github.com/AntdUI/AntdUI)
 
 ---
-**Scan your drives, get an overview of used disk space, find everything. Fast. Faster. c²flux!**
+**Scan your drives, get an overview of used disk space, find everything. Fast**
 
 
 [![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.81--beta.4-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.81-beta.4/c2flux-v1.2.81-beta.4-win-x64.zip)
