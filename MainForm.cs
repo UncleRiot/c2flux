@@ -1514,7 +1514,7 @@ namespace c2flux
                 ShowNewFolderButton = false
             };
 
-            if (folderBrowserDialog.ShowDialog(this) != DialogResult.OK)
+            if (AntdThemeService.ShowNativeDialog(folderBrowserDialog, this) != DialogResult.OK)
                 return;
 
             if (string.IsNullOrWhiteSpace(folderBrowserDialog.SelectedPath))
@@ -2766,7 +2766,7 @@ namespace c2flux
                 FileName = "scan-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".wtfscan"
             };
 
-            if (dialog.ShowDialog(this) != DialogResult.OK)
+            if (AntdThemeService.ShowNativeDialog(dialog, this) != DialogResult.OK)
                 return;
 
             try
@@ -2796,7 +2796,7 @@ namespace c2flux
                 Filter = "WTF Scan (*.wtfscan;*.json)|*.wtfscan;*.json"
             };
 
-            if (dialog.ShowDialog(this) != DialogResult.OK)
+            if (AntdThemeService.ShowNativeDialog(dialog, this) != DialogResult.OK)
                 return;
 
             try

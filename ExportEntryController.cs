@@ -84,9 +84,10 @@ namespace c2flux
                 FileName = CreateExportFileName(rootEntry)
             };
 
-            DialogResult dialogResult = _owner == null
-                ? saveFileDialog.ShowDialog()
-                : saveFileDialog.ShowDialog(_owner);
+            DialogResult dialogResult =
+                AntdThemeService.ShowNativeDialog(
+                    saveFileDialog,
+                    _owner);
 
             if (dialogResult != DialogResult.OK)
                 return;

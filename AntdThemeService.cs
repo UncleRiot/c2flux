@@ -3626,6 +3626,32 @@ namespace c2flux
         [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
         private static extern int SetWindowTheme(IntPtr hwnd, string pszSubAppName, string pszSubIdList);
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr LoadLibraryW(string lpFileName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetProcAddress(IntPtr hModule, IntPtr lpProcName);
+
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool FreeLibrary(IntPtr hModule);
+
+        private enum PreferredAppMode
+        {
+            Default = 0,
+            AllowDark = 1,
+            ForceDark = 2,
+            ForceLight = 3,
+            Max = 4
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        private delegate PreferredAppMode SetPreferredAppModeDelegate(
+            PreferredAppMode appMode);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        private delegate void RefreshImmersiveColorPolicyStateDelegate();
+
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
@@ -3635,6 +3661,92 @@ namespace c2flux
             Apply(layout);
             form.Icon = AppResources.ApplicationIcon;
             ApplyWindowsTheme(form, layout);
+        }
+
+        public static DialogResult ShowNativeDialog(
+            CommonDialog dialog,
+            IWin32Window owner)
+        {
+            if (dialog == null)
+                throw new ArgumentNullException(nameof(dialog));
+
+            if (!_useDarkMode ||
+                !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))
+            {
+                return owner == null
+                    ? dialog.ShowDialog()
+                    : dialog.ShowDialog(owner);
+            }
+
+            IntPtr uxThemeModule =
+                LoadLibraryW("uxtheme.dll");
+
+            if (uxThemeModule == IntPtr.Zero)
+            {
+                return owner == null
+                    ? dialog.ShowDialog()
+                    : dialog.ShowDialog(owner);
+            }
+
+            PreferredAppMode previousMode =
+                PreferredAppMode.Default;
+
+            SetPreferredAppModeDelegate setPreferredAppMode = null;
+            RefreshImmersiveColorPolicyStateDelegate refreshColorPolicy = null;
+
+            try
+            {
+                IntPtr setPreferredAppModeAddress =
+                    GetProcAddress(
+                        uxThemeModule,
+                        (IntPtr)135);
+
+                if (setPreferredAppModeAddress == IntPtr.Zero)
+                {
+                    return owner == null
+                        ? dialog.ShowDialog()
+                        : dialog.ShowDialog(owner);
+                }
+
+                setPreferredAppMode =
+                    Marshal.GetDelegateForFunctionPointer<SetPreferredAppModeDelegate>(
+                        setPreferredAppModeAddress);
+
+                IntPtr refreshColorPolicyAddress =
+                    GetProcAddress(
+                        uxThemeModule,
+                        (IntPtr)104);
+
+                if (refreshColorPolicyAddress != IntPtr.Zero)
+                {
+                    refreshColorPolicy =
+                        Marshal.GetDelegateForFunctionPointer<RefreshImmersiveColorPolicyStateDelegate>(
+                            refreshColorPolicyAddress);
+                }
+
+                previousMode =
+                    setPreferredAppMode(
+                        PreferredAppMode.ForceDark);
+
+                refreshColorPolicy?.Invoke();
+
+                return owner == null
+                    ? dialog.ShowDialog()
+                    : dialog.ShowDialog(owner);
+            }
+            finally
+            {
+                if (setPreferredAppMode != null)
+                {
+                    setPreferredAppMode(
+                        previousMode);
+
+                    refreshColorPolicy?.Invoke();
+                }
+
+                FreeLibrary(
+                    uxThemeModule);
+            }
         }
 
         public static void ConfigureUpdateAvailableForm(
