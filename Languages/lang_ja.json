@@ -119,8 +119,8 @@
   "Context.CopyPath": "パスをコピー",
   "Context.RemoveFromTreePane": "ツリーペインから「{0}」を削除",
   "Dialog.SelectFolder": "スキャンするフォルダーを選択",
-
-  "Dialog.FileExistsOverwrite": "「{0}」という名前のファイルは既に存在します。置き換えますか？",
+  "Dialog.FileName": "ファイル",
+  "Dialog.FileAlreadyExists": "ファイル「{0}」は既に存在します。置き換えますか？",
   "Message.NoPathSelected": "パスが選択されていません。",
   "Message.PathNotFoundPrefix": "パスが見つかりません: ",
   "Message.SettingsSaveFailedPrefix": "設定を保存できませんでした: ",

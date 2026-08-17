@@ -119,8 +119,8 @@
   "Context.CopyPath": "Kopiera sökväg",
   "Context.RemoveFromTreePane": "Ta bort \"{0}\" från trädpanelen",
   "Dialog.SelectFolder": "Välj mapp att skanna",
-
-  "Dialog.FileExistsOverwrite": "Det finns redan en fil med namnet \"{0}\". Vill du ersätta den?",
+  "Dialog.FileName": "Fil",
+  "Dialog.FileAlreadyExists": "Filen \"{0}\" finns redan. Vill du ersätta den?",
   "Message.NoPathSelected": "Ingen sökväg vald.",
   "Message.PathNotFoundPrefix": "Sökvägen hittades inte: ",
   "Message.SettingsSaveFailedPrefix": "Inställningarna kunde inte sparas: ",

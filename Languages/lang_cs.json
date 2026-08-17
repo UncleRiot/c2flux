@@ -119,8 +119,8 @@
   "Context.CopyPath": "Kopírovat cestu",
   "Context.RemoveFromTreePane": "Odebrat „{0}“ z panelu stromu",
   "Dialog.SelectFolder": "Vyberte složku ke skenování",
-
-  "Dialog.FileExistsOverwrite": "Soubor s názvem „{0}“ již existuje. Chcete jej nahradit?",
+  "Dialog.FileName": "Soubor",
+  "Dialog.FileAlreadyExists": "Soubor „{0}“ již existuje. Chcete jej nahradit?",
   "Message.NoPathSelected": "Nebyla vybrána žádná cesta.",
   "Message.PathNotFoundPrefix": "Cesta nebyla nalezena: ",
   "Message.SettingsSaveFailedPrefix": "Nastavení se nepodařilo uložit: ",

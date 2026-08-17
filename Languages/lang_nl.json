@@ -119,8 +119,8 @@
   "Context.CopyPath": "Pad kopiëren",
   "Context.RemoveFromTreePane": "\"{0}\" uit boomvenster verwijderen",
   "Dialog.SelectFolder": "Map selecteren om te scannen",
-
-  "Dialog.FileExistsOverwrite": "Er bestaat al een bestand met de naam \"{0}\". Wilt u het vervangen?",
+  "Dialog.FileName": "Bestand",
+  "Dialog.FileAlreadyExists": "Het bestand \"{0}\" bestaat al. Wilt u het vervangen?",
   "Message.NoPathSelected": "Geen pad geselecteerd.",
   "Message.PathNotFoundPrefix": "Pad niet gevonden: ",
   "Message.SettingsSaveFailedPrefix": "Instellingen konden niet worden opgeslagen: ",

@@ -119,8 +119,8 @@
   "Context.CopyPath": "Kopiuj ścieżkę",
   "Context.RemoveFromTreePane": "Usuń „{0}” z panelu drzewa",
   "Dialog.SelectFolder": "Wybierz folder do skanowania",
-
-  "Dialog.FileExistsOverwrite": "Plik o nazwie „{0}” już istnieje. Czy chcesz go zastąpić?",
+  "Dialog.FileName": "Plik",
+  "Dialog.FileAlreadyExists": "Plik „{0}” już istnieje. Czy chcesz go zastąpić?",
   "Message.NoPathSelected": "Nie wybrano ścieżki.",
   "Message.PathNotFoundPrefix": "Nie znaleziono ścieżki: ",
   "Message.SettingsSaveFailedPrefix": "Nie można zapisać ustawień: ",

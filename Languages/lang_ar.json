@@ -119,8 +119,8 @@
   "Context.CopyPath": "نسخ المسار",
   "Context.RemoveFromTreePane": "إزالة \"{0}\" من جزء الشجرة",
   "Dialog.SelectFolder": "تحديد مجلد للفحص",
-
-  "Dialog.FileExistsOverwrite": "يوجد بالفعل ملف باسم \"{0}\". هل تريد استبداله؟",
+  "Dialog.FileName": "الملف",
+  "Dialog.FileAlreadyExists": "الملف \"{0}\" موجود بالفعل. هل تريد استبداله؟",
   "Message.NoPathSelected": "لم يتم تحديد مسار.",
   "Message.PathNotFoundPrefix": "المسار غير موجود: ",
   "Message.SettingsSaveFailedPrefix": "تعذر حفظ الإعدادات: ",

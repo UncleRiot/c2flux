@@ -119,8 +119,8 @@
   "Context.CopyPath": "העתק נתיב",
   "Context.RemoveFromTreePane": "הסר את \"{0}\" מחלונית העץ",
   "Dialog.SelectFolder": "בחר תיקייה לסריקה",
-
-  "Dialog.FileExistsOverwrite": "קובץ בשם \"{0}\" כבר קיים. האם ברצונך להחליף אותו?",
+  "Dialog.FileName": "קובץ",
+  "Dialog.FileAlreadyExists": "הקובץ \"{0}\" כבר קיים. האם ברצונך להחליף אותו?",
   "Message.NoPathSelected": "לא נבחר נתיב.",
   "Message.PathNotFoundPrefix": "הנתיב לא נמצא: ",
   "Message.SettingsSaveFailedPrefix": "לא ניתן לשמור את ההגדרות: ",

@@ -119,8 +119,8 @@
   "Context.CopyPath": "पथ कॉपी करें",
   "Context.RemoveFromTreePane": "ट्री पेन से \"{0}\" हटाएँ",
   "Dialog.SelectFolder": "स्कैन करने के लिए फ़ोल्डर चुनें",
-
-  "Dialog.FileExistsOverwrite": "\"{0}\" नाम की फ़ाइल पहले से मौजूद है। क्या आप इसे बदलना चाहते हैं?",
+  "Dialog.FileName": "फ़ाइल",
+  "Dialog.FileAlreadyExists": "फ़ाइल \"{0}\" पहले से मौजूद है। क्या आप इसे बदलना चाहते हैं?",
   "Message.NoPathSelected": "कोई पथ चयनित नहीं है।",
   "Message.PathNotFoundPrefix": "पथ नहीं मिला: ",
   "Message.SettingsSaveFailedPrefix": "सेटिंग्स सहेजी नहीं जा सकीं: ",

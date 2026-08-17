@@ -119,8 +119,8 @@
   "Context.CopyPath": "راستہ کاپی کریں",
   "Context.RemoveFromTreePane": "درختی پین سے \"{0}\" ہٹائیں",
   "Dialog.SelectFolder": "اسکین کے لیے فولڈر منتخب کریں",
-
-  "Dialog.FileExistsOverwrite": "\"{0}\" نام کی فائل پہلے سے موجود ہے۔ کیا آپ اسے تبدیل کرنا چاہتے ہیں؟",
+  "Dialog.FileName": "فائل",
+  "Dialog.FileAlreadyExists": "فائل \"{0}\" پہلے سے موجود ہے۔ کیا آپ اسے تبدیل کرنا چاہتے ہیں؟",
   "Message.NoPathSelected": "کوئی راستہ منتخب نہیں کیا گیا۔",
   "Message.PathNotFoundPrefix": "راستہ نہیں ملا: ",
   "Message.SettingsSaveFailedPrefix": "ترتیبات محفوظ نہیں کی جا سکیں: ",

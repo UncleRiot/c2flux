@@ -119,8 +119,8 @@
   "Context.CopyPath": "คัดลอกเส้นทาง",
   "Context.RemoveFromTreePane": "นำ \"{0}\" ออกจากบานหน้าต่างโครงสร้าง",
   "Dialog.SelectFolder": "เลือกโฟลเดอร์ที่จะสแกน",
-
-  "Dialog.FileExistsOverwrite": "มีไฟล์ชื่อ \"{0}\" อยู่แล้ว คุณต้องการแทนที่ไฟล์นี้หรือไม่?",
+  "Dialog.FileName": "ไฟล์",
+  "Dialog.FileAlreadyExists": "มีไฟล์ \"{0}\" อยู่แล้ว คุณต้องการแทนที่หรือไม่",
   "Message.NoPathSelected": "ไม่ได้เลือกเส้นทาง",
   "Message.PathNotFoundPrefix": "ไม่พบเส้นทาง: ",
   "Message.SettingsSaveFailedPrefix": "ไม่สามารถบันทึกการตั้งค่าได้: ",

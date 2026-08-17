@@ -78,22 +78,22 @@ namespace c2flux
             if (rootEntry == null)
                 return;
 
-            using SaveFileDialog saveFileDialog = new SaveFileDialog
-            {
-                Filter = _csvExportService.FileFilter,
-                FileName = CreateExportFileName(rootEntry)
-            };
-
             DialogResult dialogResult =
-                AntdThemeService.ShowNativeDialog(
-                    saveFileDialog,
-                    _owner);
+                AppDialogs.ShowSaveFileDialog(
+                    _owner,
+                    _settings,
+                    LocalizationService.GetText("Toolbar.Export"),
+                    _csvExportService.FileFilter,
+                    string.Empty,
+                    CreateExportFileName(rootEntry),
+                    LocalizationService.GetText("Toolbar.Export"),
+                    out string fileName);
 
             if (dialogResult != DialogResult.OK)
                 return;
 
-            _csvExportService.Export(saveFileDialog.FileName, new[] { rootEntry }, _settings);
-            _setStatusText(LocalizationService.GetText("Status.ExportSaved") + saveFileDialog.FileName);
+            _csvExportService.Export(fileName, new[] { rootEntry }, _settings);
+            _setStatusText(LocalizationService.GetText("Status.ExportSaved") + fileName);
         }
 
 

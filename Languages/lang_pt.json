@@ -119,8 +119,8 @@
   "Context.CopyPath": "Copiar caminho",
   "Context.RemoveFromTreePane": "Remover \"{0}\" do painel da árvore",
   "Dialog.SelectFolder": "Selecionar pasta a analisar",
-
-  "Dialog.FileExistsOverwrite": "Já existe um ficheiro com o nome \"{0}\". Pretende substituí-lo?",
+  "Dialog.FileName": "Ficheiro",
+  "Dialog.FileAlreadyExists": "O ficheiro \"{0}\" já existe. Pretende substituí-lo?",
   "Message.NoPathSelected": "Nenhum caminho selecionado.",
   "Message.PathNotFoundPrefix": "Caminho não encontrado: ",
   "Message.SettingsSaveFailedPrefix": "Não foi possível guardar as definições: ",

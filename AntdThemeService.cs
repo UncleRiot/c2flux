@@ -730,6 +730,33 @@ namespace c2flux
 
 
         // ============================================================
+        // App file dialog
+        // ============================================================
+
+        public const int AppFileDialogWidth = 1040;
+        public const int AppFileDialogHeight = 680;
+        public const int AppFileDialogMinimumWidth = 760;
+        public const int AppFileDialogMinimumHeight = 520;
+        public const int AppFileDialogOuterMargin = 12;
+        public const int AppFileDialogNavigationButtonSize = 34;
+        public const int AppFileDialogControlGap = 6;
+        public const int AppFileDialogSearchWidth = 220;
+        public const int AppFileDialogSidebarWidth = 230;
+        public const int AppFileDialogFooterFolderHeight = 68;
+        public const int AppFileDialogFooterFileHeight = 106;
+        public const int AppFileDialogLabelWidth = 110;
+        public const int AppFileDialogInputHeight = 30;
+        public const int AppFileDialogButtonHeight = 32;
+        public const int AppFileDialogConfirmButtonWidth = 170;
+        public const int AppFileDialogCancelButtonWidth = 110;
+        public const int AppFileDialogNewFolderWidth = 34;
+        public const int AppFileDialogNewFolderFormWidth = 360;
+        public const int AppFileDialogNewFolderFormHeight = 126;
+        public const int AppFileDialogShellIconSize = 16;
+        public const int AppFileDialogListIconLeftPadding = 6;
+        public const int AppFileDialogListIconTextGap = 6;
+
+        // ============================================================
         // Update available dialog
         // ============================================================
 
@@ -3636,6 +3663,34 @@ namespace c2flux
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool FreeLibrary(IntPtr hModule);
 
+        [DllImport("kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SetWindowsHookEx(
+            int idHook,
+            HookProcDelegate lpfn,
+            IntPtr hMod,
+            uint dwThreadId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool UnhookWindowsHookEx(
+            IntPtr hhk);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallNextHookEx(
+            IntPtr hhk,
+            int nCode,
+            IntPtr wParam,
+            IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetClassName(
+            IntPtr hWnd,
+            System.Text.StringBuilder lpClassName,
+            int nMaxCount);
+
         private enum PreferredAppMode
         {
             Default = 0,
@@ -3652,6 +3707,14 @@ namespace c2flux
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         private delegate void RefreshImmersiveColorPolicyStateDelegate();
 
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        private delegate IntPtr HookProcDelegate(
+            int nCode,
+            IntPtr wParam,
+            IntPtr lParam);
+
+        private const int WH_CBT = 5;
+        private const int HCBT_ACTIVATE = 5;
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
@@ -3693,6 +3756,8 @@ namespace c2flux
 
             SetPreferredAppModeDelegate setPreferredAppMode = null;
             RefreshImmersiveColorPolicyStateDelegate refreshColorPolicy = null;
+            HookProcDelegate dialogHookProc = null;
+            IntPtr dialogHook = IntPtr.Zero;
 
             try
             {
@@ -3730,12 +3795,46 @@ namespace c2flux
 
                 refreshColorPolicy?.Invoke();
 
+                dialogHookProc =
+                    (nCode, wParam, lParam) =>
+                    {
+                        if (nCode == HCBT_ACTIVATE &&
+                            IsNativeDialogWindow(
+                                wParam))
+                        {
+                            ApplyNativeDialogDarkTheme(
+                                wParam);
+                        }
+
+                        return CallNextHookEx(
+                            dialogHook,
+                            nCode,
+                            wParam,
+                            lParam);
+                    };
+
+                dialogHook =
+                    SetWindowsHookEx(
+                        WH_CBT,
+                        dialogHookProc,
+                        IntPtr.Zero,
+                        GetCurrentThreadId());
+
                 return owner == null
                     ? dialog.ShowDialog()
                     : dialog.ShowDialog(owner);
             }
             finally
             {
+                if (dialogHook != IntPtr.Zero)
+                {
+                    UnhookWindowsHookEx(
+                        dialogHook);
+                }
+
+                GC.KeepAlive(
+                    dialogHookProc);
+
                 if (setPreferredAppMode != null)
                 {
                     setPreferredAppMode(
@@ -3747,6 +3846,915 @@ namespace c2flux
                 FreeLibrary(
                     uxThemeModule);
             }
+        }
+
+        private static bool IsNativeDialogWindow(
+            IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero)
+                return false;
+
+            System.Text.StringBuilder className =
+                new System.Text.StringBuilder(
+                    64);
+
+            if (GetClassName(
+                    hWnd,
+                    className,
+                    className.Capacity) <= 0)
+            {
+                return false;
+            }
+
+            return string.Equals(
+                className.ToString(),
+                "#32770",
+                StringComparison.Ordinal);
+        }
+
+        private static void ApplyNativeDialogDarkTheme(
+            IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero)
+                return;
+
+            SetWindowTheme(
+                hWnd,
+                "DarkMode_Explorer",
+                null);
+
+            int useDarkMode = 1;
+
+            DwmSetWindowAttribute(
+                hWnd,
+                DWMWA_USE_IMMERSIVE_DARK_MODE,
+                ref useDarkMode,
+                sizeof(int));
+        }
+
+        internal static void ConfigureAppFileDialogShellImageList(
+            ImageList imageList)
+        {
+            if (imageList == null)
+                return;
+
+            imageList.ColorDepth =
+                ColorDepth.Depth32Bit;
+            imageList.ImageSize =
+                new Size(
+                    AppFileDialogShellIconSize,
+                    AppFileDialogShellIconSize);
+            imageList.TransparentColor =
+                Color.Transparent;
+        }
+
+        internal static void ConfigureAppFileDialog(
+            Form form,
+            AppLayout layout,
+            AppFileDialogMode mode,
+            Panel panelNavigation,
+            Panel panelFooter,
+            TreeView treeNavigation,
+            ListView listEntries,
+            TextBox textBoxAddress,
+            TextBox textBoxSearch,
+            TextBox textBoxFileName,
+            ComboBox comboBoxFileType,
+            Label labelFileName,
+            Label labelFileType,
+            AntdUI.Button buttonBack,
+            AntdUI.Button buttonForward,
+            AntdUI.Button buttonUp,
+            AntdUI.Button buttonNewFolder,
+            AntdUI.Button buttonConfirm,
+            AntdUI.Button buttonCancel)
+        {
+            if (form == null ||
+                panelNavigation == null ||
+                panelFooter == null ||
+                treeNavigation == null ||
+                listEntries == null ||
+                textBoxAddress == null ||
+                textBoxSearch == null ||
+                textBoxFileName == null ||
+                comboBoxFileType == null ||
+                labelFileName == null ||
+                labelFileType == null ||
+                buttonBack == null ||
+                buttonForward == null ||
+                buttonUp == null ||
+                buttonNewFolder == null ||
+                buttonConfirm == null ||
+                buttonCancel == null)
+            {
+                return;
+            }
+
+            form.StartPosition =
+                FormStartPosition.CenterParent;
+            form.ClientSize =
+                new Size(
+                    AppFileDialogWidth,
+                    AppFileDialogHeight);
+            form.MinimumSize =
+                new Size(
+                    AppFileDialogMinimumWidth,
+                    AppFileDialogMinimumHeight);
+            form.ShowInTaskbar = false;
+            form.MinimizeBox = false;
+
+            Apply(form, layout);
+
+            panelNavigation.BackColor =
+                BackgroundPrimary;
+            panelFooter.BackColor =
+                BackgroundSecondary;
+
+            treeNavigation.BorderStyle =
+                BorderStyle.None;
+            treeNavigation.BackColor =
+                BackgroundPrimary;
+            treeNavigation.ForeColor =
+                TextPrimary;
+            treeNavigation.Font =
+                DefaultFont;
+            treeNavigation.HideSelection =
+                false;
+            treeNavigation.FullRowSelect =
+                true;
+            treeNavigation.DrawMode =
+                TreeViewDrawMode.OwnerDrawText;
+            treeNavigation.DrawNode -=
+                appFileDialogTreeNavigation_DrawNode;
+            treeNavigation.DrawNode +=
+                appFileDialogTreeNavigation_DrawNode;
+
+            listEntries.BorderStyle =
+                BorderStyle.None;
+            listEntries.BackColor =
+                BackgroundPrimary;
+            listEntries.ForeColor =
+                TextPrimary;
+            listEntries.Font =
+                DefaultFont;
+            listEntries.OwnerDraw = true;
+            listEntries.DrawColumnHeader -=
+                appFileDialogListEntries_DrawColumnHeader;
+            listEntries.DrawColumnHeader +=
+                appFileDialogListEntries_DrawColumnHeader;
+            listEntries.DrawItem -=
+                appFileDialogListEntries_DrawItem;
+            listEntries.DrawItem +=
+                appFileDialogListEntries_DrawItem;
+            listEntries.DrawSubItem -=
+                appFileDialogListEntries_DrawSubItem;
+            listEntries.DrawSubItem +=
+                appFileDialogListEntries_DrawSubItem;
+
+            textBoxAddress.BackColor =
+                InputBackground;
+            textBoxAddress.ForeColor =
+                TextPrimary;
+            textBoxAddress.BorderStyle =
+                BorderStyle.FixedSingle;
+            textBoxAddress.Font =
+                DefaultFont;
+
+            textBoxSearch.BackColor =
+                InputBackground;
+            textBoxSearch.ForeColor =
+                TextPrimary;
+            textBoxSearch.BorderStyle =
+                BorderStyle.FixedSingle;
+            textBoxSearch.Font =
+                DefaultFont;
+
+            textBoxFileName.BackColor =
+                InputBackground;
+            textBoxFileName.ForeColor =
+                TextPrimary;
+            textBoxFileName.BorderStyle =
+                BorderStyle.FixedSingle;
+            textBoxFileName.Font =
+                DefaultFont;
+
+            comboBoxFileType.BackColor =
+                InputBackground;
+            comboBoxFileType.ForeColor =
+                TextPrimary;
+            comboBoxFileType.FlatStyle =
+                FlatStyle.Flat;
+            comboBoxFileType.Font =
+                DefaultFont;
+
+            labelFileName.BackColor =
+                Color.Transparent;
+            labelFileName.ForeColor =
+                TextPrimary;
+            labelFileName.Font =
+                DefaultFont;
+
+            labelFileType.BackColor =
+                Color.Transparent;
+            labelFileType.ForeColor =
+                TextPrimary;
+            labelFileType.Font =
+                DefaultFont;
+
+            buttonBack.Type =
+                AntdUI.TTypeMini.Default;
+            buttonForward.Type =
+                AntdUI.TTypeMini.Default;
+            buttonUp.Type =
+                AntdUI.TTypeMini.Default;
+            buttonNewFolder.Type =
+                AntdUI.TTypeMini.Default;
+            buttonConfirm.Type =
+                AntdUI.TTypeMini.Default;
+            buttonCancel.Type =
+                AntdUI.TTypeMini.Default;
+
+            ApplyMainButtonVisualStyle(
+                buttonBack);
+            ApplyMainButtonVisualStyle(
+                buttonForward);
+            ApplyMainButtonVisualStyle(
+                buttonUp);
+            ApplyMainButtonVisualStyle(
+                buttonNewFolder);
+            ConfigureAppFileDialogFooterButton(
+                buttonConfirm);
+            ConfigureAppFileDialogFooterButton(
+                buttonCancel);
+
+            buttonNewFolder.Visible =
+                mode !=
+                AppFileDialogMode.SelectFolder;
+
+            labelFileName.Visible =
+                mode !=
+                AppFileDialogMode.SelectFolder;
+            textBoxFileName.Visible =
+                mode !=
+                AppFileDialogMode.SelectFolder;
+            labelFileType.Visible =
+                mode !=
+                AppFileDialogMode.SelectFolder;
+            comboBoxFileType.Visible =
+                mode !=
+                AppFileDialogMode.SelectFolder;
+
+            ApplyNativeScrollBarThemeToHandle(
+                treeNavigation,
+                true);
+            ApplyNativeScrollBarThemeToHandle(
+                listEntries,
+                true);
+        }
+
+        private static void ConfigureAppFileDialogFooterButton(
+            AntdUI.Button button)
+        {
+            if (button == null)
+                return;
+
+            button.Type =
+                AntdUI.TTypeMini.Default;
+            button.Font =
+                DefaultFont;
+            button.OriginalBackColor =
+                Color.Transparent;
+            button.BackColor =
+                null;
+            button.Invalidate();
+        }
+
+        internal static void LayoutAppFileDialog(
+            Form form,
+            AppFileDialogMode mode,
+            Panel panelNavigation,
+            Panel panelFooter,
+            TreeView treeNavigation,
+            ListView listEntries,
+            TextBox textBoxAddress,
+            TextBox textBoxSearch,
+            TextBox textBoxFileName,
+            ComboBox comboBoxFileType,
+            Label labelFileName,
+            Label labelFileType,
+            AntdUI.Button buttonBack,
+            AntdUI.Button buttonForward,
+            AntdUI.Button buttonUp,
+            AntdUI.Button buttonNewFolder,
+            AntdUI.Button buttonConfirm,
+            AntdUI.Button buttonCancel)
+        {
+            if (form == null ||
+                panelNavigation == null ||
+                panelFooter == null ||
+                treeNavigation == null ||
+                listEntries == null ||
+                textBoxAddress == null ||
+                textBoxSearch == null ||
+                textBoxFileName == null ||
+                comboBoxFileType == null ||
+                labelFileName == null ||
+                labelFileType == null ||
+                buttonBack == null ||
+                buttonForward == null ||
+                buttonUp == null ||
+                buttonNewFolder == null ||
+                buttonConfirm == null ||
+                buttonCancel == null)
+            {
+                return;
+            }
+
+            int margin =
+                AppFileDialogOuterMargin;
+            int gap =
+                AppFileDialogControlGap;
+            int navigationButtonSize =
+                AppFileDialogNavigationButtonSize;
+
+            int top =
+                margin;
+
+            buttonBack.Location =
+                new Point(
+                    margin,
+                    top);
+            buttonBack.Size =
+                new Size(
+                    navigationButtonSize,
+                    navigationButtonSize);
+
+            buttonForward.Location =
+                new Point(
+                    buttonBack.Right + gap,
+                    top);
+            buttonForward.Size =
+                buttonBack.Size;
+
+            buttonUp.Location =
+                new Point(
+                    buttonForward.Right + gap,
+                    top);
+            buttonUp.Size =
+                buttonBack.Size;
+
+            int addressLeft =
+                buttonUp.Right + gap;
+
+            if (mode !=
+                AppFileDialogMode.SelectFolder)
+            {
+                buttonNewFolder.Location =
+                    new Point(
+                        addressLeft,
+                        top);
+                buttonNewFolder.Size =
+                    new Size(
+                        AppFileDialogNewFolderWidth,
+                        navigationButtonSize);
+
+                addressLeft =
+                    buttonNewFolder.Right +
+                    gap;
+            }
+
+            int searchLeft =
+                form.ClientSize.Width -
+                margin -
+                AppFileDialogSearchWidth;
+
+            textBoxSearch.Location =
+                new Point(
+                    searchLeft,
+                    top + 2);
+            textBoxSearch.Size =
+                new Size(
+                    AppFileDialogSearchWidth,
+                    AppFileDialogInputHeight);
+
+            textBoxAddress.Location =
+                new Point(
+                    addressLeft,
+                    top + 2);
+            textBoxAddress.Size =
+                new Size(
+                    Math.Max(
+                        120,
+                        textBoxSearch.Left -
+                        gap -
+                        addressLeft),
+                    AppFileDialogInputHeight);
+
+            int bodyTop =
+                top +
+                navigationButtonSize +
+                margin;
+
+            int footerHeight =
+                mode ==
+                AppFileDialogMode.SelectFolder
+                    ? AppFileDialogFooterFolderHeight
+                    : AppFileDialogFooterFileHeight;
+
+            int footerTop =
+                form.ClientSize.Height -
+                footerHeight;
+
+            panelNavigation.Location =
+                new Point(
+                    0,
+                    bodyTop);
+            panelNavigation.Size =
+                new Size(
+                    AppFileDialogSidebarWidth +
+                    margin * 2,
+                    Math.Max(
+                        0,
+                        footerTop -
+                        bodyTop));
+
+            treeNavigation.Location =
+                new Point(
+                    margin,
+                    0);
+            treeNavigation.Size =
+                new Size(
+                    AppFileDialogSidebarWidth,
+                    panelNavigation.ClientSize.Height);
+
+            int listLeft =
+                panelNavigation.Right +
+                margin;
+
+            listEntries.Location =
+                new Point(
+                    listLeft,
+                    bodyTop);
+            listEntries.Size =
+                new Size(
+                    Math.Max(
+                        0,
+                        form.ClientSize.Width -
+                        margin -
+                        listLeft),
+                    Math.Max(
+                        0,
+                        footerTop -
+                        bodyTop));
+
+            panelFooter.Location =
+                new Point(
+                    0,
+                    footerTop);
+            panelFooter.Size =
+                new Size(
+                    form.ClientSize.Width,
+                    footerHeight);
+
+            int footerContentTop =
+                margin;
+
+            labelFileName.Location =
+                new Point(
+                    margin,
+                    footerContentTop);
+            labelFileName.Size =
+                new Size(
+                    AppFileDialogLabelWidth,
+                    AppFileDialogInputHeight);
+
+            int buttonRight =
+                panelFooter.ClientSize.Width -
+                margin;
+
+            int cancelButtonWidth =
+                Math.Max(
+                    AppFileDialogCancelButtonWidth,
+                    TextRenderer.MeasureText(
+                        buttonCancel.Text ??
+                        string.Empty,
+                        DefaultFont).Width +
+                    24);
+
+            int confirmButtonWidth =
+                Math.Max(
+                    AppFileDialogConfirmButtonWidth,
+                    TextRenderer.MeasureText(
+                        buttonConfirm.Text ??
+                        string.Empty,
+                        DefaultFont).Width +
+                    24);
+
+            buttonCancel.Size =
+                new Size(
+                    cancelButtonWidth,
+                    AppFileDialogButtonHeight);
+            int footerButtonTop =
+                mode ==
+                AppFileDialogMode.SelectFolder
+                    ? Math.Max(
+                        0,
+                        (panelFooter.ClientSize.Height -
+                         AppFileDialogButtonHeight) /
+                        2)
+                    : footerContentTop +
+                      AppFileDialogInputHeight +
+                      gap;
+
+            buttonCancel.Location =
+                new Point(
+                    buttonRight -
+                    buttonCancel.Width,
+                    footerButtonTop);
+
+            buttonConfirm.Size =
+                new Size(
+                    confirmButtonWidth,
+                    AppFileDialogButtonHeight);
+            buttonConfirm.Location =
+                new Point(
+                    buttonCancel.Left -
+                    gap -
+                    buttonConfirm.Width,
+                    buttonCancel.Top);
+
+            int inputLeft =
+                labelFileName.Right +
+                gap;
+            int inputRight =
+                mode ==
+                AppFileDialogMode.SelectFolder
+                    ? buttonConfirm.Left -
+                      gap
+                    : panelFooter.ClientSize.Width -
+                      margin;
+
+            textBoxFileName.Location =
+                new Point(
+                    inputLeft,
+                    footerContentTop + 2);
+            textBoxFileName.Size =
+                new Size(
+                    Math.Max(
+                        120,
+                        inputRight -
+                        inputLeft),
+                    AppFileDialogInputHeight);
+
+            if (mode !=
+                AppFileDialogMode.SelectFolder)
+            {
+                int secondRowTop =
+                    footerContentTop +
+                    AppFileDialogInputHeight +
+                    gap;
+
+                labelFileType.Location =
+                    new Point(
+                        margin,
+                        secondRowTop);
+                labelFileType.Size =
+                    new Size(
+                        AppFileDialogLabelWidth,
+                        AppFileDialogInputHeight);
+
+                comboBoxFileType.Location =
+                    new Point(
+                        inputLeft,
+                        secondRowTop + 2);
+                comboBoxFileType.Size =
+                    new Size(
+                        Math.Max(
+                            120,
+                            buttonConfirm.Left -
+                            gap -
+                            inputLeft),
+                        AppFileDialogInputHeight);
+            }
+
+            if (listEntries.Columns.Count >= 4)
+            {
+                int availableWidth =
+                    Math.Max(
+                        240,
+                        listEntries.ClientSize.Width -
+                        SystemInformation.VerticalScrollBarWidth);
+
+                listEntries.Columns[0].Width =
+                    Math.Max(
+                        140,
+                        (int)Math.Round(
+                            availableWidth * 0.42D));
+                listEntries.Columns[1].Width =
+                    Math.Max(
+                        120,
+                        (int)Math.Round(
+                            availableWidth * 0.22D));
+                listEntries.Columns[2].Width =
+                    Math.Max(
+                        110,
+                        (int)Math.Round(
+                            availableWidth * 0.20D));
+                listEntries.Columns[3].Width =
+                    Math.Max(
+                        90,
+                        availableWidth -
+                        listEntries.Columns[0].Width -
+                        listEntries.Columns[1].Width -
+                        listEntries.Columns[2].Width);
+            }
+        }
+
+        public static void ConfigureAppFileDialogNewFolderForm(
+            Form form,
+            AppLayout layout,
+            AntdUI.Input inputFolderName,
+            AntdUI.Button buttonOk,
+            AntdUI.Button buttonCancel)
+        {
+            if (form == null ||
+                inputFolderName == null ||
+                buttonOk == null ||
+                buttonCancel == null)
+            {
+                return;
+            }
+
+            form.StartPosition =
+                FormStartPosition.CenterParent;
+            form.ClientSize =
+                new Size(
+                    AppFileDialogNewFolderFormWidth,
+                    AppFileDialogNewFolderFormHeight);
+            form.MinimumSize =
+                form.Size;
+            form.MaximumSize =
+                form.Size;
+            form.MinimizeBox = false;
+            form.MaximizeBox = false;
+            form.ShowInTaskbar = false;
+
+            inputFolderName.Location =
+                new Point(
+                    16,
+                    18);
+            inputFolderName.Size =
+                new Size(
+                    form.ClientSize.Width -
+                    32,
+                    32);
+
+            buttonCancel.Location =
+                new Point(
+                    form.ClientSize.Width -
+                    16 -
+                    AppFileDialogCancelButtonWidth,
+                    72);
+            buttonCancel.Size =
+                new Size(
+                    AppFileDialogCancelButtonWidth,
+                    AppFileDialogButtonHeight);
+
+            buttonOk.Location =
+                new Point(
+                    buttonCancel.Left -
+                    AppFileDialogControlGap -
+                    AppFileDialogCancelButtonWidth,
+                    72);
+            buttonOk.Size =
+                new Size(
+                    AppFileDialogCancelButtonWidth,
+                    AppFileDialogButtonHeight);
+
+            Apply(form, layout);
+
+            inputFolderName.BackColor =
+                InputBackground;
+            inputFolderName.ForeColor =
+                TextPrimary;
+            inputFolderName.Font =
+                DefaultFont;
+
+            buttonOk.Type =
+                AntdUI.TTypeMini.Default;
+            buttonCancel.Type =
+                AntdUI.TTypeMini.Default;
+
+            ApplyMainButtonVisualStyle(
+                buttonOk);
+            ApplyMainButtonVisualStyle(
+                buttonCancel);
+        }
+
+        private static void appFileDialogTreeNavigation_DrawNode(
+            object sender,
+            DrawTreeNodeEventArgs e)
+        {
+            if (e.Node == null)
+                return;
+
+            bool selected =
+                (e.State &
+                 TreeNodeStates.Selected) ==
+                TreeNodeStates.Selected;
+
+            Color backColor =
+                selected
+                    ? Accent
+                    : BackgroundPrimary;
+            Color foreColor =
+                selected
+                    ? AccentText
+                    : TextPrimary;
+
+            int width =
+                sender is TreeView treeView
+                    ? Math.Max(
+                        0,
+                        treeView.ClientSize.Width -
+                        e.Bounds.Left)
+                    : Math.Max(
+                        0,
+                        e.Bounds.Width);
+
+            Rectangle bounds =
+                new Rectangle(
+                    e.Bounds.Left,
+                    e.Bounds.Top,
+                    width,
+                    e.Bounds.Height);
+
+            using (SolidBrush backBrush =
+                   new SolidBrush(
+                       backColor))
+            {
+                e.Graphics.FillRectangle(
+                    backBrush,
+                    bounds);
+            }
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                e.Node.Text,
+                DefaultFont,
+                bounds,
+                foreColor,
+                TextFormatFlags.VerticalCenter |
+                TextFormatFlags.EndEllipsis |
+                TextFormatFlags.NoPadding);
+        }
+
+        private static void appFileDialogListEntries_DrawColumnHeader(
+            object sender,
+            DrawListViewColumnHeaderEventArgs e)
+        {
+            using (SolidBrush backBrush =
+                   new SolidBrush(
+                       BackgroundSecondary))
+            {
+                e.Graphics.FillRectangle(
+                    backBrush,
+                    e.Bounds);
+            }
+
+            Rectangle textBounds =
+                Rectangle.Inflate(
+                    e.Bounds,
+                    -8,
+                    0);
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                e.Header?.Text ??
+                string.Empty,
+                DefaultFont,
+                textBounds,
+                TextPrimary,
+                TextFormatFlags.VerticalCenter |
+                TextFormatFlags.EndEllipsis |
+                TextFormatFlags.NoPadding);
+
+            using Pen borderPen =
+                new Pen(
+                    Border);
+
+            e.Graphics.DrawLine(
+                borderPen,
+                e.Bounds.Right - 1,
+                e.Bounds.Top,
+                e.Bounds.Right - 1,
+                e.Bounds.Bottom);
+        }
+
+        private static void appFileDialogListEntries_DrawItem(
+            object sender,
+            DrawListViewItemEventArgs e)
+        {
+        }
+
+        private static void appFileDialogListEntries_DrawSubItem(
+            object sender,
+            DrawListViewSubItemEventArgs e)
+        {
+            bool selected =
+                e.Item != null &&
+                e.Item.Selected;
+
+            Color backColor =
+                selected
+                    ? Accent
+                    : BackgroundPrimary;
+            Color foreColor =
+                selected
+                    ? AccentText
+                    : TextPrimary;
+
+            using (SolidBrush backBrush =
+                   new SolidBrush(
+                       backColor))
+            {
+                e.Graphics.FillRectangle(
+                    backBrush,
+                    e.Bounds);
+            }
+
+            Rectangle textBounds =
+                Rectangle.Inflate(
+                    e.Bounds,
+                    -8,
+                    0);
+
+            if (e.ColumnIndex == 0 &&
+                sender is ListView listView &&
+                listView.SmallImageList != null &&
+                e.Item != null &&
+                !string.IsNullOrWhiteSpace(
+                    e.Item.ImageKey) &&
+                listView.SmallImageList.Images.ContainsKey(
+                    e.Item.ImageKey))
+            {
+                Image icon =
+                    listView.SmallImageList.Images[
+                        e.Item.ImageKey];
+
+                int iconLeft =
+                    e.Bounds.Left +
+                    AppFileDialogListIconLeftPadding;
+                int iconTop =
+                    e.Bounds.Top +
+                    Math.Max(
+                        0,
+                        (e.Bounds.Height -
+                         icon.Height) /
+                        2);
+
+                e.Graphics.DrawImage(
+                    icon,
+                    iconLeft,
+                    iconTop,
+                    icon.Width,
+                    icon.Height);
+
+                int iconOffset =
+                    AppFileDialogListIconLeftPadding +
+                    icon.Width +
+                    AppFileDialogListIconTextGap;
+
+                textBounds.X =
+                    e.Bounds.Left +
+                    iconOffset;
+                textBounds.Width =
+                    Math.Max(
+                        0,
+                        e.Bounds.Right -
+                        textBounds.X -
+                        8);
+            }
+
+            TextFormatFlags flags =
+                TextFormatFlags.VerticalCenter |
+                TextFormatFlags.EndEllipsis |
+                TextFormatFlags.NoPadding;
+
+            if (e.ColumnIndex == 3)
+            {
+                flags |=
+                    TextFormatFlags.Right;
+            }
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                e.SubItem?.Text ??
+                string.Empty,
+                DefaultFont,
+                textBounds,
+                foreColor,
+                flags);
         }
 
         public static void ConfigureUpdateAvailableForm(
@@ -4173,6 +5181,21 @@ namespace c2flux
 
         private static void ApplyNativeScrollBarThemeToHandle(Control control, bool useDarkMode)
         {
+            if (control == null ||
+                control.IsDisposed)
+            {
+                return;
+            }
+
+            if (!control.IsHandleCreated)
+            {
+                control.HandleCreated -=
+                    nativeScrollBarThemeControl_HandleCreated;
+                control.HandleCreated +=
+                    nativeScrollBarThemeControl_HandleCreated;
+                return;
+            }
+
             try
             {
                 SetWindowTheme(
@@ -4183,6 +5206,21 @@ namespace c2flux
             catch
             {
             }
+        }
+
+        private static void nativeScrollBarThemeControl_HandleCreated(
+            object sender,
+            EventArgs e)
+        {
+            if (sender is not Control control ||
+                control.IsDisposed)
+            {
+                return;
+            }
+
+            ApplyNativeScrollBarThemeToHandle(
+                control,
+                _useDarkMode);
         }
 
         private static void tabControl_DrawItem(object sender, DrawItemEventArgs e)

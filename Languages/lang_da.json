@@ -119,8 +119,8 @@
   "Context.CopyPath": "Kopiér sti",
   "Context.RemoveFromTreePane": "Fjern \"{0}\" fra træpanelet",
   "Dialog.SelectFolder": "Vælg mappe, der skal scannes",
-
-  "Dialog.FileExistsOverwrite": "Der findes allerede en fil med navnet \"{0}\". Vil du erstatte den?",
+  "Dialog.FileName": "Fil",
+  "Dialog.FileAlreadyExists": "Filen \"{0}\" findes allerede. Vil du erstatte den?",
   "Message.NoPathSelected": "Ingen sti valgt.",
   "Message.PathNotFoundPrefix": "Sti ikke fundet: ",
   "Message.SettingsSaveFailedPrefix": "Indstillingerne kunne ikke gemmes: ",

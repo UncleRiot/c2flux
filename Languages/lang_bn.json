@@ -119,8 +119,8 @@
   "Context.CopyPath": "পাথ কপি করুন",
   "Context.RemoveFromTreePane": "ট্রি প্যান থেকে \"{0}\" সরান",
   "Dialog.SelectFolder": "স্ক্যান করার ফোল্ডার নির্বাচন করুন",
-
-  "Dialog.FileExistsOverwrite": "\"{0}\" নামে একটি ফাইল ইতিমধ্যে আছে। আপনি কি এটি প্রতিস্থাপন করতে চান?",
+  "Dialog.FileName": "ফাইল",
+  "Dialog.FileAlreadyExists": "\"{0}\" ফাইলটি ইতিমধ্যেই বিদ্যমান। আপনি কি এটি প্রতিস্থাপন করতে চান?",
   "Message.NoPathSelected": "কোনো পাথ নির্বাচন করা হয়নি।",
   "Message.PathNotFoundPrefix": "পাথ পাওয়া যায়নি: ",
   "Message.SettingsSaveFailedPrefix": "সেটিংস সংরক্ষণ করা যায়নি: ",

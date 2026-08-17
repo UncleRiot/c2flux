@@ -119,8 +119,8 @@
   "Context.CopyPath": "کپی مسیر",
   "Context.RemoveFromTreePane": "حذف «{0}» از پنل درختی",
   "Dialog.SelectFolder": "انتخاب پوشه برای اسکن",
-
-  "Dialog.FileExistsOverwrite": "فایلی با نام «{0}» از قبل وجود دارد. آیا می‌خواهید آن را جایگزین کنید؟",
+  "Dialog.FileName": "فایل",
+  "Dialog.FileAlreadyExists": "فایل «{0}» از قبل وجود دارد. آیا می‌خواهید آن را جایگزین کنید؟",
   "Message.NoPathSelected": "هیچ مسیری انتخاب نشده است.",
   "Message.PathNotFoundPrefix": "مسیر پیدا نشد: ",
   "Message.SettingsSaveFailedPrefix": "تنظیمات ذخیره نشد: ",

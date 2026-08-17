@@ -1,112 +1,68 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace c2flux
 {
     internal enum AppFileDialogMode
     {
+        SelectFolder,
         OpenFile,
-        SaveFile,
-        SelectFolder
+        SaveFile
     }
 
     internal sealed class AppFileDialog : Form
     {
-        private sealed class PathEntry
-        {
-            public string FullPath { get; }
-            public bool IsDirectory { get; }
-
-            public PathEntry(
-                string fullPath,
-                bool isDirectory)
-            {
-                FullPath = fullPath;
-                IsDirectory = isDirectory;
-            }
-
-            public override string ToString()
-            {
-                string name =
-                    Path.GetFileName(
-                        FullPath.TrimEnd(
-                            Path.DirectorySeparatorChar,
-                            Path.AltDirectorySeparatorChar));
-
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    name = FullPath;
-                }
-
-                return IsDirectory
-                    ? "📁 " + name
-                    : name;
-            }
-        }
-
-        private sealed class FileFilterEntry
-        {
-            public string DisplayName { get; }
-            public string[] Patterns { get; }
-
-            public FileFilterEntry(
-                string displayName,
-                string patternText)
-            {
-                DisplayName =
-                    string.IsNullOrWhiteSpace(displayName)
-                        ? patternText
-                        : displayName;
-
-                Patterns =
-                    (patternText ?? "*.*")
-                        .Split(
-                            new[] { ';' },
-                            StringSplitOptions.RemoveEmptyEntries)
-                        .Select(pattern => pattern.Trim())
-                        .Where(pattern => pattern.Length > 0)
-                        .ToArray();
-
-                if (Patterns.Length == 0)
-                {
-                    Patterns = new[] { "*.*" };
-                }
-            }
-
-            public override string ToString()
-            {
-                return DisplayName;
-            }
-        }
-
         private readonly AppSettings _settings;
         private readonly AppFileDialogMode _mode;
+        private readonly string _filter;
         private readonly string _defaultExtension;
+        private readonly string _initialFileName;
+        private readonly string _confirmButtonText;
+
+        private readonly Stack<string> _backHistory =
+            new Stack<string>();
+        private readonly Stack<string> _forwardHistory =
+            new Stack<string>();
+        private readonly List<FileDialogFilter> _filters =
+            new List<FileDialogFilter>();
+
+        private readonly ImageList _shellImageList =
+            new ImageList();
 
         private string _currentDirectory;
+        private bool _navigatingHistory;
 
-        private readonly Label _pathLabel;
-        private readonly TextBox _pathTextBox;
-        private readonly AntdUI.Button _upButton;
-        private readonly ListBox _entriesListBox;
-        private readonly Label _fileNameLabel;
-        private readonly TextBox _fileNameTextBox;
-        private readonly Label _fileTypeLabel;
-        private readonly ComboBox _fileTypeComboBox;
-        private readonly AntdUI.Button _confirmButton;
-        private readonly AntdUI.Button _cancelButton;
+        private Panel panelNavigation;
+        private Panel panelFooter;
+        private TreeView treeNavigation;
+        private ListView listEntries;
+        private TextBox textBoxAddress;
+        private TextBox textBoxSearch;
+        private TextBox textBoxFileName;
+        private ComboBox comboBoxFileType;
+        private Label labelFileName;
+        private Label labelFileType;
+        private AntdUI.Button buttonBack;
+        private AntdUI.Button buttonForward;
+        private AntdUI.Button buttonUp;
+        private AntdUI.Button buttonNewFolder;
+        private AntdUI.Button buttonConfirm;
+        private AntdUI.Button buttonCancel;
 
-        private AppFileDialog(
+        public AppFileDialog(
             AppSettings settings,
             AppFileDialogMode mode,
             string title,
-            string confirmButtonText,
             string filter,
             string defaultExtension,
-            string initialFileName)
+            string initialFileName,
+            string confirmButtonText)
         {
             _settings =
                 settings ??
@@ -114,408 +70,836 @@ namespace c2flux
                     nameof(settings));
 
             _mode = mode;
+            _filter = filter ?? string.Empty;
             _defaultExtension =
-                NormalizeExtension(
-                    defaultExtension);
+                defaultExtension ??
+                string.Empty;
+            _initialFileName =
+                initialFileName ??
+                string.Empty;
+            _confirmButtonText =
+                string.IsNullOrWhiteSpace(
+                    confirmButtonText)
+                    ? LocalizationService.GetText(
+                        "Common.OK")
+                    : confirmButtonText;
 
-            Text = title ?? string.Empty;
+            Text =
+                string.IsNullOrWhiteSpace(title)
+                    ? AppConstants.ApplicationName
+                    : title;
 
-            _pathLabel = new Label
+            InitializeComponent();
+            ParseFilters();
+            PopulateNavigationTree();
+            PopulateFileTypes();
+
+            string startDirectory =
+                ResolveStartDirectory(
+                    _initialFileName);
+
+            NavigateTo(
+                startDirectory,
+                false);
+
+            if (_mode == AppFileDialogMode.SaveFile)
             {
-                Text =
-                    LocalizationService.GetText(
-                        "Common.Path")
-            };
-
-            _pathTextBox = new TextBox();
-
-            _upButton = new AntdUI.Button
-            {
-                Name = "buttonUp",
-                Text = "↑"
-            };
-
-            _entriesListBox = new ListBox
-            {
-                Name = "listBoxEntries"
-            };
-
-            _fileNameLabel = new Label
-            {
-                Text =
-                    LocalizationService.GetText(
-                        "Common.Name")
-            };
-
-            _fileNameTextBox = new TextBox
-            {
-                Text =
-                    initialFileName ??
-                    string.Empty
-            };
-
-            _fileTypeLabel = new Label
-            {
-                Text =
-                    LocalizationService.GetText(
-                        "Advanced.FileType")
-            };
-
-            _fileTypeComboBox = new ComboBox();
-
-            _confirmButton = new AntdUI.Button
-            {
-                Name = "buttonConfirm",
-                Text = confirmButtonText ?? string.Empty
-            };
-
-            _cancelButton = new AntdUI.Button
-            {
-                Name = "buttonCancel",
-                Text =
-                    LocalizationService.GetText(
-                        "Common.Cancel"),
-                DialogResult = DialogResult.Cancel
-            };
-
-            Controls.Add(_pathLabel);
-            Controls.Add(_pathTextBox);
-            Controls.Add(_upButton);
-            Controls.Add(_entriesListBox);
-            Controls.Add(_fileNameLabel);
-            Controls.Add(_fileNameTextBox);
-            Controls.Add(_fileTypeLabel);
-            Controls.Add(_fileTypeComboBox);
-            Controls.Add(_confirmButton);
-            Controls.Add(_cancelButton);
+                textBoxFileName.Text =
+                    Path.GetFileName(
+                        _initialFileName);
+            }
 
             AntdThemeService.ConfigureAppFileDialog(
                 this,
                 _settings.Layout,
-                _pathLabel,
-                _pathTextBox,
-                _upButton,
-                _entriesListBox,
-                _fileNameLabel,
-                _fileNameTextBox,
-                _fileTypeLabel,
-                _fileTypeComboBox,
-                _confirmButton,
-                _cancelButton,
-                _mode !=
-                    AppFileDialogMode.SelectFolder);
+                _mode,
+                panelNavigation,
+                panelFooter,
+                treeNavigation,
+                listEntries,
+                textBoxAddress,
+                textBoxSearch,
+                textBoxFileName,
+                comboBoxFileType,
+                labelFileName,
+                labelFileType,
+                buttonBack,
+                buttonForward,
+                buttonUp,
+                buttonNewFolder,
+                buttonConfirm,
+                buttonCancel);
 
-            AcceptButton = _confirmButton;
-            CancelButton = _cancelButton;
+            AntdThemeService.LayoutAppFileDialog(
+                this,
+                _mode,
+                panelNavigation,
+                panelFooter,
+                treeNavigation,
+                listEntries,
+                textBoxAddress,
+                textBoxSearch,
+                textBoxFileName,
+                comboBoxFileType,
+                labelFileName,
+                labelFileType,
+                buttonBack,
+                buttonForward,
+                buttonUp,
+                buttonNewFolder,
+                buttonConfirm,
+                buttonCancel);
 
-            _upButton.Click +=
-                upButton_Click;
-            _confirmButton.Click +=
-                confirmButton_Click;
-            _entriesListBox.SelectedIndexChanged +=
-                entriesListBox_SelectedIndexChanged;
-            _entriesListBox.DoubleClick +=
-                entriesListBox_DoubleClick;
-            _entriesListBox.KeyDown +=
-                entriesListBox_KeyDown;
-            _pathTextBox.KeyDown +=
-                pathTextBox_KeyDown;
-            _fileNameTextBox.KeyDown +=
-                fileNameTextBox_KeyDown;
-            _fileTypeComboBox.SelectedIndexChanged +=
-                fileTypeComboBox_SelectedIndexChanged;
-
-            PopulateFileFilters(filter);
-
-            Shown +=
-                AppFileDialog_Shown;
+            UpdateNavigationButtons();
+            UpdateConfirmState();
         }
 
-        public static DialogResult ShowFolderDialog(
-            IWin32Window owner,
-            AppSettings settings,
-            string title,
-            string confirmButtonText,
-            out string selectedPath)
+        public string SelectedPath { get; private set; }
+
+        private void InitializeComponent()
         {
-            using AppFileDialog dialog =
-                new AppFileDialog(
-                    settings,
-                    AppFileDialogMode.SelectFolder,
-                    title,
-                    confirmButtonText,
-                    null,
-                    null,
-                    null);
+            AntdThemeService.ConfigureAppFileDialogShellImageList(
+                _shellImageList);
 
-            DialogResult result =
-                owner == null
-                    ? dialog.ShowDialog()
-                    : dialog.ShowDialog(owner);
-
-            selectedPath =
-                result == DialogResult.OK
-                    ? dialog.GetSelectedFolderPath()
-                    : null;
-
-            return result;
-        }
-
-        public static DialogResult ShowOpenFileDialog(
-            IWin32Window owner,
-            AppSettings settings,
-            string title,
-            string confirmButtonText,
-            string filter,
-            out string fileName)
-        {
-            using AppFileDialog dialog =
-                new AppFileDialog(
-                    settings,
-                    AppFileDialogMode.OpenFile,
-                    title,
-                    confirmButtonText,
-                    filter,
-                    null,
-                    null);
-
-            DialogResult result =
-                owner == null
-                    ? dialog.ShowDialog()
-                    : dialog.ShowDialog(owner);
-
-            fileName =
-                result == DialogResult.OK
-                    ? dialog.GetSelectedFilePath()
-                    : null;
-
-            return result;
-        }
-
-        public static DialogResult ShowSaveFileDialog(
-            IWin32Window owner,
-            AppSettings settings,
-            string title,
-            string confirmButtonText,
-            string filter,
-            string defaultExtension,
-            string initialFileName,
-            out string fileName)
-        {
-            using AppFileDialog dialog =
-                new AppFileDialog(
-                    settings,
-                    AppFileDialogMode.SaveFile,
-                    title,
-                    confirmButtonText,
-                    filter,
-                    defaultExtension,
-                    initialFileName);
-
-            DialogResult result =
-                owner == null
-                    ? dialog.ShowDialog()
-                    : dialog.ShowDialog(owner);
-
-            fileName =
-                result == DialogResult.OK
-                    ? dialog.GetSelectedFilePath()
-                    : null;
-
-            return result;
-        }
-
-        private void AppFileDialog_Shown(
-            object sender,
-            EventArgs e)
-        {
-            string initialDirectory =
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.MyDocuments);
-
-            if (string.IsNullOrWhiteSpace(initialDirectory) ||
-                !Directory.Exists(initialDirectory))
+            panelNavigation = new Panel();
+            panelFooter = new Panel();
+            treeNavigation = new TreeView
             {
-                initialDirectory =
-                    Environment.CurrentDirectory;
-            }
-
-            NavigateToDirectory(
-                initialDirectory,
-                false);
-
-            if (_mode != AppFileDialogMode.SelectFolder)
+                ImageList = _shellImageList
+            };
+            listEntries = new ListView
             {
-                _fileNameTextBox.SelectAll();
-            }
+                View = View.Details,
+                FullRowSelect = true,
+                HideSelection = false,
+                MultiSelect = false,
+                SmallImageList = _shellImageList
+            };
+
+            listEntries.Columns.Add(
+                LocalizationService.GetText(
+                    "Common.Name"));
+            listEntries.Columns.Add(
+                LocalizationService.GetText(
+                    "StorageHistory.Date"));
+            listEntries.Columns.Add(
+                LocalizationService.GetText(
+                    "Advanced.FileType"));
+            listEntries.Columns.Add(
+                LocalizationService.GetText(
+                    "Common.Size"));
+
+            textBoxAddress = new TextBox();
+            textBoxSearch = new TextBox
+            {
+                PlaceholderText =
+                    LocalizationService.GetText(
+                        "Search.Title")
+            };
+            textBoxFileName = new TextBox();
+            comboBoxFileType =
+                new ComboBox
+                {
+                    DropDownStyle =
+                        ComboBoxStyle.DropDownList
+                };
+
+            labelFileName =
+                new Label
+                {
+                    Text =
+                        LocalizationService.GetText(
+                            "Dialog.FileName") +
+                        ":",
+                    TextAlign =
+                        ContentAlignment.MiddleRight
+                };
+
+            labelFileType =
+                new Label
+                {
+                    Text =
+                        LocalizationService.GetText(
+                            "Advanced.FileType") +
+                        ":",
+                    TextAlign =
+                        ContentAlignment.MiddleRight
+                };
+
+            buttonBack =
+                new AntdUI.Button
+                {
+                    Name = "buttonBack",
+                    Text = "←"
+                };
+            buttonForward =
+                new AntdUI.Button
+                {
+                    Name = "buttonForward",
+                    Text = "→"
+                };
+            buttonUp =
+                new AntdUI.Button
+                {
+                    Name = "buttonUp",
+                    Text = "↑"
+                };
+            buttonNewFolder =
+                new AntdUI.Button
+                {
+                    Name = "buttonNewFolder",
+                    Text = "+"
+                };
+            buttonConfirm =
+                new AntdUI.Button
+                {
+                    Name = "buttonConfirm",
+                    Text = _confirmButtonText
+                };
+            buttonCancel =
+                new AntdUI.Button
+                {
+                    Name = "buttonCancel",
+                    Text =
+                        LocalizationService.GetText(
+                            "Common.Cancel"),
+                    DialogResult =
+                        DialogResult.Cancel
+                };
+
+            panelNavigation.Controls.Add(treeNavigation);
+
+            panelFooter.Controls.Add(textBoxFileName);
+            panelFooter.Controls.Add(comboBoxFileType);
+            panelFooter.Controls.Add(labelFileName);
+            panelFooter.Controls.Add(labelFileType);
+            panelFooter.Controls.Add(buttonConfirm);
+            panelFooter.Controls.Add(buttonCancel);
+
+            Controls.Add(panelNavigation);
+            Controls.Add(panelFooter);
+            Controls.Add(listEntries);
+            Controls.Add(textBoxAddress);
+            Controls.Add(textBoxSearch);
+            Controls.Add(buttonBack);
+            Controls.Add(buttonForward);
+            Controls.Add(buttonUp);
+            Controls.Add(buttonNewFolder);
+
+            AcceptButton = buttonConfirm;
+            CancelButton = buttonCancel;
+
+            buttonBack.Click +=
+                buttonBack_Click;
+            buttonForward.Click +=
+                buttonForward_Click;
+            buttonUp.Click +=
+                buttonUp_Click;
+            buttonNewFolder.Click +=
+                buttonNewFolder_Click;
+            buttonConfirm.Click +=
+                buttonConfirm_Click;
+            textBoxAddress.KeyDown +=
+                textBoxAddress_KeyDown;
+            textBoxSearch.TextChanged +=
+                textBoxSearch_TextChanged;
+            textBoxFileName.TextChanged +=
+                textBoxFileName_TextChanged;
+            treeNavigation.NodeMouseDoubleClick +=
+                treeNavigation_NodeMouseDoubleClick;
+            treeNavigation.AfterSelect +=
+                treeNavigation_AfterSelect;
+            listEntries.ItemSelectionChanged +=
+                listEntries_ItemSelectionChanged;
+            listEntries.DoubleClick +=
+                listEntries_DoubleClick;
+            comboBoxFileType.SelectedIndexChanged +=
+                comboBoxFileType_SelectedIndexChanged;
+            Resize +=
+                AppFileDialog_Resize;
         }
 
-        private void PopulateFileFilters(
-            string filter)
+        private void ParseFilters()
         {
-            _fileTypeComboBox.Items.Clear();
+            _filters.Clear();
 
-            if (_mode == AppFileDialogMode.SelectFolder)
+            if (string.IsNullOrWhiteSpace(_filter))
+            {
+                _filters.Add(
+                    new FileDialogFilter(
+                        LocalizationService.GetText(
+                            "Common.Files"),
+                        "*.*"));
                 return;
+            }
 
-            string[] filterParts =
-                (filter ?? string.Empty)
-                    .Split('|');
+            string[] parts =
+                _filter.Split('|');
 
             for (int index = 0;
-                 index + 1 < filterParts.Length;
+                 index + 1 < parts.Length;
                  index += 2)
             {
-                _fileTypeComboBox.Items.Add(
-                    new FileFilterEntry(
-                        filterParts[index],
-                        filterParts[index + 1]));
+                string description =
+                    parts[index]?.Trim();
+                string patterns =
+                    parts[index + 1]?.Trim();
+
+                if (string.IsNullOrWhiteSpace(
+                        description) ||
+                    string.IsNullOrWhiteSpace(
+                        patterns))
+                {
+                    continue;
+                }
+
+                _filters.Add(
+                    new FileDialogFilter(
+                        description,
+                        patterns));
             }
 
-            if (_fileTypeComboBox.Items.Count == 0)
+            if (_filters.Count == 0)
             {
-                _fileTypeComboBox.Items.Add(
-                    new FileFilterEntry(
-                        "*.*",
+                _filters.Add(
+                    new FileDialogFilter(
+                        LocalizationService.GetText(
+                            "Common.Files"),
                         "*.*"));
             }
-
-            _fileTypeComboBox.SelectedIndex = 0;
         }
 
-        private void NavigateToDirectory(
-            string path,
-            bool showError)
+        private void PopulateFileTypes()
         {
-            if (string.IsNullOrWhiteSpace(path))
-                return;
+            comboBoxFileType.Items.Clear();
+
+            foreach (FileDialogFilter filter
+                     in _filters)
+            {
+                comboBoxFileType.Items.Add(
+                    filter);
+            }
+
+            if (comboBoxFileType.Items.Count > 0)
+            {
+                comboBoxFileType.SelectedIndex = 0;
+            }
+        }
+
+        private void PopulateNavigationTree()
+        {
+            treeNavigation.BeginUpdate();
 
             try
             {
-                string fullPath =
-                    Path.GetFullPath(
-                        Environment.ExpandEnvironmentVariables(
-                            path.Trim()));
+                treeNavigation.Nodes.Clear();
 
-                if (!Directory.Exists(fullPath))
+                AddNavigationNode(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.Desktop));
+
+                AddNavigationNode(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.MyDocuments));
+
+                AddNavigationNode(
+                    Path.Combine(
+                        Environment.GetFolderPath(
+                            Environment.SpecialFolder.UserProfile),
+                        "Downloads"));
+
+                AddNavigationNode(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.MyPictures));
+
+                AddNavigationNode(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.MyMusic));
+
+                AddNavigationNode(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.MyVideos));
+
+                foreach (DriveInfo drive
+                         in DriveInfo.GetDrives()
+                             .Where(
+                                 drive =>
+                                     drive.IsReady))
                 {
-                    if (showError)
+                    string displayName =
+                        drive.Name;
+
+                    try
                     {
-                        ShowPathError(
-                            LocalizationService.GetText(
-                                "Message.PathNotFoundPrefix") +
-                            fullPath);
+                        if (!string.IsNullOrWhiteSpace(
+                                drive.VolumeLabel))
+                        {
+                            displayName =
+                                drive.VolumeLabel +
+                                " (" +
+                                drive.Name.TrimEnd(
+                                    Path.DirectorySeparatorChar) +
+                                ")";
+                        }
+                    }
+                    catch
+                    {
                     }
 
-                    return;
+                    string drivePath =
+                        drive.RootDirectory.FullName;
+
+                    string imageKey =
+                        EnsureShellIcon(
+                            drivePath);
+
+                    TreeNode driveNode =
+                        new TreeNode(
+                            displayName)
+                        {
+                            Tag = drivePath,
+                            ImageKey = imageKey,
+                            SelectedImageKey = imageKey
+                        };
+
+                    treeNavigation.Nodes.Add(
+                        driveNode);
                 }
+            }
+            finally
+            {
+                treeNavigation.EndUpdate();
+            }
+        }
 
-                List<PathEntry> entries =
-                    CreateDirectoryEntries(
-                        fullPath);
+        private void AddNavigationNode(
+            string path)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    path) ||
+                !Directory.Exists(path))
+            {
+                return;
+            }
 
-                _currentDirectory = fullPath;
-                _pathTextBox.Text = fullPath;
+            string displayName;
 
-                _entriesListBox.BeginUpdate();
+            try
+            {
+                displayName =
+                    new DirectoryInfo(path).Name;
 
+                if (string.IsNullOrWhiteSpace(
+                        displayName))
+                {
+                    displayName = path;
+                }
+            }
+            catch
+            {
+                displayName = path;
+            }
+
+            string imageKey =
+                EnsureShellIcon(
+                    path);
+
+            TreeNode node =
+                new TreeNode(
+                    displayName)
+                {
+                    Tag = path,
+                    ImageKey = imageKey,
+                    SelectedImageKey = imageKey
+                };
+
+            treeNavigation.Nodes.Add(node);
+        }
+
+        private static string ResolveStartDirectory(
+            string initialFileName)
+        {
+            if (!string.IsNullOrWhiteSpace(
+                    initialFileName))
+            {
                 try
                 {
-                    _entriesListBox.Items.Clear();
+                    string directory =
+                        Path.GetDirectoryName(
+                            initialFileName);
 
-                    foreach (PathEntry entry in entries)
+                    if (!string.IsNullOrWhiteSpace(
+                            directory) &&
+                        Directory.Exists(
+                            directory))
                     {
-                        _entriesListBox.Items.Add(
-                            entry);
+                        return directory;
                     }
                 }
-                finally
+                catch
                 {
-                    _entriesListBox.EndUpdate();
                 }
+            }
+
+            string documents =
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.MyDocuments);
+
+            if (!string.IsNullOrWhiteSpace(
+                    documents) &&
+                Directory.Exists(documents))
+            {
+                return documents;
+            }
+
+            string userProfile =
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.UserProfile);
+
+            if (!string.IsNullOrWhiteSpace(
+                    userProfile) &&
+                Directory.Exists(userProfile))
+            {
+                return userProfile;
+            }
+
+            string systemRoot =
+                Path.GetPathRoot(
+                    Environment.SystemDirectory);
+
+            return string.IsNullOrWhiteSpace(
+                    systemRoot)
+                ? Environment.CurrentDirectory
+                : systemRoot;
+        }
+
+        private void NavigateTo(
+            string path,
+            bool addToHistory)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    path))
+            {
+                return;
+            }
+
+            string normalizedPath;
+
+            try
+            {
+                normalizedPath =
+                    Path.GetFullPath(path);
             }
             catch (Exception exception)
-                when (exception is IOException ||
-                      exception is UnauthorizedAccessException ||
-                      exception is ArgumentException ||
-                      exception is NotSupportedException)
             {
-                if (showError)
+                ShowNavigationError(exception);
+                return;
+            }
+
+            if (!Directory.Exists(
+                    normalizedPath))
+            {
+                AppDialogs.ShowWarningOk(
+                    _settings,
+                    LocalizationService.GetText(
+                        "Message.PathNotFoundPrefix") +
+                    normalizedPath,
+                    LocalizationService.GetText(
+                        "Common.Warning"),
+                    LocalizationService.GetText(
+                        "Common.OK"));
+                return;
+            }
+
+            if (addToHistory &&
+                !_navigatingHistory &&
+                !string.IsNullOrWhiteSpace(
+                    _currentDirectory) &&
+                !string.Equals(
+                    _currentDirectory,
+                    normalizedPath,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                _backHistory.Push(
+                    _currentDirectory);
+                _forwardHistory.Clear();
+            }
+
+            try
+            {
+                _currentDirectory =
+                    normalizedPath;
+                textBoxAddress.Text =
+                    _currentDirectory;
+                RefreshEntries();
+
+                if (_mode ==
+                    AppFileDialogMode.SelectFolder)
                 {
-                    ShowPathError(
-                        exception.Message);
+                    textBoxFileName.Text =
+                        _currentDirectory;
                 }
+                else if (_mode ==
+                         AppFileDialogMode.OpenFile)
+                {
+                    textBoxFileName.Clear();
+                }
+
+                UpdateNavigationButtons();
+                UpdateConfirmState();
+            }
+            catch (Exception exception)
+            {
+                ShowNavigationError(exception);
             }
         }
 
-        private List<PathEntry> CreateDirectoryEntries(
-            string directoryPath)
+        private void RefreshEntries()
         {
-            List<PathEntry> entries =
-                Directory.GetDirectories(
-                    directoryPath)
-                    .OrderBy(
-                        path => Path.GetFileName(path),
-                        StringComparer.CurrentCultureIgnoreCase)
-                    .Select(
-                        path =>
-                            new PathEntry(
-                                path,
-                                true))
-                    .ToList();
-
-            if (_mode == AppFileDialogMode.SelectFolder)
-                return entries;
-
-            IEnumerable<string> files =
-                GetFilteredFiles(
-                    directoryPath)
-                    .OrderBy(
-                        path => Path.GetFileName(path),
-                        StringComparer.CurrentCultureIgnoreCase);
-
-            entries.AddRange(
-                files.Select(
-                    path =>
-                        new PathEntry(
-                            path,
-                            false)));
-
-            return entries;
-        }
-
-        private IEnumerable<string> GetFilteredFiles(
-            string directoryPath)
-        {
-            FileFilterEntry selectedFilter =
-                _fileTypeComboBox.SelectedItem
-                    as FileFilterEntry;
-
-            string[] patterns =
-                selectedFilter?.Patterns ??
-                new[] { "*.*" };
-
-            HashSet<string> files =
-                new HashSet<string>(
-                    StringComparer.OrdinalIgnoreCase);
-
-            foreach (string pattern in patterns)
+            if (string.IsNullOrWhiteSpace(
+                    _currentDirectory))
             {
-                foreach (string filePath in
-                         Directory.GetFiles(
-                             directoryPath,
-                             pattern,
-                             SearchOption.TopDirectoryOnly))
+                return;
+            }
+
+            string searchText =
+                textBoxSearch.Text?.Trim() ??
+                string.Empty;
+
+            List<FileSystemInfo> entries =
+                new List<FileSystemInfo>();
+
+            DirectoryInfo directoryInfo =
+                new DirectoryInfo(
+                    _currentDirectory);
+
+            foreach (DirectoryInfo directory
+                     in directoryInfo
+                         .EnumerateDirectories()
+                         .OrderBy(
+                             directory =>
+                                 directory.Name,
+                             StringComparer.CurrentCultureIgnoreCase))
+            {
+                if (MatchesSearch(
+                        directory.Name,
+                        searchText))
                 {
-                    files.Add(
-                        filePath);
+                    entries.Add(directory);
                 }
             }
 
-            return files;
+            if (_mode !=
+                AppFileDialogMode.SelectFolder)
+            {
+                foreach (FileInfo file
+                         in directoryInfo
+                             .EnumerateFiles()
+                             .Where(
+                                 MatchesSelectedFilter)
+                             .OrderBy(
+                                 file =>
+                                     file.Name,
+                                 StringComparer.CurrentCultureIgnoreCase))
+                {
+                    if (MatchesSearch(
+                            file.Name,
+                            searchText))
+                    {
+                        entries.Add(file);
+                    }
+                }
+            }
+
+            listEntries.BeginUpdate();
+
+            try
+            {
+                listEntries.Items.Clear();
+
+                foreach (FileSystemInfo entry
+                         in entries)
+                {
+                    bool isDirectory =
+                        entry is DirectoryInfo;
+
+                    ListViewItem item =
+                        new ListViewItem(
+                            entry.Name)
+                        {
+                            Tag = entry.FullName,
+                            ImageKey =
+                                EnsureShellIcon(
+                                    entry.FullName)
+                        };
+
+                    item.SubItems.Add(
+                        entry.LastWriteTime
+                            .ToString("g"));
+
+                    item.SubItems.Add(
+                        isDirectory
+                            ? LocalizationService.GetText(
+                                "Common.Folder")
+                            : GetFileType(
+                                entry.Name));
+
+                    item.SubItems.Add(
+                        entry is FileInfo fileInfo
+                            ? SizeFormatter.Format(
+                                fileInfo.Length)
+                            : string.Empty);
+
+                    listEntries.Items.Add(item);
+                }
+            }
+            finally
+            {
+                listEntries.EndUpdate();
+            }
         }
 
-        private void upButton_Click(
+        private bool MatchesSelectedFilter(
+            FileInfo file)
+        {
+            if (file == null)
+                return false;
+
+            if (comboBoxFileType.SelectedItem
+                is not FileDialogFilter filter)
+            {
+                return true;
+            }
+
+            foreach (string pattern
+                     in filter.Patterns)
+            {
+                if (MatchesWildcard(
+                        file.Name,
+                        pattern))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool MatchesWildcard(
+            string fileName,
+            string pattern)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    pattern) ||
+                pattern == "*.*" ||
+                pattern == "*")
+            {
+                return true;
+            }
+
+            string regexPattern =
+                "^" +
+                Regex.Escape(pattern)
+                    .Replace(
+                        "\\*",
+                        ".*")
+                    .Replace(
+                        "\\?",
+                        ".") +
+                "$";
+
+            return Regex.IsMatch(
+                fileName ?? string.Empty,
+                regexPattern,
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant);
+        }
+
+        private static bool MatchesSearch(
+            string name,
+            string searchText)
+        {
+            return string.IsNullOrWhiteSpace(
+                       searchText) ||
+                   (name?.IndexOf(
+                        searchText,
+                        StringComparison.CurrentCultureIgnoreCase) ??
+                    -1) >= 0;
+        }
+
+        private static string GetFileType(
+            string fileName)
+        {
+            string extension =
+                Path.GetExtension(
+                    fileName);
+
+            return string.IsNullOrWhiteSpace(
+                    extension)
+                ? LocalizationService.GetText(
+                    "Common.Files")
+                : extension.TrimStart('.')
+                    .ToUpperInvariant();
+        }
+
+        private void buttonBack_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_backHistory.Count == 0)
+                return;
+
+            string target =
+                _backHistory.Pop();
+
+            if (!string.IsNullOrWhiteSpace(
+                    _currentDirectory))
+            {
+                _forwardHistory.Push(
+                    _currentDirectory);
+            }
+
+            NavigateHistory(target);
+        }
+
+        private void buttonForward_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (_forwardHistory.Count == 0)
+                return;
+
+            string target =
+                _forwardHistory.Pop();
+
+            if (!string.IsNullOrWhiteSpace(
+                    _currentDirectory))
+            {
+                _backHistory.Push(
+                    _currentDirectory);
+            }
+
+            NavigateHistory(target);
+        }
+
+        private void NavigateHistory(
+            string target)
+        {
+            _navigatingHistory = true;
+
+            try
+            {
+                NavigateTo(
+                    target,
+                    false);
+            }
+            finally
+            {
+                _navigatingHistory = false;
+            }
+        }
+
+        private void buttonUp_Click(
             object sender,
             EventArgs e)
         {
@@ -525,177 +909,167 @@ namespace c2flux
                 return;
             }
 
-            DirectoryInfo parentDirectory =
+            DirectoryInfo parent =
                 Directory.GetParent(
                     _currentDirectory);
 
-            if (parentDirectory == null)
-                return;
-
-            NavigateToDirectory(
-                parentDirectory.FullName,
-                true);
-        }
-
-        private void confirmButton_Click(
-            object sender,
-            EventArgs e)
-        {
-            ConfirmSelection();
-        }
-
-        private void entriesListBox_SelectedIndexChanged(
-            object sender,
-            EventArgs e)
-        {
-            if (_mode == AppFileDialogMode.SelectFolder)
-                return;
-
-            if (_entriesListBox.SelectedItem
-                is not PathEntry entry ||
-                entry.IsDirectory)
+            if (parent != null)
             {
-                return;
-            }
-
-            _fileNameTextBox.Text =
-                Path.GetFileName(
-                    entry.FullPath);
-        }
-
-        private void entriesListBox_DoubleClick(
-            object sender,
-            EventArgs e)
-        {
-            ActivateSelectedEntry();
-        }
-
-        private void entriesListBox_KeyDown(
-            object sender,
-            KeyEventArgs e)
-        {
-            if (e.KeyCode != Keys.Enter)
-                return;
-
-            e.Handled = true;
-            e.SuppressKeyPress = true;
-
-            ActivateSelectedEntry();
-        }
-
-        private void ActivateSelectedEntry()
-        {
-            if (_entriesListBox.SelectedItem
-                is not PathEntry entry)
-            {
-                return;
-            }
-
-            if (entry.IsDirectory)
-            {
-                NavigateToDirectory(
-                    entry.FullPath,
+                NavigateTo(
+                    parent.FullName,
                     true);
-
-                return;
-            }
-
-            if (_mode == AppFileDialogMode.OpenFile)
-            {
-                _fileNameTextBox.Text =
-                    Path.GetFileName(
-                        entry.FullPath);
-
-                ConfirmSelection();
             }
         }
 
-        private void pathTextBox_KeyDown(
-            object sender,
-            KeyEventArgs e)
-        {
-            if (e.KeyCode != Keys.Enter)
-                return;
-
-            e.Handled = true;
-            e.SuppressKeyPress = true;
-
-            NavigateToDirectory(
-                _pathTextBox.Text,
-                true);
-        }
-
-        private void fileNameTextBox_KeyDown(
-            object sender,
-            KeyEventArgs e)
-        {
-            if (e.KeyCode != Keys.Enter)
-                return;
-
-            e.Handled = true;
-            e.SuppressKeyPress = true;
-
-            ConfirmSelection();
-        }
-
-        private void fileTypeComboBox_SelectedIndexChanged(
+        private void buttonNewFolder_Click(
             object sender,
             EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(
-                    _currentDirectory))
+            if (_mode ==
+                AppFileDialogMode.SelectFolder)
             {
                 return;
             }
 
-            NavigateToDirectory(
-                _currentDirectory,
-                false);
+            using NewFolderForm dialog =
+                new NewFolderForm(
+                    _settings);
+
+            if (dialog.ShowDialog(this) !=
+                DialogResult.OK)
+            {
+                return;
+            }
+
+            string folderName =
+                dialog.FolderName?.Trim();
+
+            if (string.IsNullOrWhiteSpace(
+                    folderName))
+            {
+                return;
+            }
+
+            try
+            {
+                string newFolderPath =
+                    Path.Combine(
+                        _currentDirectory,
+                        folderName);
+
+                Directory.CreateDirectory(
+                    newFolderPath);
+
+                RefreshEntries();
+            }
+            catch (Exception exception)
+            {
+                ShowNavigationError(exception);
+            }
         }
 
-        private void ConfirmSelection()
+        private void buttonConfirm_Click(
+            object sender,
+            EventArgs e)
         {
-            if (_mode == AppFileDialogMode.SelectFolder)
+            if (_mode ==
+                AppFileDialogMode.SelectFolder)
             {
-                DialogResult = DialogResult.OK;
+                string folderPath =
+                    textBoxFileName.Text?.Trim();
+
+                if (string.IsNullOrWhiteSpace(
+                        folderPath))
+                {
+                    folderPath =
+                        _currentDirectory;
+                }
+
+                if (!Directory.Exists(
+                        folderPath))
+                {
+                    AppDialogs.ShowWarningOk(
+                        _settings,
+                        LocalizationService.GetText(
+                            "Message.PathNotFoundPrefix") +
+                        folderPath,
+                        LocalizationService.GetText(
+                            "Common.Warning"),
+                        LocalizationService.GetText(
+                            "Common.OK"));
+                    return;
+                }
+
+                SelectedPath =
+                    folderPath;
+                DialogResult =
+                    DialogResult.OK;
                 Close();
                 return;
             }
 
-            string selectedPath =
-                GetSelectedFilePath();
+            string fileName =
+                textBoxFileName.Text?.Trim();
 
             if (string.IsNullOrWhiteSpace(
-                    selectedPath))
+                    fileName))
             {
                 return;
             }
 
-            if (_mode == AppFileDialogMode.OpenFile)
+            string candidatePath;
+
+            try
             {
-                if (!File.Exists(selectedPath))
+                candidatePath =
+                    Path.IsPathRooted(
+                        fileName)
+                        ? fileName
+                        : Path.Combine(
+                            _currentDirectory,
+                            fileName);
+            }
+            catch (Exception exception)
+            {
+                ShowNavigationError(exception);
+                return;
+            }
+
+            if (_mode ==
+                AppFileDialogMode.OpenFile)
+            {
+                if (!File.Exists(
+                        candidatePath))
                 {
-                    ShowPathError(
+                    AppDialogs.ShowWarningOk(
+                        _settings,
                         LocalizationService.GetText(
                             "Message.PathNotFoundPrefix") +
-                        selectedPath);
-
+                        candidatePath,
+                        LocalizationService.GetText(
+                            "Common.Warning"),
+                        LocalizationService.GetText(
+                            "Common.OK"));
                     return;
                 }
             }
             else
             {
-                if (File.Exists(selectedPath))
+                candidatePath =
+                    ApplyDefaultExtension(
+                        candidatePath);
+
+                if (File.Exists(
+                        candidatePath))
                 {
                     DialogResult overwriteResult =
                         AppDialogs.ShowWarningYesNo(
                             this,
                             _settings,
-                            string.Format(
-                                LocalizationService.GetText(
-                                    "Dialog.FileExistsOverwrite"),
+                            LocalizationService.Format(
+                                "Dialog.FileAlreadyExists",
                                 Path.GetFileName(
-                                    selectedPath)),
+                                    candidatePath)),
                             LocalizationService.GetText(
                                 "Common.Warning"),
                             LocalizationService.GetText(
@@ -703,108 +1077,502 @@ namespace c2flux
                             LocalizationService.GetText(
                                 "Common.No"));
 
-                    if (overwriteResult != DialogResult.Yes)
+                    if (overwriteResult !=
+                        DialogResult.Yes)
+                    {
                         return;
+                    }
                 }
             }
 
-            DialogResult = DialogResult.OK;
+            SelectedPath =
+                candidatePath;
+            DialogResult =
+                DialogResult.OK;
             Close();
         }
 
-        private string GetSelectedFolderPath()
+        private string ApplyDefaultExtension(
+            string fileName)
         {
-            if (_entriesListBox.SelectedItem
-                    is PathEntry selectedEntry &&
-                selectedEntry.IsDirectory)
-            {
-                return selectedEntry.FullPath;
-            }
-
-            return _currentDirectory;
-        }
-
-        private string GetSelectedFilePath()
-        {
-            if (string.IsNullOrWhiteSpace(
-                    _currentDirectory))
-            {
-                return null;
-            }
-
-            string fileName =
-                (_fileNameTextBox.Text ?? string.Empty)
-                    .Trim();
-
-            if (string.IsNullOrWhiteSpace(
+            if (Path.HasExtension(
                     fileName))
             {
-                return null;
+                return fileName;
             }
 
+            string extension =
+                _defaultExtension
+                    .Trim()
+                    .TrimStart('.');
+
+            if (string.IsNullOrWhiteSpace(
+                    extension) &&
+                comboBoxFileType.SelectedItem
+                    is FileDialogFilter filter)
+            {
+                extension =
+                    filter.GetFirstExtension();
+            }
+
+            if (string.IsNullOrWhiteSpace(
+                    extension))
+            {
+                return fileName;
+            }
+
+            return fileName +
+                   "." +
+                   extension;
+        }
+
+        private void textBoxAddress_KeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.SuppressKeyPress = true;
+            NavigateTo(
+                textBoxAddress.Text,
+                true);
+        }
+
+        private void textBoxSearch_TextChanged(
+            object sender,
+            EventArgs e)
+        {
             try
             {
-                string filePath =
-                    Path.IsPathRooted(
-                        fileName)
-                        ? Path.GetFullPath(
-                            fileName)
-                        : Path.Combine(
-                            _currentDirectory,
-                            fileName);
-
-                if (_mode == AppFileDialogMode.SaveFile &&
-                    string.IsNullOrWhiteSpace(
-                        Path.GetExtension(
-                            filePath)) &&
-                    !string.IsNullOrWhiteSpace(
-                        _defaultExtension))
-                {
-                    filePath +=
-                        "." +
-                        _defaultExtension;
-                }
-
-                return Path.GetFullPath(
-                    filePath);
+                RefreshEntries();
             }
             catch (Exception exception)
-                when (exception is ArgumentException ||
-                      exception is NotSupportedException ||
-                      exception is PathTooLongException)
             {
-                ShowPathError(
-                    exception.Message);
-
-                return null;
+                ShowNavigationError(exception);
             }
         }
 
-        private void ShowPathError(
-            string message)
+        private void textBoxFileName_TextChanged(
+            object sender,
+            EventArgs e)
+        {
+            UpdateConfirmState();
+        }
+
+        private void treeNavigation_NodeMouseDoubleClick(
+            object sender,
+            TreeNodeMouseClickEventArgs e)
+        {
+            NavigateFromNode(
+                e.Node);
+        }
+
+        private void treeNavigation_AfterSelect(
+            object sender,
+            TreeViewEventArgs e)
+        {
+            if (e.Action ==
+                TreeViewAction.Unknown)
+            {
+                return;
+            }
+
+            NavigateFromNode(
+                e.Node);
+        }
+
+        private void NavigateFromNode(
+            TreeNode node)
+        {
+            if (node?.Tag is string path &&
+                Directory.Exists(path))
+            {
+                NavigateTo(
+                    path,
+                    true);
+            }
+        }
+
+        private void listEntries_ItemSelectionChanged(
+            object sender,
+            ListViewItemSelectionChangedEventArgs e)
+        {
+            if (!e.IsSelected ||
+                e.Item?.Tag is not string path)
+            {
+                return;
+            }
+
+            if (Directory.Exists(path))
+            {
+                if (_mode ==
+                    AppFileDialogMode.SelectFolder)
+                {
+                    textBoxFileName.Text =
+                        path;
+                }
+            }
+            else if (File.Exists(path) &&
+                     _mode !=
+                     AppFileDialogMode.SelectFolder)
+            {
+                textBoxFileName.Text =
+                    Path.GetFileName(path);
+            }
+
+            UpdateConfirmState();
+        }
+
+        private void listEntries_DoubleClick(
+            object sender,
+            EventArgs e)
+        {
+            if (listEntries.SelectedItems.Count != 1)
+                return;
+
+            if (listEntries.SelectedItems[0].Tag
+                is not string path)
+            {
+                return;
+            }
+
+            if (Directory.Exists(path))
+            {
+                NavigateTo(
+                    path,
+                    true);
+                return;
+            }
+
+            if (_mode ==
+                    AppFileDialogMode.OpenFile &&
+                File.Exists(path))
+            {
+                textBoxFileName.Text =
+                    Path.GetFileName(path);
+
+                buttonConfirm_Click(
+                    buttonConfirm,
+                    EventArgs.Empty);
+            }
+        }
+
+        private void comboBoxFileType_SelectedIndexChanged(
+            object sender,
+            EventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(
+                    _currentDirectory))
+            {
+                RefreshEntries();
+            }
+        }
+
+        private void AppFileDialog_Resize(
+            object sender,
+            EventArgs e)
+        {
+            AntdThemeService.LayoutAppFileDialog(
+                this,
+                _mode,
+                panelNavigation,
+                panelFooter,
+                treeNavigation,
+                listEntries,
+                textBoxAddress,
+                textBoxSearch,
+                textBoxFileName,
+                comboBoxFileType,
+                labelFileName,
+                labelFileType,
+                buttonBack,
+                buttonForward,
+                buttonUp,
+                buttonNewFolder,
+                buttonConfirm,
+                buttonCancel);
+        }
+
+        private void UpdateNavigationButtons()
+        {
+            buttonBack.Enabled =
+                _backHistory.Count > 0;
+            buttonForward.Enabled =
+                _forwardHistory.Count > 0;
+
+            buttonUp.Enabled =
+                !string.IsNullOrWhiteSpace(
+                    _currentDirectory) &&
+                Directory.GetParent(
+                    _currentDirectory) != null;
+        }
+
+        private void UpdateConfirmState()
+        {
+            if (_mode ==
+                AppFileDialogMode.SelectFolder)
+            {
+                buttonConfirm.Enabled =
+                    !string.IsNullOrWhiteSpace(
+                        textBoxFileName.Text) &&
+                    Directory.Exists(
+                        textBoxFileName.Text);
+                return;
+            }
+
+            buttonConfirm.Enabled =
+                !string.IsNullOrWhiteSpace(
+                    textBoxFileName.Text);
+        }
+
+        private void ShowNavigationError(
+            Exception exception)
         {
             AppDialogs.ShowWarningOk(
-                this,
                 _settings,
-                message,
+                exception?.Message ??
+                LocalizationService.GetText(
+                    "Common.Error"),
                 LocalizationService.GetText(
                     "Common.Error"),
                 LocalizationService.GetText(
                     "Common.OK"));
         }
 
-        private static string NormalizeExtension(
-            string extension)
+        private string EnsureShellIcon(
+            string path)
         {
-            if (string.IsNullOrWhiteSpace(
-                    extension))
+            if (string.IsNullOrWhiteSpace(path))
+                return string.Empty;
+
+            SHFILEINFO fileInfo =
+                new SHFILEINFO();
+
+            IntPtr result =
+                SHGetFileInfo(
+                    path,
+                    0,
+                    ref fileInfo,
+                    (uint)Marshal.SizeOf<SHFILEINFO>(),
+                    SHGFI_ICON |
+                    SHGFI_SMALLICON);
+
+            if (result == IntPtr.Zero ||
+                fileInfo.hIcon == IntPtr.Zero)
             {
                 return string.Empty;
             }
 
-            return extension
-                .Trim()
-                .TrimStart('.');
+            string imageKey =
+                "shell-" +
+                fileInfo.iIcon.ToString();
+
+            try
+            {
+                if (!_shellImageList.Images.ContainsKey(
+                        imageKey))
+                {
+                    using Icon icon =
+                        (Icon)Icon.FromHandle(
+                            fileInfo.hIcon)
+                            .Clone();
+
+                    Bitmap bitmap =
+                        icon.ToBitmap();
+
+                    _shellImageList.Images.Add(
+                        imageKey,
+                        bitmap);
+                }
+            }
+            finally
+            {
+                DestroyIcon(
+                    fileInfo.hIcon);
+            }
+
+            return imageKey;
+        }
+
+        [StructLayout(
+            LayoutKind.Sequential,
+            CharSet = CharSet.Unicode)]
+        private struct SHFILEINFO
+        {
+            public IntPtr hIcon;
+            public int iIcon;
+            public uint dwAttributes;
+
+            [MarshalAs(
+                UnmanagedType.ByValTStr,
+                SizeConst = 260)]
+            public string szDisplayName;
+
+            [MarshalAs(
+                UnmanagedType.ByValTStr,
+                SizeConst = 80)]
+            public string szTypeName;
+        }
+
+        [DllImport(
+            "shell32.dll",
+            CharSet = CharSet.Unicode)]
+        private static extern IntPtr SHGetFileInfo(
+            string pszPath,
+            uint dwFileAttributes,
+            ref SHFILEINFO psfi,
+            uint cbFileInfo,
+            uint uFlags);
+
+        [DllImport(
+            "user32.dll",
+            SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DestroyIcon(
+            IntPtr hIcon);
+
+        private const uint SHGFI_ICON = 0x000000100;
+        private const uint SHGFI_SMALLICON = 0x000000001;
+
+        private sealed class FileDialogFilter
+        {
+            public FileDialogFilter(
+                string description,
+                string patterns)
+            {
+                Description =
+                    description ??
+                    string.Empty;
+
+                Patterns =
+                    (patterns ??
+                     "*.*")
+                    .Split(
+                        new[] { ';' },
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(
+                        pattern =>
+                            pattern.Trim())
+                    .Where(
+                        pattern =>
+                            !string.IsNullOrWhiteSpace(
+                                pattern))
+                    .ToArray();
+
+                if (Patterns.Length == 0)
+                {
+                    Patterns =
+                        new[]
+                        {
+                            "*.*"
+                        };
+                }
+            }
+
+            public string Description { get; }
+
+            public string[] Patterns { get; }
+
+            public string GetFirstExtension()
+            {
+                foreach (string pattern
+                         in Patterns)
+                {
+                    string extension =
+                        Path.GetExtension(
+                            pattern);
+
+                    if (!string.IsNullOrWhiteSpace(
+                            extension) &&
+                        extension != ".*")
+                    {
+                        return extension
+                            .TrimStart('.');
+                    }
+                }
+
+                return string.Empty;
+            }
+
+            public override string ToString()
+            {
+                return Description;
+            }
+        }
+
+        private sealed class NewFolderForm : Form
+        {
+            private readonly AppSettings _settings;
+            private AntdUI.Input inputFolderName;
+            private AntdUI.Button buttonOk;
+            private AntdUI.Button buttonCancel;
+
+            public NewFolderForm(
+                AppSettings settings)
+            {
+                _settings =
+                    settings ??
+                    throw new ArgumentNullException(
+                        nameof(settings));
+
+                Text =
+                    LocalizationService.GetText(
+                        "Common.Folder");
+
+                inputFolderName =
+                    new AntdUI.Input
+                    {
+                        Name =
+                            "inputFolderName"
+                    };
+
+                buttonOk =
+                    new AntdUI.Button
+                    {
+                        Name =
+                            "buttonOk",
+                        Text =
+                            LocalizationService.GetText(
+                                "Common.OK"),
+                        DialogResult =
+                            DialogResult.OK
+                    };
+
+                buttonCancel =
+                    new AntdUI.Button
+                    {
+                        Name =
+                            "buttonCancel",
+                        Text =
+                            LocalizationService.GetText(
+                                "Common.Cancel"),
+                        DialogResult =
+                            DialogResult.Cancel
+                    };
+
+                Controls.Add(
+                    inputFolderName);
+                Controls.Add(
+                    buttonOk);
+                Controls.Add(
+                    buttonCancel);
+
+                AcceptButton =
+                    buttonOk;
+                CancelButton =
+                    buttonCancel;
+
+                AntdThemeService.ConfigureAppFileDialogNewFolderForm(
+                    this,
+                    _settings.Layout,
+                    inputFolderName,
+                    buttonOk,
+                    buttonCancel);
+            }
+
+            public string FolderName =>
+                inputFolderName.Text;
         }
     }
 }

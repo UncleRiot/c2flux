@@ -119,8 +119,8 @@
   "Context.CopyPath": "Kopioi polku",
   "Context.RemoveFromTreePane": "Poista \"{0}\" puunäkymästä",
   "Dialog.SelectFolder": "Valitse tarkistettava kansio",
-
-  "Dialog.FileExistsOverwrite": "Tiedosto nimeltä \"{0}\" on jo olemassa. Haluatko korvata sen?",
+  "Dialog.FileName": "Tiedosto",
+  "Dialog.FileAlreadyExists": "Tiedosto \"{0}\" on jo olemassa. Haluatko korvata sen?",
   "Message.NoPathSelected": "Polkua ei ole valittu.",
   "Message.PathNotFoundPrefix": "Polkua ei löytynyt: ",
   "Message.SettingsSaveFailedPrefix": "Asetuksia ei voitu tallentaa: ",

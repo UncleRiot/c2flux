@@ -119,8 +119,8 @@
   "Context.CopyPath": "Yolu kopyala",
   "Context.RemoveFromTreePane": "\"{0}\" öğesini ağaç bölmesinden kaldır",
   "Dialog.SelectFolder": "Taranacak klasörü seçin",
-
-  "Dialog.FileExistsOverwrite": "\"{0}\" adlı bir dosya zaten var. Değiştirmek istiyor musunuz?",
+  "Dialog.FileName": "Dosya",
+  "Dialog.FileAlreadyExists": "\"{0}\" dosyası zaten var. Değiştirmek istiyor musunuz?",
   "Message.NoPathSelected": "Yol seçilmedi.",
   "Message.PathNotFoundPrefix": "Yol bulunamadı: ",
   "Message.SettingsSaveFailedPrefix": "Ayarlar kaydedilemedi: ",

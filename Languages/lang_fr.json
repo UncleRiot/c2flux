@@ -119,8 +119,8 @@
   "Context.CopyPath": "Copier le chemin",
   "Context.RemoveFromTreePane": "Retirer « {0} » du volet d’arborescence",
   "Dialog.SelectFolder": "Sélectionner le dossier à analyser",
-
-  "Dialog.FileExistsOverwrite": "Un fichier nommé « {0} » existe déjà. Voulez-vous le remplacer ?",
+  "Dialog.FileName": "Fichier",
+  "Dialog.FileAlreadyExists": "Le fichier « {0} » existe déjà. Voulez-vous le remplacer ?",
   "Message.NoPathSelected": "Aucun chemin sélectionné.",
   "Message.PathNotFoundPrefix": "Chemin introuvable : ",
   "Message.SettingsSaveFailedPrefix": "Impossible d’enregistrer les paramètres : ",

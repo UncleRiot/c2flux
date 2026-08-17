@@ -119,8 +119,8 @@
   "Context.CopyPath": "Копировать путь",
   "Context.RemoveFromTreePane": "Удалить \"{0}\" из панели дерева",
   "Dialog.SelectFolder": "Выберите папку для сканирования",
-
-  "Dialog.FileExistsOverwrite": "Файл с именем «{0}» уже существует. Заменить его?",
+  "Dialog.FileName": "Файл",
+  "Dialog.FileAlreadyExists": "Файл «{0}» уже существует. Заменить его?",
   "Message.NoPathSelected": "Путь не выбран.",
   "Message.PathNotFoundPrefix": "Путь не найден: ",
   "Message.SettingsSaveFailedPrefix": "Не удалось сохранить настройки: ",

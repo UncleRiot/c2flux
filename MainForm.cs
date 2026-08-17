@@ -1508,21 +1508,21 @@ namespace c2flux
         }
         private async void toolStripButtonOpenFolder_Click(object sender, EventArgs e)
         {
-            using FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog
+            if (AppDialogs.ShowSelectFolderDialog(
+                    this,
+                    _settings,
+                    LocalizationService.GetText("Dialog.SelectFolder"),
+                    out string selectedPath) != DialogResult.OK)
             {
-                Description = LocalizationService.GetText("Dialog.SelectFolder"),
-                ShowNewFolderButton = false
-            };
+                return;
+            }
 
-            if (AntdThemeService.ShowNativeDialog(folderBrowserDialog, this) != DialogResult.OK)
+            if (string.IsNullOrWhiteSpace(selectedPath))
                 return;
 
-            if (string.IsNullOrWhiteSpace(folderBrowserDialog.SelectedPath))
-                return;
+            _driveComboBoxController.AddOrSelectPath(selectedPath);
 
-            _driveComboBoxController.AddOrSelectPath(folderBrowserDialog.SelectedPath);
-
-            await StartScanAsync(folderBrowserDialog.SelectedPath);
+            await StartScanAsync(selectedPath);
         }
 
         private async void DriveComboBoxScanPathSelectionCommitted(string rootPath)
@@ -2759,26 +2759,29 @@ namespace c2flux
             if (_currentRootEntry == null)
                 return;
 
-            using SaveFileDialog dialog = new SaveFileDialog
+            if (AppDialogs.ShowSaveFileDialog(
+                    this,
+                    _settings,
+                    LocalizationService.GetText("Menu.SaveScanResult"),
+                    "WTF Scan (*.wtfscan)|*.wtfscan|JSON (*.json)|*.json",
+                    "wtfscan",
+                    "scan-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".wtfscan",
+                    LocalizationService.GetText("Menu.SaveScanResult"),
+                    out string fileName) != DialogResult.OK)
             {
-                Filter = "WTF Scan (*.wtfscan)|*.wtfscan|JSON (*.json)|*.json",
-                DefaultExt = "wtfscan",
-                FileName = "scan-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".wtfscan"
-            };
-
-            if (AntdThemeService.ShowNativeDialog(dialog, this) != DialogResult.OK)
                 return;
+            }
 
             try
             {
-                ScanResultFileService.Save(dialog.FileName, _currentRootEntry);
+                ScanResultFileService.Save(fileName, _currentRootEntry);
             }
             catch (Exception exception)
             {
                 AppAlertLog.AddError(
                     LocalizationService.GetText("Menu.SaveScanResult"),
                     exception.Message,
-                    "Path: " + dialog.FileName +
+                    "Path: " + fileName +
                     Environment.NewLine +
                     exception);
 
@@ -2791,17 +2794,19 @@ namespace c2flux
 
         private void menuItemLoadScanResult_Click(object sender, EventArgs e)
         {
-            using OpenFileDialog dialog = new OpenFileDialog
+            if (AppDialogs.ShowOpenFileDialog(
+                    this,
+                    _settings,
+                    LocalizationService.GetText("Menu.LoadScanResult"),
+                    "WTF Scan (*.wtfscan;*.json)|*.wtfscan;*.json",
+                    out string fileName) != DialogResult.OK)
             {
-                Filter = "WTF Scan (*.wtfscan;*.json)|*.wtfscan;*.json"
-            };
-
-            if (AntdThemeService.ShowNativeDialog(dialog, this) != DialogResult.OK)
                 return;
+            }
 
             try
             {
-                FileSystemEntry loadedEntry = ScanResultFileService.Load(dialog.FileName);
+                FileSystemEntry loadedEntry = ScanResultFileService.Load(fileName);
 
                 if (loadedEntry == null)
                     return;
@@ -2815,7 +2820,7 @@ namespace c2flux
                 AppAlertLog.AddError(
                     LocalizationService.GetText("Menu.LoadScanResult"),
                     exception.Message,
-                    "Path: " + dialog.FileName +
+                    "Path: " + fileName +
                     Environment.NewLine +
                     exception);
 

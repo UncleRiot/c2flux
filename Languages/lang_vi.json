@@ -119,8 +119,8 @@
   "Context.CopyPath": "Sao chép đường dẫn",
   "Context.RemoveFromTreePane": "Xóa \"{0}\" khỏi ngăn cây",
   "Dialog.SelectFolder": "Chọn thư mục để quét",
-
-  "Dialog.FileExistsOverwrite": "Tệp có tên \"{0}\" đã tồn tại. Bạn có muốn thay thế tệp này không?",
+  "Dialog.FileName": "Tệp",
+  "Dialog.FileAlreadyExists": "Tệp \"{0}\" đã tồn tại. Bạn có muốn thay thế tệp này không?",
   "Message.NoPathSelected": "Chưa chọn đường dẫn.",
   "Message.PathNotFoundPrefix": "Không tìm thấy đường dẫn: ",
   "Message.SettingsSaveFailedPrefix": "Không thể lưu cài đặt: ",

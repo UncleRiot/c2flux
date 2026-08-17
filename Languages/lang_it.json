@@ -119,8 +119,8 @@
   "Context.CopyPath": "Copia percorso",
   "Context.RemoveFromTreePane": "Rimuovi \"{0}\" dal riquadro ad albero",
   "Dialog.SelectFolder": "Seleziona cartella da analizzare",
-
-  "Dialog.FileExistsOverwrite": "Esiste già un file denominato \"{0}\". Vuoi sostituirlo?",
+  "Dialog.FileName": "File",
+  "Dialog.FileAlreadyExists": "Il file \"{0}\" esiste già. Vuoi sostituirlo?",
   "Message.NoPathSelected": "Nessun percorso selezionato.",
   "Message.PathNotFoundPrefix": "Percorso non trovato: ",
   "Message.SettingsSaveFailedPrefix": "Impossibile salvare le impostazioni: ",

@@ -119,8 +119,8 @@
   "Context.CopyPath": "Kopier bane",
   "Context.RemoveFromTreePane": "Fjern \"{0}\" fra trepanelet",
   "Dialog.SelectFolder": "Velg mappe som skal skannes",
-
-  "Dialog.FileExistsOverwrite": "Det finnes allerede en fil med navnet \"{0}\". Vil du erstatte den?",
+  "Dialog.FileName": "Fil",
+  "Dialog.FileAlreadyExists": "Filen \"{0}\" finnes allerede. Vil du erstatte den?",
   "Message.NoPathSelected": "Ingen bane valgt.",
   "Message.PathNotFoundPrefix": "Bane ikke funnet: ",
   "Message.SettingsSaveFailedPrefix": "Innstillingene kunne ikke lagres: ",

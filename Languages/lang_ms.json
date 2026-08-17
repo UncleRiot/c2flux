@@ -119,8 +119,8 @@
   "Context.CopyPath": "Salin laluan",
   "Context.RemoveFromTreePane": "Alih keluar \"{0}\" daripada anak tetingkap pepohon",
   "Dialog.SelectFolder": "Pilih folder untuk diimbas",
-
-  "Dialog.FileExistsOverwrite": "Fail bernama \"{0}\" sudah wujud. Adakah anda mahu menggantikannya?",
+  "Dialog.FileName": "Fail",
+  "Dialog.FileAlreadyExists": "Fail \"{0}\" sudah wujud. Adakah anda mahu menggantikannya?",
   "Message.NoPathSelected": "Tiada laluan yang dipilih.",
   "Message.PathNotFoundPrefix": "Laluan tidak ditemukan: ",
   "Message.SettingsSaveFailedPrefix": "Tetapan tidak dapat disimpan: ",

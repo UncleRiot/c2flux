@@ -40,7 +40,6 @@
 
 
 	<ItemGroup>
-		<Compile Remove="AppFileDialog.cs" />
 		<Compile Remove="Libraries\NtfsReader\**\*.cs" />
 		<ProjectReference Include="Libraries\NtfsReader\NtfsReader.csproj" />
 	</ItemGroup>

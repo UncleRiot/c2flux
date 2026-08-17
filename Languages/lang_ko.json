@@ -119,8 +119,8 @@
   "Context.CopyPath": "경로 복사",
   "Context.RemoveFromTreePane": "트리 창에서 \"{0}\" 제거",
   "Dialog.SelectFolder": "스캔할 폴더 선택",
-
-  "Dialog.FileExistsOverwrite": "\"{0}\" 이름의 파일이 이미 있습니다. 바꾸시겠습니까?",
+  "Dialog.FileName": "파일",
+  "Dialog.FileAlreadyExists": "\"{0}\" 파일이 이미 있습니다. 바꾸시겠습니까?",
   "Message.NoPathSelected": "경로가 선택되지 않았습니다.",
   "Message.PathNotFoundPrefix": "경로를 찾을 수 없음: ",
   "Message.SettingsSaveFailedPrefix": "설정을 저장할 수 없음: ",

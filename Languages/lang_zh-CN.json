@@ -119,8 +119,8 @@
   "Context.CopyPath": "复制路径",
   "Context.RemoveFromTreePane": "从树窗格中移除“{0}”",
   "Dialog.SelectFolder": "选择要扫描的文件夹",
-
-  "Dialog.FileExistsOverwrite": "名为“{0}”的文件已存在。是否要替换它？",
+  "Dialog.FileName": "文件",
+  "Dialog.FileAlreadyExists": "文件“{0}”已存在。是否要替换它？",
   "Message.NoPathSelected": "未选择路径。",
   "Message.PathNotFoundPrefix": "未找到路径: ",
   "Message.SettingsSaveFailedPrefix": "无法保存设置: ",

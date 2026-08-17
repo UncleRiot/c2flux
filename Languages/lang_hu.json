@@ -119,8 +119,8 @@
   "Context.CopyPath": "Elérési út másolása",
   "Context.RemoveFromTreePane": "„{0}” eltávolítása a fapanelről",
   "Dialog.SelectFolder": "Vizsgálandó mappa kiválasztása",
-
-  "Dialog.FileExistsOverwrite": "Már létezik „{0}” nevű fájl. Le szeretné cserélni?",
+  "Dialog.FileName": "Fájl",
+  "Dialog.FileAlreadyExists": "A(z) „{0}” fájl már létezik. Szeretné lecserélni?",
   "Message.NoPathSelected": "Nincs kiválasztva elérési út.",
   "Message.PathNotFoundPrefix": "Az elérési út nem található: ",
   "Message.SettingsSaveFailedPrefix": "A beállítások nem menthetők: ",

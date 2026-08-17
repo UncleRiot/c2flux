@@ -112,6 +112,100 @@ namespace c2flux
             public bool DoNotShowAgain { get; }
         }
 
+        public static DialogResult ShowSelectFolderDialog(
+            IWin32Window owner,
+            AppSettings settings,
+            string title,
+            out string selectedPath)
+        {
+            using AppFileDialog dialog =
+                new AppFileDialog(
+                    settings,
+                    AppFileDialogMode.SelectFolder,
+                    title,
+                    string.Empty,
+                    string.Empty,
+                    string.Empty,
+                    LocalizationService.GetText(
+                        "Dialog.SelectFolder"));
+
+            DialogResult result =
+                owner == null
+                    ? dialog.ShowDialog()
+                    : dialog.ShowDialog(owner);
+
+            selectedPath =
+                result == DialogResult.OK
+                    ? dialog.SelectedPath
+                    : string.Empty;
+
+            return result;
+        }
+
+        public static DialogResult ShowOpenFileDialog(
+            IWin32Window owner,
+            AppSettings settings,
+            string title,
+            string filter,
+            out string fileName)
+        {
+            using AppFileDialog dialog =
+                new AppFileDialog(
+                    settings,
+                    AppFileDialogMode.OpenFile,
+                    title,
+                    filter,
+                    string.Empty,
+                    string.Empty,
+                    LocalizationService.GetText(
+                        "Toolbar.Open"));
+
+            DialogResult result =
+                owner == null
+                    ? dialog.ShowDialog()
+                    : dialog.ShowDialog(owner);
+
+            fileName =
+                result == DialogResult.OK
+                    ? dialog.SelectedPath
+                    : string.Empty;
+
+            return result;
+        }
+
+        public static DialogResult ShowSaveFileDialog(
+            IWin32Window owner,
+            AppSettings settings,
+            string title,
+            string filter,
+            string defaultExtension,
+            string initialFileName,
+            string confirmButtonText,
+            out string fileName)
+        {
+            using AppFileDialog dialog =
+                new AppFileDialog(
+                    settings,
+                    AppFileDialogMode.SaveFile,
+                    title,
+                    filter,
+                    defaultExtension,
+                    initialFileName,
+                    confirmButtonText);
+
+            DialogResult result =
+                owner == null
+                    ? dialog.ShowDialog()
+                    : dialog.ShowDialog(owner);
+
+            fileName =
+                result == DialogResult.OK
+                    ? dialog.SelectedPath
+                    : string.Empty;
+
+            return result;
+        }
+
         private sealed class WarningOkDialogForm : Form
         {
             private readonly AppSettings _settings;

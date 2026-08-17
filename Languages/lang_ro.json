@@ -119,8 +119,8 @@
   "Context.CopyPath": "Copiază calea",
   "Context.RemoveFromTreePane": "Elimină „{0}” din panoul arborelui",
   "Dialog.SelectFolder": "Selectați folderul de scanat",
-
-  "Dialog.FileExistsOverwrite": "Există deja un fișier numit „{0}”. Doriți să îl înlocuiți?",
+  "Dialog.FileName": "Fișier",
+  "Dialog.FileAlreadyExists": "Fișierul „{0}” există deja. Doriți să îl înlocuiți?",
   "Message.NoPathSelected": "Nu a fost selectată nicio cale.",
   "Message.PathNotFoundPrefix": "Calea nu a fost găsită: ",
   "Message.SettingsSaveFailedPrefix": "Setările nu au putut fi salvate: ",
