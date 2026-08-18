@@ -13,7 +13,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 **Scan your drives, get an overview of used disk space, find everything. Fast**
 
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.2.81--beta.4-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.2.81-beta.4/c2flux-v1.2.81-beta.4-win-x64.zip)
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.3.1-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.3.1/c2flux-v1.3.1-win-x64.zip)
 
 <br>
 <br>
@@ -52,7 +52,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 <br>
 <br>
 
-✨ Storage History - see, why your free drive space gets smaller and smaller
+✨ Scan History - see, why your free drive space gets smaller and smaller
 
    <img width="1481" height="840" alt="grafik" src="https://github.com/user-attachments/assets/a896b664-70d4-40bc-bc54-a99b1382876a" />
 
@@ -122,16 +122,6 @@ Fastest possible scan mode.
 
 <br>
 
-## Scan History & Comparison
-
-An optional SQLite database can be activated to persist scan results.
-
-- Store previous scans
-- Compare scans
-- Inspect detailed differences between scan states
-- Track storage usage over time
-
-<br>
 
 ## Visualization & Analysis
 
