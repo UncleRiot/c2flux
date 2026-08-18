@@ -30,6 +30,8 @@ namespace c2flux
         private AntdUI.Checkbox checkBoxShowFilesInTree;
         private AntdUI.Checkbox checkBoxC2FluxScan;
         private AntdUI.Button buttonC2FluxScanHelp;
+        private AntdUI.Label labelNtQueryDirectoryBufferSize;
+        private AntdUI.Select comboBoxNtQueryDirectoryBufferSize;
         private AntdUI.Checkbox checkBoxSkipReparsePoints;
         private AntdUI.Checkbox checkBoxShowPartitionPanel;
         private AntdUI.Checkbox checkBoxStartElevatedOnStartup;
@@ -440,6 +442,57 @@ namespace c2flux
                 TabStop = false
             };
 
+            labelNtQueryDirectoryBufferSize =
+                AntdThemeService.CreateSettingsLabel(
+                    "labelNtQueryDirectoryBufferSize",
+                    LocalizationService.GetText(
+                        "Settings.NtQueryDirectoryBufferSize"),
+                    AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeLabelLeft,
+                    AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeLabelTop,
+                    AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeLabelWidth,
+                    AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeLabelHeight);
+
+            comboBoxNtQueryDirectoryBufferSize =
+                AntdThemeService.CreateSettingsSelect(
+                    "comboBoxNtQueryDirectoryBufferSize",
+                    new Point(
+                        AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeSelectLeft,
+                        AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeSelectTop),
+                    new Size(
+                        AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeSelectWidth,
+                        AntdThemeService.SettingsGeneralNtQueryDirectoryBufferSizeSelectHeight));
+
+            comboBoxNtQueryDirectoryBufferSize.List = true;
+
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "64 KiB",
+                    64 * 1024));
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "128 KiB",
+                    128 * 1024));
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "256 KiB",
+                    256 * 1024));
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "512 KiB",
+                    512 * 1024));
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "1 MiB",
+                    1024 * 1024));
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "2 MiB",
+                    2 * 1024 * 1024));
+            comboBoxNtQueryDirectoryBufferSize.Items.Add(
+                new DirectoryQueryBufferSizeItem(
+                    "4 MiB",
+                    4 * 1024 * 1024));
+
             checkBoxSkipReparsePoints = AntdThemeService.CreateSettingsCheckBox(
                 "checkBoxSkipReparsePoints",
                 LocalizationService.GetText("Settings.SkipReparsePoints"),
@@ -519,6 +572,7 @@ namespace c2flux
                 new Size(
                     AntdThemeService.SettingsGeneralLanguageSelectWidth,
                     AntdThemeService.SettingsGeneralLanguageSelectHeight));
+            comboBoxLanguage.List = true;
             comboBoxLanguage.SelectedIndexChanged += comboBoxLanguage_SelectedIndexChanged;
 
             buttonAddLanguage = AntdThemeService.CreateSettingsRoundButton(
@@ -1035,6 +1089,7 @@ namespace c2flux
                 new Size(
                     AntdThemeService.SettingsLoggingLogLevelSelectWidth,
                     AntdThemeService.SettingsLoggingLogLevelSelectHeight));
+            comboBoxLogLevel.List = true;
             comboBoxLogLevel.Items.Add(AppLogLevel.Normal);
             comboBoxLogLevel.Items.Add(AppLogLevel.Verbose);
 
@@ -1090,6 +1145,8 @@ namespace c2flux
             panelGeneral.Controls.Add(checkBoxShowFilesInTree);
             panelGeneral.Controls.Add(checkBoxC2FluxScan);
             panelGeneral.Controls.Add(buttonC2FluxScanHelp);
+            panelGeneral.Controls.Add(labelNtQueryDirectoryBufferSize);
+            panelGeneral.Controls.Add(comboBoxNtQueryDirectoryBufferSize);
             panelGeneral.Controls.Add(checkBoxSkipReparsePoints);
             panelGeneral.Controls.Add(checkBoxStartElevatedOnStartup);
             panelGeneral.Controls.Add(checkBoxShowElevationPromptOnStartup);
@@ -1715,6 +1772,28 @@ namespace c2flux
         {
             checkBoxShowFilesInTree.Checked = _settings.ShowFilesInTree;
             checkBoxC2FluxScan.Checked = _settings.C2FluxScan;
+
+            for (int index = 0;
+                index < comboBoxNtQueryDirectoryBufferSize.Items.Count;
+                index++)
+            {
+                if (comboBoxNtQueryDirectoryBufferSize.Items[index]
+                        is DirectoryQueryBufferSizeItem bufferSizeItem &&
+                    bufferSizeItem.SizeBytes ==
+                        _settings.NtQueryDirectoryBufferSize)
+                {
+                    comboBoxNtQueryDirectoryBufferSize.SelectedIndex =
+                        index;
+                    break;
+                }
+            }
+
+            if (comboBoxNtQueryDirectoryBufferSize.SelectedIndex < 0)
+            {
+                comboBoxNtQueryDirectoryBufferSize.SelectedIndex =
+                    comboBoxNtQueryDirectoryBufferSize.Items.Count - 1;
+            }
+
             checkBoxSkipReparsePoints.Checked = _settings.SkipReparsePoints;
             checkBoxShowPartitionPanel.Checked = _settings.ShowPartitionPanel;
             checkBoxStartElevatedOnStartup.Checked = _settings.StartElevatedOnStartup;
@@ -1960,6 +2039,14 @@ namespace c2flux
 
             _settings.ShowFilesInTree = checkBoxShowFilesInTree.Checked;
             _settings.C2FluxScan = checkBoxC2FluxScan.Checked;
+
+            if (comboBoxNtQueryDirectoryBufferSize.SelectedValue
+                is DirectoryQueryBufferSizeItem selectedBufferSizeItem)
+            {
+                _settings.NtQueryDirectoryBufferSize =
+                    selectedBufferSizeItem.SizeBytes;
+            }
+
             _settings.SkipReparsePoints = checkBoxSkipReparsePoints.Checked;
             _settings.ShowPartitionPanel = checkBoxShowPartitionPanel.Checked;
             _settings.StartElevatedOnStartup = checkBoxStartElevatedOnStartup.Checked;
@@ -2135,6 +2222,25 @@ namespace c2flux
                 partitionFillDarkColor;
 
             UpdatePartitionFillControlsVisibility();
+        }
+
+        private sealed class DirectoryQueryBufferSizeItem
+        {
+            public DirectoryQueryBufferSizeItem(
+                string text,
+                int sizeBytes)
+            {
+                Text = text;
+                SizeBytes = sizeBytes;
+            }
+
+            public string Text { get; }
+            public int SizeBytes { get; }
+
+            public override string ToString()
+            {
+                return Text;
+            }
         }
 
         private sealed class LanguageItem

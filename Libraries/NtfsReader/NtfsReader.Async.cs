@@ -81,7 +81,6 @@ public sealed partial class NtfsReader
         }
 
         _nameIndex.Clear();
-        GC.Collect();
     }
 
     /// <summary>

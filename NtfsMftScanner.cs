@@ -24,24 +24,81 @@ namespace c2flux
 
         public static bool IsSupported(string rootPath)
         {
-            if (!IsProcessElevated())
+            bool isProcessElevated = IsProcessElevated();
+
+            if (!isProcessElevated)
+            {
+                AppAlertLog.AddVerboseInformation(
+                    "Scan",
+                    "MFT support check",
+                    string.Join(
+                        Environment.NewLine,
+                        string.Format("Path: {0}", rootPath),
+                        string.Format("IsProcessElevated: {0}", isProcessElevated),
+                        "Result: False"));
+
                 return false;
+            }
 
             try
             {
                 string driveRoot = Path.GetPathRoot(rootPath);
 
                 if (string.IsNullOrWhiteSpace(driveRoot))
+                {
+                    AppAlertLog.AddVerboseInformation(
+                        "Scan",
+                        "MFT support check",
+                        string.Join(
+                            Environment.NewLine,
+                            string.Format("Path: {0}", rootPath),
+                            string.Format("IsProcessElevated: {0}", isProcessElevated),
+                            "DriveRoot: <empty>",
+                            "Result: False"));
+
                     return false;
+                }
 
                 DriveInfo driveInfo = new DriveInfo(driveRoot);
+                bool isReady = driveInfo.IsReady;
+                DriveType driveType = driveInfo.DriveType;
+                string driveFormat = isReady
+                    ? driveInfo.DriveFormat
+                    : string.Empty;
+                bool result =
+                    isReady &&
+                    driveType == DriveType.Fixed &&
+                    string.Equals(
+                        driveFormat,
+                        "NTFS",
+                        StringComparison.OrdinalIgnoreCase);
 
-                return driveInfo.IsReady &&
-                       driveInfo.DriveType == DriveType.Fixed &&
-                       string.Equals(driveInfo.DriveFormat, "NTFS", StringComparison.OrdinalIgnoreCase);
+                AppAlertLog.AddVerboseInformation(
+                    "Scan",
+                    "MFT support check",
+                    string.Join(
+                        Environment.NewLine,
+                        string.Format("Path: {0}", rootPath),
+                        string.Format("IsProcessElevated: {0}", isProcessElevated),
+                        string.Format("DriveRoot: {0}", driveRoot),
+                        string.Format("IsReady: {0}", isReady),
+                        string.Format("DriveType: {0}", driveType),
+                        string.Format("DriveFormat: {0}", driveFormat),
+                        string.Format("Result: {0}", result)));
+
+                return result;
             }
-            catch
+            catch (Exception exception)
             {
+                AppAlertLog.AddVerboseInformation(
+                    "Scan",
+                    "MFT support check failed",
+                    string.Join(
+                        Environment.NewLine,
+                        string.Format("Path: {0}", rootPath),
+                        string.Format("IsProcessElevated: {0}", isProcessElevated),
+                        string.Format("Exception: {0}", exception)));
+
                 return false;
             }
         }

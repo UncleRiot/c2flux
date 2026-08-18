@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Win32.SafeHandles;
 
 namespace c2flux
 {
@@ -15,6 +16,12 @@ namespace c2flux
         private const int LiveSnapshotDepth = 1;
         private const int MaxLiveChildrenPerDirectory = 100;
         private const int FIND_FIRST_EX_LARGE_FETCH = 2;
+        private const uint FILE_SHARE_READ = 0x00000001;
+        private const uint FILE_SHARE_WRITE = 0x00000002;
+        private const uint FILE_SHARE_DELETE = 0x00000004;
+        private const uint OPEN_EXISTING = 3;
+        private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+        private const int FileIdInfoClass = 18;
         private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 
         private readonly AppSettings _settings;
@@ -27,6 +34,7 @@ namespace c2flux
         private ScanCacheService _scanCacheService;
         private int _skippedDirectories;
         private List<string> _skippedDirectoryDetails;
+        private List<DirectoryIdentity> _activeDirectoryIdentities;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern IntPtr FindFirstFileEx(
@@ -44,6 +52,28 @@ namespace c2flux
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool FindClose(IntPtr hFindFile);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern SafeFileHandle CreateFile(
+            string lpFileName,
+            uint dwDesiredAccess,
+            uint dwShareMode,
+            IntPtr lpSecurityAttributes,
+            uint dwCreationDisposition,
+            uint dwFlagsAndAttributes,
+            IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileInformationByHandleEx(
+            SafeFileHandle hFile,
+            int fileInformationClass,
+            out FILE_ID_INFO lpFileInformation,
+            uint dwBufferSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileInformationByHandle(
+            SafeFileHandle hFile,
+            out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 
         private enum FINDEX_INFO_LEVELS
         {
@@ -82,6 +112,82 @@ namespace c2flux
             public uint dwHighDateTime;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILE_ID_128
+        {
+            public ulong LowPart;
+            public ulong HighPart;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILE_ID_INFO
+        {
+            public ulong VolumeSerialNumber;
+            public FILE_ID_128 FileId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BY_HANDLE_FILE_INFORMATION
+        {
+            public FileAttributes dwFileAttributes;
+            public FILETIME ftCreationTime;
+            public FILETIME ftLastAccessTime;
+            public FILETIME ftLastWriteTime;
+            public uint dwVolumeSerialNumber;
+            public uint nFileSizeHigh;
+            public uint nFileSizeLow;
+            public uint nNumberOfLinks;
+            public uint nFileIndexHigh;
+            public uint nFileIndexLow;
+        }
+
+        private readonly struct DirectoryIdentity
+        {
+            public DirectoryIdentity(
+                bool hasExtendedId,
+                ulong extendedVolumeSerialNumber,
+                ulong extendedFileIdLow,
+                ulong extendedFileIdHigh,
+                bool hasLegacyId,
+                uint legacyVolumeSerialNumber,
+                ulong legacyFileId)
+            {
+                HasExtendedId = hasExtendedId;
+                ExtendedVolumeSerialNumber = extendedVolumeSerialNumber;
+                ExtendedFileIdLow = extendedFileIdLow;
+                ExtendedFileIdHigh = extendedFileIdHigh;
+                HasLegacyId = hasLegacyId;
+                LegacyVolumeSerialNumber = legacyVolumeSerialNumber;
+                LegacyFileId = legacyFileId;
+            }
+
+            public bool HasExtendedId { get; }
+            public ulong ExtendedVolumeSerialNumber { get; }
+            public ulong ExtendedFileIdLow { get; }
+            public ulong ExtendedFileIdHigh { get; }
+            public bool HasLegacyId { get; }
+            public uint LegacyVolumeSerialNumber { get; }
+            public ulong LegacyFileId { get; }
+
+            public bool Matches(DirectoryIdentity other)
+            {
+                if (HasExtendedId && other.HasExtendedId)
+                {
+                    return ExtendedVolumeSerialNumber == other.ExtendedVolumeSerialNumber &&
+                        ExtendedFileIdLow == other.ExtendedFileIdLow &&
+                        ExtendedFileIdHigh == other.ExtendedFileIdHigh;
+                }
+
+                if (HasLegacyId && other.HasLegacyId)
+                {
+                    return LegacyVolumeSerialNumber == other.LegacyVolumeSerialNumber &&
+                        LegacyFileId == other.LegacyFileId;
+                }
+
+                return false;
+            }
+        }
+
         private sealed class Win32FileSystemEntry
         {
             public string Name { get; set; }
@@ -104,6 +210,9 @@ namespace c2flux
                 _scanCacheService = ScanCacheService.Load(rootPath);
                 _skippedDirectories = 0;
                 _skippedDirectoryDetails = new List<string>();
+                _activeDirectoryIdentities = _settings.SkipReparsePoints
+                    ? null
+                    : new List<DirectoryIdentity>();
 
                 FileSystemEntry rootEntry = CreateDirectoryEntry(rootPath);
                 _liveRootEntry = rootEntry;
@@ -135,81 +244,186 @@ namespace c2flux
 
         private void ScanDirectoryContents(FileSystemEntry entry, IProgress<ScanProgress> progress, CancellationToken cancellationToken, PauseToken pauseToken, Action<long> addSizeToAncestors)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            pauseToken.WaitWhilePaused(cancellationToken);
-
-            foreach (Win32FileSystemEntry fileSystemEntry in EnumerateFileSystemEntries(entry.FullPath))
+            if (_settings.SkipReparsePoints)
             {
+
                 cancellationToken.ThrowIfCancellationRequested();
                 pauseToken.WaitWhilePaused(cancellationToken);
 
-                if (ScanPathFilter.IsExcluded(fileSystemEntry.FullPath, _settings.ExcludedPaths))
-                    continue;
-
-                if (fileSystemEntry.IsDirectory)
+                foreach (Win32FileSystemEntry fileSystemEntry in EnumerateFileSystemEntries(entry.FullPath))
                 {
-                    if (_settings.SkipReparsePoints && fileSystemEntry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    cancellationToken.ThrowIfCancellationRequested();
+                    pauseToken.WaitWhilePaused(cancellationToken);
+
+                    if (ScanPathFilter.IsExcluded(fileSystemEntry.FullPath, _settings.ExcludedPaths))
                         continue;
 
-                    FileSystemEntry childEntry = new FileSystemEntry
+                    if (fileSystemEntry.IsDirectory)
+                    {
+                        if (_settings.SkipReparsePoints && fileSystemEntry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                            continue;
+
+                        FileSystemEntry childEntry = new FileSystemEntry
+                        {
+                            Name = fileSystemEntry.Name,
+                            FullPath = fileSystemEntry.FullPath,
+                            IsDirectory = true
+                        };
+
+                        entry.Children.Add(childEntry);
+                        _scannedDirectories++;
+
+                        ReportProgress(childEntry.FullPath, progress, false);
+
+                        ScanDirectoryContents(
+                            childEntry,
+                            progress,
+                            cancellationToken,
+                            pauseToken,
+                            sizeDelta =>
+                            {
+                                entry.SizeBytes += sizeDelta;
+                                addSizeToAncestors?.Invoke(sizeDelta);
+                            });
+
+                        ReportProgress(childEntry.FullPath, progress, false);
+                        continue;
+                    }
+
+                    long fileLength = _scanCacheService.GetLengthAndUpdate(
+                        fileSystemEntry.FullPath,
+                        fileSystemEntry.SizeBytes,
+                        fileSystemEntry.LastWriteTimeUtcTicks,
+                        (int)fileSystemEntry.Attributes);
+
+                    _scannedFiles++;
+                    _scannedBytes += fileLength;
+                    entry.SizeBytes += fileLength;
+                    addSizeToAncestors?.Invoke(fileLength);
+
+                    FileSystemEntry fileEntry = new FileSystemEntry
                     {
                         Name = fileSystemEntry.Name,
                         FullPath = fileSystemEntry.FullPath,
-                        IsDirectory = true
+                        SizeBytes = fileLength,
+                        IsDirectory = false,
+                        LastWriteTimeUtc = fileSystemEntry.LastWriteTimeUtcTicks > 0
+                            ? DateTime.FromFileTimeUtc(fileSystemEntry.LastWriteTimeUtcTicks)
+                            : DateTime.MinValue
                     };
 
-                    entry.Children.Add(childEntry);
-                    _scannedDirectories++;
+                    _liveRootEntry.AllFiles.Add(fileEntry);
 
-                    ReportProgress(childEntry.FullPath, progress, false);
+                    if (_settings.ShowFilesInTree)
+                    {
+                        entry.Children.Add(fileEntry);
+                    }
 
-                    ScanDirectoryContents(
-                        childEntry,
-                        progress,
-                        cancellationToken,
-                        pauseToken,
-                        sizeDelta =>
-                        {
-                            entry.SizeBytes += sizeDelta;
-                            addSizeToAncestors?.Invoke(sizeDelta);
-                        });
-
-                    ReportProgress(childEntry.FullPath, progress, false);
-                    continue;
+                    ReportProgress(fileSystemEntry.FullPath, progress, false);
                 }
-
-                long fileLength = _scanCacheService.GetLengthAndUpdate(
-                    fileSystemEntry.FullPath,
-                    fileSystemEntry.SizeBytes,
-                    fileSystemEntry.LastWriteTimeUtcTicks,
-                    (int)fileSystemEntry.Attributes);
-
-                _scannedFiles++;
-                _scannedBytes += fileLength;
-                entry.SizeBytes += fileLength;
-                addSizeToAncestors?.Invoke(fileLength);
-
-                FileSystemEntry fileEntry = new FileSystemEntry
-                {
-                    Name = fileSystemEntry.Name,
-                    FullPath = fileSystemEntry.FullPath,
-                    SizeBytes = fileLength,
-                    IsDirectory = false,
-                    LastWriteTimeUtc = fileSystemEntry.LastWriteTimeUtcTicks > 0
-                        ? DateTime.FromFileTimeUtc(fileSystemEntry.LastWriteTimeUtcTicks)
-                        : DateTime.MinValue
-                };
-
-                _liveRootEntry.AllFiles.Add(fileEntry);
-
-                if (_settings.ShowFilesInTree)
-                {
-                    entry.Children.Add(fileEntry);
-                }
-
-                ReportProgress(fileSystemEntry.FullPath, progress, false);
+                        return;
             }
-        }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            pauseToken.WaitWhilePaused(cancellationToken);
+
+            DirectoryIdentity directoryIdentity = default;
+            bool directoryIdentityAdded = false;
+
+            if (TryGetDirectoryIdentity(entry.FullPath, out directoryIdentity))
+            {
+                if (_activeDirectoryIdentities.Any(
+                        activeDirectoryIdentity =>
+                            activeDirectoryIdentity.Matches(directoryIdentity)))
+                {
+                    return;
+                }
+
+                _activeDirectoryIdentities.Add(directoryIdentity);
+                directoryIdentityAdded = true;
+            }
+
+            try
+            {
+                foreach (Win32FileSystemEntry fileSystemEntry in EnumerateFileSystemEntries(entry.FullPath))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    pauseToken.WaitWhilePaused(cancellationToken);
+
+                    if (ScanPathFilter.IsExcluded(fileSystemEntry.FullPath, _settings.ExcludedPaths))
+                        continue;
+
+                    if (fileSystemEntry.IsDirectory)
+                    {
+                        FileSystemEntry childEntry = new FileSystemEntry
+                        {
+                            Name = fileSystemEntry.Name,
+                            FullPath = fileSystemEntry.FullPath,
+                            IsDirectory = true
+                        };
+
+                        entry.Children.Add(childEntry);
+                        _scannedDirectories++;
+
+                        ReportProgress(childEntry.FullPath, progress, false);
+
+                        ScanDirectoryContents(
+                            childEntry,
+                            progress,
+                            cancellationToken,
+                            pauseToken,
+                            sizeDelta =>
+                            {
+                                entry.SizeBytes += sizeDelta;
+                                addSizeToAncestors?.Invoke(sizeDelta);
+                            });
+
+                        ReportProgress(childEntry.FullPath, progress, false);
+                        continue;
+                    }
+
+                    long fileLength = _scanCacheService.GetLengthAndUpdate(
+                        fileSystemEntry.FullPath,
+                        fileSystemEntry.SizeBytes,
+                        fileSystemEntry.LastWriteTimeUtcTicks,
+                        (int)fileSystemEntry.Attributes);
+
+                    _scannedFiles++;
+                    _scannedBytes += fileLength;
+                    entry.SizeBytes += fileLength;
+                    addSizeToAncestors?.Invoke(fileLength);
+
+                    FileSystemEntry fileEntry = new FileSystemEntry
+                    {
+                        Name = fileSystemEntry.Name,
+                        FullPath = fileSystemEntry.FullPath,
+                        SizeBytes = fileLength,
+                        IsDirectory = false,
+                        LastWriteTimeUtc = fileSystemEntry.LastWriteTimeUtcTicks > 0
+                            ? DateTime.FromFileTimeUtc(fileSystemEntry.LastWriteTimeUtcTicks)
+                            : DateTime.MinValue
+                    };
+
+                    _liveRootEntry.AllFiles.Add(fileEntry);
+
+                    if (_settings.ShowFilesInTree)
+                    {
+                        entry.Children.Add(fileEntry);
+                    }
+
+                    ReportProgress(fileSystemEntry.FullPath, progress, false);
+                }
+            }
+            finally
+            {
+                if (directoryIdentityAdded)
+                {
+                    _activeDirectoryIdentities.RemoveAt(
+                        _activeDirectoryIdentities.Count - 1);
+                }
+            }
+                }
+
 
         private IEnumerable<Win32FileSystemEntry> EnumerateFileSystemEntries(string directoryPath)
         {
@@ -277,6 +491,75 @@ namespace c2flux
             {
                 return 0;
             }
+        }
+
+        private static bool TryGetDirectoryIdentity(
+            string directoryPath,
+            out DirectoryIdentity directoryIdentity)
+        {
+            directoryIdentity = default;
+
+            string normalizedPath = NormalizePathForDirectoryHandle(directoryPath);
+
+            using SafeFileHandle directoryHandle = CreateFile(
+                normalizedPath,
+                0,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                IntPtr.Zero,
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS,
+                IntPtr.Zero);
+
+            if (directoryHandle == null || directoryHandle.IsInvalid)
+                return false;
+
+            FILE_ID_INFO fileIdInfo;
+            bool hasExtendedId =
+                GetFileInformationByHandleEx(
+                    directoryHandle,
+                    FileIdInfoClass,
+                    out fileIdInfo,
+                    (uint)Marshal.SizeOf(typeof(FILE_ID_INFO))) &&
+                (fileIdInfo.FileId.LowPart != 0 ||
+                 fileIdInfo.FileId.HighPart != 0);
+
+            bool hasLegacyId =
+                GetFileInformationByHandle(
+                    directoryHandle,
+                    out BY_HANDLE_FILE_INFORMATION fileInformation);
+
+            if (!hasExtendedId && !hasLegacyId)
+                return false;
+
+            ulong legacyFileId = hasLegacyId
+                ? ((ulong)fileInformation.nFileIndexHigh << 32) |
+                    fileInformation.nFileIndexLow
+                : 0;
+
+            directoryIdentity = new DirectoryIdentity(
+                hasExtendedId,
+                hasExtendedId ? fileIdInfo.VolumeSerialNumber : 0,
+                hasExtendedId ? fileIdInfo.FileId.LowPart : 0,
+                hasExtendedId ? fileIdInfo.FileId.HighPart : 0,
+                hasLegacyId,
+                hasLegacyId ? fileInformation.dwVolumeSerialNumber : 0,
+                legacyFileId);
+
+            return true;
+        }
+
+        private static string NormalizePathForDirectoryHandle(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return path;
+
+            if (path.StartsWith(@"\\?\", StringComparison.Ordinal))
+                return path;
+
+            if (path.StartsWith(@"\\", StringComparison.Ordinal))
+                return @"\\?\UNC\" + path.Substring(2);
+
+            return @"\\?\" + path;
         }
 
         private FileSystemEntry CreateDirectoryEntry(string path)

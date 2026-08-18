@@ -58,6 +58,7 @@ namespace c2flux
         //changed with v1.3.0
         public bool ShowFilesInTree { get; set; } = true;
         public bool C2FluxScan { get; set; }
+        public int NtQueryDirectoryBufferSize { get; set; } = 64 * 1024;
         public bool SkipReparsePoints { get; set; } = true;
         public bool ShowPartitionPanel { get; set; } = true;
         public int PartitionFillColorLightArgb { get; set; } = unchecked((int)0xFF32CD32);
@@ -247,6 +248,18 @@ namespace c2flux
                 settings.MaximumLogFileSizeMb = Math.Max(
                     1,
                     settings.MaximumLogFileSizeMb);
+
+                if (settings.NtQueryDirectoryBufferSize != 64 * 1024 &&
+                    settings.NtQueryDirectoryBufferSize != 128 * 1024 &&
+                    settings.NtQueryDirectoryBufferSize != 256 * 1024 &&
+                    settings.NtQueryDirectoryBufferSize != 512 * 1024 &&
+                    settings.NtQueryDirectoryBufferSize != 1024 * 1024 &&
+                    settings.NtQueryDirectoryBufferSize != 2 * 1024 * 1024 &&
+                    settings.NtQueryDirectoryBufferSize != 4 * 1024 * 1024)
+                {
+                    settings.NtQueryDirectoryBufferSize = 64 * 1024;
+                }
+
                 ScanHistoryService.ConfigureDatabasePath(settings.ScanHistoryDatabasePath);
                 ScanHistoryService.ConfigureRetention(
                     settings.ScanHistoryMaximumScansPerPath);

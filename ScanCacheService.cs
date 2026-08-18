@@ -205,10 +205,17 @@ namespace c2flux
 
             if (File.Exists(_cacheFilePath))
             {
-                File.Delete(_cacheFilePath);
+                File.Replace(
+                    temporaryFilePath,
+                    _cacheFilePath,
+                    null);
             }
-
-            File.Move(temporaryFilePath, _cacheFilePath);
+            else
+            {
+                File.Move(
+                    temporaryFilePath,
+                    _cacheFilePath);
+            }
         }
 
         private static string GetCacheFilePath(string rootPath)

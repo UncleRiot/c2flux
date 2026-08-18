@@ -214,13 +214,15 @@ namespace c2flux
 
             comboBoxSource = new AntdUI.Select
             {
-                Dock = DockStyle.Fill
+                Dock = DockStyle.Fill,
+                List = true
             };
 
             labelSavedScan = CreateLabel("Search.SavedScan");
             comboBoxSavedScan = new AntdUI.Select
             {
-                Dock = DockStyle.Fill
+                Dock = DockStyle.Fill,
+                List = true
             };
 
             textBoxSearch = new AntdUI.Input
@@ -232,7 +234,8 @@ namespace c2flux
 
             comboBoxMatchMode = new AntdUI.Select
             {
-                Dock = DockStyle.Fill
+                Dock = DockStyle.Fill,
+                List = true
             };
             comboBoxMatchMode.Items.AddRange(new object[]
             {

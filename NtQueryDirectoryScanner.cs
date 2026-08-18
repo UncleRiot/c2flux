@@ -17,11 +17,11 @@ namespace c2flux
         private const int LiveSnapshotIntervalMilliseconds = 1000;
         private const int LiveSnapshotDepth = 2;
         private const int MaxLiveChildrenPerDirectory = 80;
-        private const int DirectoryQueryBufferSize = 4 * 1024 * 1024;
         private const int FileFullDirectoryInformationClass = 2;
         private const int FileFullDirectoryInformationFileNameOffset = 68;
         private const int FileIdFullDirectoryInformationClass = 38;
         private const int FileIdFullDirectoryInformationFileNameOffset = 80;
+        private const int FileIdInfoClass = 18;
 
         private const uint FILE_LIST_DIRECTORY = 0x0001;
         private const uint SYNCHRONIZE = 0x00100000;
@@ -63,6 +63,12 @@ namespace c2flux
         {
             _settings = settings;
         }
+
+        public int ScannedDirectories =>
+            Volatile.Read(ref _scannedDirectories);
+
+        public int ScannedFiles =>
+            Volatile.Read(ref _scannedFiles);
 
         public Task<FileSystemEntry> ScanAsync(
             string rootPath,
@@ -113,7 +119,14 @@ namespace c2flux
                     workerTasks[workerIndex] = Task.Run(() => WorkerLoop(progress, cancellationToken), cancellationToken);
                 }
 
-                _workQueue.Add(new WorkItem(rootEntry, true), cancellationToken);
+                WorkItem rootWorkItem = _settings.SkipReparsePoints
+                    ? new WorkItem(rootEntry, true)
+                    : new WorkItem(
+                        rootEntry,
+                        true,
+                        new List<DirectoryIdentity>());
+
+                _workQueue.Add(rootWorkItem, cancellationToken);
 
                 try
                 {
@@ -150,7 +163,13 @@ namespace c2flux
 
         private void WorkerLoop(IProgress<ScanProgress> progress, CancellationToken cancellationToken)
         {
-            IntPtr buffer = Marshal.AllocHGlobal(DirectoryQueryBufferSize);
+            int directoryQueryBufferSize =
+                _settings.NtQueryDirectoryBufferSize;
+
+            IntPtr buffer =
+                Marshal.AllocHGlobal(
+                    directoryQueryBufferSize);
+
             List<FileSystemEntry> localFiles = new List<FileSystemEntry>(4096);
 
             try
@@ -165,7 +184,7 @@ namespace c2flux
                         ProcessDirectory(
                             workItem,
                             buffer,
-                            DirectoryQueryBufferSize,
+                            directoryQueryBufferSize,
                             localFiles,
                             progress,
                             cancellationToken);
@@ -226,6 +245,29 @@ namespace c2flux
                 return;
             }
 
+            List<DirectoryIdentity> descendantAncestorDirectoryIdentities =
+                workItem.AncestorDirectoryIdentities;
+
+            if (!_settings.SkipReparsePoints &&
+                TryGetDirectoryIdentity(
+                    directoryHandle,
+                    out DirectoryIdentity directoryIdentity))
+            {
+                if (workItem.AncestorDirectoryIdentities.Any(
+                        ancestorDirectoryIdentity =>
+                            ancestorDirectoryIdentity.Matches(directoryIdentity)))
+                {
+                    return;
+                }
+
+                descendantAncestorDirectoryIdentities =
+                    new List<DirectoryIdentity>(
+                        workItem.AncestorDirectoryIdentities)
+                    {
+                        directoryIdentity
+                    };
+            }
+
             bool restartScan = true;
 
             while (true)
@@ -283,7 +325,8 @@ namespace c2flux
                     fileNameOffset,
                     localFiles,
                     progress,
-                    cancellationToken);
+                    cancellationToken,
+                    descendantAncestorDirectoryIdentities);
 
                 if (directFileSizeBytes > 0)
                 {
@@ -309,7 +352,8 @@ namespace c2flux
             int fileNameOffset,
             List<FileSystemEntry> localFiles,
             IProgress<ScanProgress> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            List<DirectoryIdentity> ancestorDirectoryIdentities)
         {
             IntPtr currentEntryPointer = buffer;
             long directFileSizeBytes = 0;
@@ -344,7 +388,8 @@ namespace c2flux
                             lastWriteTimeUtc,
                             localFiles,
                             progress,
-                            cancellationToken);
+                            cancellationToken,
+                            ancestorDirectoryIdentities);
                     }
                 }
 
@@ -365,7 +410,8 @@ namespace c2flux
             DateTime lastWriteTimeUtc,
             List<FileSystemEntry> localFiles,
             IProgress<ScanProgress> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            List<DirectoryIdentity> ancestorDirectoryIdentities)
         {
             FileSystemEntry directoryEntry = workItem.Entry;
             bool isDirectory = attributes.HasFlag(FileAttributes.Directory);
@@ -393,10 +439,15 @@ namespace c2flux
 
                 try
                 {
-                    _workQueue.Add(
-                        new WorkItem(
+                    WorkItem childWorkItem = _settings.SkipReparsePoints
+                        ? new WorkItem(childEntry, false)
+                        : new WorkItem(
                             childEntry,
-                            false),
+                            false,
+                            ancestorDirectoryIdentities);
+
+                    _workQueue.Add(
+                        childWorkItem,
                         cancellationToken);
                 }
                 catch
@@ -504,6 +555,47 @@ namespace c2flux
                     Marshal.FreeHGlobal(unicodeStringBuffer);
                 }
             }
+        }
+
+        private static bool TryGetDirectoryIdentity(
+            SafeFileHandle directoryHandle,
+            out DirectoryIdentity directoryIdentity)
+        {
+            directoryIdentity = default;
+
+            FILE_ID_INFO fileIdInfo;
+            bool hasExtendedId =
+                GetFileInformationByHandleEx(
+                    directoryHandle,
+                    FileIdInfoClass,
+                    out fileIdInfo,
+                    (uint)Marshal.SizeOf(typeof(FILE_ID_INFO))) &&
+                (fileIdInfo.FileId.LowPart != 0 ||
+                 fileIdInfo.FileId.HighPart != 0);
+
+            bool hasLegacyId =
+                GetFileInformationByHandle(
+                    directoryHandle,
+                    out BY_HANDLE_FILE_INFORMATION fileInformation);
+
+            if (!hasExtendedId && !hasLegacyId)
+                return false;
+
+            ulong legacyFileId = hasLegacyId
+                ? ((ulong)fileInformation.nFileIndexHigh << 32) |
+                    fileInformation.nFileIndexLow
+                : 0;
+
+            directoryIdentity = new DirectoryIdentity(
+                hasExtendedId,
+                hasExtendedId ? fileIdInfo.VolumeSerialNumber : 0,
+                hasExtendedId ? fileIdInfo.FileId.LowPart : 0,
+                hasExtendedId ? fileIdInfo.FileId.HighPart : 0,
+                hasLegacyId,
+                hasLegacyId ? fileInformation.dwVolumeSerialNumber : 0,
+                legacyFileId);
+
+            return true;
         }
 
         private static UNICODE_STRING CreateUnicodeString(string text, out IntPtr buffer)
@@ -779,6 +871,101 @@ namespace c2flux
             IntPtr fileName,
             [MarshalAs(UnmanagedType.U1)] bool restartScan);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileInformationByHandleEx(
+            SafeFileHandle hFile,
+            int fileInformationClass,
+            out FILE_ID_INFO lpFileInformation,
+            uint dwBufferSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileInformationByHandle(
+            SafeFileHandle hFile,
+            out BY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILE_ID_128
+        {
+            public ulong LowPart;
+            public ulong HighPart;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILE_ID_INFO
+        {
+            public ulong VolumeSerialNumber;
+            public FILE_ID_128 FileId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILETIME
+        {
+            public uint dwLowDateTime;
+            public uint dwHighDateTime;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BY_HANDLE_FILE_INFORMATION
+        {
+            public FileAttributes dwFileAttributes;
+            public FILETIME ftCreationTime;
+            public FILETIME ftLastAccessTime;
+            public FILETIME ftLastWriteTime;
+            public uint dwVolumeSerialNumber;
+            public uint nFileSizeHigh;
+            public uint nFileSizeLow;
+            public uint nNumberOfLinks;
+            public uint nFileIndexHigh;
+            public uint nFileIndexLow;
+        }
+
+        private readonly struct DirectoryIdentity
+        {
+            public DirectoryIdentity(
+                bool hasExtendedId,
+                ulong extendedVolumeSerialNumber,
+                ulong extendedFileIdLow,
+                ulong extendedFileIdHigh,
+                bool hasLegacyId,
+                uint legacyVolumeSerialNumber,
+                ulong legacyFileId)
+            {
+                HasExtendedId = hasExtendedId;
+                ExtendedVolumeSerialNumber = extendedVolumeSerialNumber;
+                ExtendedFileIdLow = extendedFileIdLow;
+                ExtendedFileIdHigh = extendedFileIdHigh;
+                HasLegacyId = hasLegacyId;
+                LegacyVolumeSerialNumber = legacyVolumeSerialNumber;
+                LegacyFileId = legacyFileId;
+            }
+
+            public bool HasExtendedId { get; }
+            public ulong ExtendedVolumeSerialNumber { get; }
+            public ulong ExtendedFileIdLow { get; }
+            public ulong ExtendedFileIdHigh { get; }
+            public bool HasLegacyId { get; }
+            public uint LegacyVolumeSerialNumber { get; }
+            public ulong LegacyFileId { get; }
+
+            public bool Matches(DirectoryIdentity other)
+            {
+                if (HasExtendedId && other.HasExtendedId)
+                {
+                    return ExtendedVolumeSerialNumber == other.ExtendedVolumeSerialNumber &&
+                        ExtendedFileIdLow == other.ExtendedFileIdLow &&
+                        ExtendedFileIdHigh == other.ExtendedFileIdHigh;
+                }
+
+                if (HasLegacyId && other.HasLegacyId)
+                {
+                    return LegacyVolumeSerialNumber == other.LegacyVolumeSerialNumber &&
+                        LegacyFileId == other.LegacyFileId;
+                }
+
+                return false;
+            }
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         private struct UNICODE_STRING
         {
@@ -919,8 +1106,19 @@ namespace c2flux
                 IsRoot = isRoot;
             }
 
+            public WorkItem(
+                FileSystemEntry entry,
+                bool isRoot,
+                List<DirectoryIdentity> ancestorDirectoryIdentities)
+            {
+                Entry = entry;
+                IsRoot = isRoot;
+                AncestorDirectoryIdentities = ancestorDirectoryIdentities;
+            }
+
             public FileSystemEntry Entry { get; }
             public bool IsRoot { get; }
+            public List<DirectoryIdentity> AncestorDirectoryIdentities { get; }
         }
     }
 }

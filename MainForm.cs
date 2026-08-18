@@ -2334,12 +2334,6 @@ namespace c2flux
             ScanSession session,
             ScanProgress scanProgress)
         {
-            double percent = session.ScanTargetBytes <= 0
-                ? 0D
-                : (double)scanProgress.ScannedBytes *
-                    100D /
-                    session.ScanTargetBytes;
-
             FileSystemEntry statusEntry =
                 scanProgress.LiveRootEntry ??
                 _selectedEntry ??
@@ -2351,6 +2345,20 @@ namespace c2flux
                     statusEntry,
                     scanProgress.ScannedFiles);
             }
+
+            if (session.ScanTargetBytes <= 0)
+            {
+                _statusMainFormController.SetScanProgressPending(
+                    0.03F,
+                    session.ScanStopwatch?.Elapsed,
+                    true);
+                return;
+            }
+
+            double percent =
+                (double)scanProgress.ScannedBytes *
+                100D /
+                session.ScanTargetBytes;
 
             _statusMainFormController.SetScanProgress(
                 percent,
@@ -2397,8 +2405,33 @@ namespace c2flux
         {
             try
             {
-                System.IO.DriveInfo driveInfo = new System.IO.DriveInfo(rootPath);
-                return Math.Max(0, driveInfo.TotalSize - driveInfo.AvailableFreeSpace);
+                string fullPath = Path.GetFullPath(rootPath);
+                string pathRoot = Path.GetPathRoot(fullPath);
+
+                if (string.IsNullOrWhiteSpace(pathRoot))
+                    return 0;
+
+                string normalizedFullPath = fullPath.TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar);
+
+                string normalizedPathRoot = pathRoot.TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar);
+
+                if (!string.Equals(
+                        normalizedFullPath,
+                        normalizedPathRoot,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return 0;
+                }
+
+                DriveInfo driveInfo = new DriveInfo(pathRoot);
+
+                return Math.Max(
+                    0,
+                    driveInfo.TotalSize - driveInfo.AvailableFreeSpace);
             }
             catch
             {

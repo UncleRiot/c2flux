@@ -106,6 +106,7 @@ namespace c2flux
             comboBoxPaths =
                 AntdThemeService.CreateStorageHistoryPathSelect(
                     "comboBoxPaths");
+            comboBoxPaths.List = true;
             comboBoxPaths.Margin = new Padding(0, 2, 0, 2);
             comboBoxPaths.SelectedIndexChanged +=
                 comboBoxPaths_SelectedIndexChanged;
@@ -123,6 +124,7 @@ namespace c2flux
                     "comboBoxDisplayMode",
                     AntdThemeService.StorageHistoryDisplaySelectWidth,
                     AntdThemeService.StorageHistoryDisplaySelectHeight);
+            comboBoxDisplayMode.List = true;
             comboBoxDisplayMode.Margin = new Padding(0, 2, 0, 2);
             comboBoxDisplayMode.Items.Add(new StorageHistoryDisplayModeItem(
                 StorageHistoryDisplayMode.UsedSpace,
@@ -141,6 +143,7 @@ namespace c2flux
                     "comboBoxRange",
                     AntdThemeService.StorageHistoryRangeSelectWidth,
                     AntdThemeService.StorageHistoryRangeSelectHeight);
+            comboBoxRange.List = true;
             PopulateRangeItems();
             AntdThemeService.AdjustStorageHistorySelectWidth(
                 comboBoxRange,
