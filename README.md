@@ -1,4 +1,4 @@
-![Windows](https://img.shields.io/badge/Windows-7%2B-0078D6?logo=windows&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
+![Windows](https://img.shields.io/badge/Windows-10%2B-0078D6?logo=windows&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
 
 # c² flux – Tree Scanner
 
@@ -13,7 +13,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 **Scan your drives, get an overview of used disk space, find everything. Fast**
 
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.3.1-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.3.1/c2flux-v1.3.1-win-x64.zip)
+[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.3.3-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.3.2/c2flux-v1.3.3-win-x64.zip)
 
 <br>
 <br>
