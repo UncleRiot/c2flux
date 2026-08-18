@@ -466,15 +466,16 @@ namespace c2flux
             TaskScheduler.Default);
         }
 
-        public Task<FileSystemEntry> CaptureStorageHistoryDetailsSnapshotAsync(
+        public async Task<FileSystemEntry> CaptureStorageHistoryDetailsSnapshotAsync(
             string rootPath,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IProgress<double> progress = null)
         {
-            return Task.Factory.StartNew(() =>
-            {
-                Stopwatch stopwatch = Stopwatch.StartNew();
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
-                cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(0D);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
                 string driveRoot = Path.GetPathRoot(rootPath);
 
@@ -508,21 +509,50 @@ namespace c2flux
                     return null;
                 }
 
-                NtfsReader reader = new NtfsReader(
-                    driveInfo,
-                    RetrieveMode.Minimal,
-                    MftReadBufferSizeBytes);
+                IProgress<double> mftProgress =
+                    progress == null
+                        ? null
+                        : new Progress<double>(
+                            mftPercent =>
+                            {
+                                double normalizedMftPercent =
+                                    Math.Max(
+                                        0D,
+                                        Math.Min(
+                                            100D,
+                                            mftPercent));
+
+                                progress.Report(
+                                    normalizedMftPercent *
+                                    0.25D);
+                            });
+
+                NtfsReader reader =
+                    await NtfsReader.CreateAsync(
+                        driveInfo,
+                        RetrieveMode.Minimal,
+                        cancellationToken,
+                        MftReadBufferSizeBytes,
+                        mftProgress).ConfigureAwait(false);
 
                 List<INode> nodes = NtfsReaderFastNodeProvider.GetNodes(
                     reader,
                     driveRoot,
                     out bool fastNodeEnumerationUsed);
 
+                progress?.Report(25D);
+
                 FileSystemEntry snapshotRoot =
                     CreateRootEntry(driveRoot);
 
                 Dictionary<uint, INode> directoryNodesByNodeIndex =
                     new Dictionary<uint, INode>();
+
+                int processedDirectoryNodeCount = 0;
+                int snapshotProgressInterval =
+                    Math.Max(
+                        1,
+                        nodes.Count / 100);
 
                 foreach (INode node in nodes)
                 {
@@ -533,6 +563,22 @@ namespace c2flux
                             System.IO.Filesystem.Ntfs.Attributes.Directory))
                     {
                         directoryNodesByNodeIndex[node.NodeIndex] = node;
+                    }
+
+                    processedDirectoryNodeCount++;
+
+                    if (processedDirectoryNodeCount == nodes.Count ||
+                        processedDirectoryNodeCount % snapshotProgressInterval == 0)
+                    {
+                        double directoryProgress =
+                            nodes.Count == 0
+                                ? 1D
+                                : (double)processedDirectoryNodeCount /
+                                  nodes.Count;
+
+                        progress?.Report(
+                            25D +
+                            (directoryProgress * 15D));
                     }
                 }
 
@@ -548,9 +594,27 @@ namespace c2flux
                 HashSet<uint> directoryResolutionVisitedNodeIndexes =
                     new HashSet<uint>();
 
+                int processedFileNodeCount = 0;
+
                 foreach (INode node in nodes)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    processedFileNodeCount++;
+
+                    if (processedFileNodeCount == nodes.Count ||
+                        processedFileNodeCount % snapshotProgressInterval == 0)
+                    {
+                        double fileProgress =
+                            nodes.Count == 0
+                                ? 1D
+                                : (double)processedFileNodeCount /
+                                  nodes.Count;
+
+                        progress?.Report(
+                            40D +
+                            (fileProgress * 60D));
+                    }
 
                     if (node == null ||
                         node.Attributes.HasFlag(
@@ -620,10 +684,6 @@ namespace c2flux
                             stopwatch.Elapsed.TotalMilliseconds)));
 
                 return snapshotRoot;
-            },
-            cancellationToken,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
         }
 
         private string ResolveFilePath(

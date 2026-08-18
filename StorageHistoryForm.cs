@@ -838,7 +838,23 @@ namespace c2flux
 
             _settings.StorageHistoryRangeMode = rangeMode;
             _settings.Save();
-            BindRecords(_currentRecords);
+
+            if (!IsHandleCreated)
+                return;
+
+            BeginInvoke(new MethodInvoker(
+                () =>
+                {
+                    BindRecords(_currentRecords);
+
+                    dataGridViewRecords.Invalidate(true);
+                    dataGridViewRecords.Refresh();
+                    dataGridViewRecords.Update();
+
+                    storageHistoryChart.Invalidate(true);
+                    storageHistoryChart.Refresh();
+                    storageHistoryChart.Update();
+                }));
         }
 
         private void buttonCalendar_Click(

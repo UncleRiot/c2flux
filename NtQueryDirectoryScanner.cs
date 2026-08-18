@@ -57,18 +57,25 @@ namespace c2flux
         private PauseToken _pauseToken;
         private CompiledPathFilter _pathFilter;
         private ConcurrentBag<List<FileSystemEntry>> _workerFileBatches;
+        private bool _prepareDirectoryTree;
 
         public NtQueryDirectoryScanner(AppSettings settings)
         {
             _settings = settings;
         }
 
-        public Task<FileSystemEntry> ScanAsync(string rootPath, IProgress<ScanProgress> progress, CancellationToken cancellationToken, PauseToken pauseToken)
+        public Task<FileSystemEntry> ScanAsync(
+            string rootPath,
+            IProgress<ScanProgress> progress,
+            CancellationToken cancellationToken,
+            PauseToken pauseToken,
+            bool prepareDirectoryTree = true)
         {
             return Task.Factory.StartNew(() =>
             {
                 FileSystemEntry rootEntry = CreateDirectoryEntry(rootPath);
                 _pauseToken = pauseToken;
+                _prepareDirectoryTree = prepareDirectoryTree;
 
                 _liveRootEntry = rootEntry;
                 _scannedBytes = 0;
@@ -129,8 +136,12 @@ namespace c2flux
                     .SelectMany(batch => batch)
                     .ToList();
 
-                FinalizeDirectorySizes(rootEntry);
-                SortChildrenRecursive(rootEntry);
+                if (_prepareDirectoryTree)
+                {
+                    FinalizeDirectorySizes(rootEntry);
+                    SortChildrenRecursive(rootEntry);
+                }
+
                 ReportProgress(rootPath, progress, true);
 
                 return rootEntry;
@@ -603,7 +614,8 @@ namespace c2flux
 
             FileSystemEntry liveRootEntry = null;
 
-            if (force || ShouldCreateLiveSnapshot())
+            if (_prepareDirectoryTree &&
+                (force || ShouldCreateLiveSnapshot()))
             {
                 liveRootEntry = CreateLiveSnapshot(
                     _liveRootEntry,

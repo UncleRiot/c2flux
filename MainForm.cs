@@ -527,8 +527,10 @@ namespace c2flux
             menuItemView.DropDownItems.Add(menuItemStorageHistory);
 
             menuItemTools.DropDownItems.Add(menuItemSearch);
-            menuItemTools.DropDownItems.Add(menuItemCompareScans);
 
+            // Legacy scan comparison remains in the codebase for compatibility,
+            // but the menu entry is intentionally hidden because SaveScanHistory
+            // is no longer configurable in the current settings UI.
             menuItemHelp.DropDownItems.Add(menuItemOnlineHelp);
             menuItemHelp.DropDownItems.Add(new ToolStripSeparator());
             menuItemHelp.DropDownItems.Add(menuItemAbout);
@@ -676,7 +678,10 @@ namespace c2flux
 
             toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonAnalysis));
             toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonStorageHistory));
-            toolStripFeatures.Items.Add(toolStripButtonScanHistoryHost);
+
+            // Legacy scan comparison remains in the codebase for compatibility,
+            // but its toolbar button is intentionally hidden because SaveScanHistory
+            // is no longer configurable in the current settings UI.
             toolStripFeatures.Items.Add(AntdThemeService.CreateToolStripHost(toolStripButtonSearch));
 
             toolStripPanelMain.Controls.Add(toolStripMain);
@@ -1220,10 +1225,9 @@ namespace c2flux
                 _settings.ToolbarStorageHistoryButtonVisible,
                 visible => _settings.ToolbarStorageHistoryButtonVisible = visible);
 
-            AddToolbarVisibilityMenuItem(
-                LocalizationService.GetText("Toolbar.CompareScansButton"),
-                _settings.ToolbarScanHistoryButtonVisible,
-                visible => _settings.ToolbarScanHistoryButtonVisible = visible);
+            // Legacy scan comparison is intentionally omitted from the toolbar
+            // context menu because SaveScanHistory is no longer configurable
+            // in the current settings UI.
 
             AddToolbarVisibilityMenuItem(
                 LocalizationService.GetText("Toolbar.SearchButton"),
@@ -1599,6 +1603,15 @@ namespace c2flux
             session.RootEntry = initialRootEntry;
             _currentRootEntry = initialRootEntry;
 
+            if (storageHistoryView.Visible)
+            {
+                HideStorageHistoryView();
+                _layoutMainFormController.SetViewMode(
+                    _settings.SelectedViewMode,
+                    true);
+                RefreshMainViewButtonIcons();
+            }
+
             bool scanProgressStarted = false;
             float scanStartAnimationValue = 0.005F;
 
@@ -1720,152 +1733,6 @@ namespace c2flux
                 session.LatestProgress = null;
 
                 uiTransitionPhaseStopwatch.Restart();
-
-                FileSystemEntry storageHistoryDetailsSnapshot = null;
-                float storageHistoryPostProcessingAnimationValue = 0F;
-
-                using System.Windows.Forms.Timer storageHistoryPostProcessingTimer =
-                    new System.Windows.Forms.Timer
-                    {
-                        Interval = 50
-                    };
-
-                storageHistoryPostProcessingTimer.Tick += (_, _) =>
-                {
-                    if (!IsCurrentScanSession(session) ||
-                        !IsSelectedScanPath(session.RootPath))
-                    {
-                        return;
-                    }
-
-                    storageHistoryPostProcessingAnimationValue += 0.02F;
-
-                    if (storageHistoryPostProcessingAnimationValue > 1F)
-                    {
-                        storageHistoryPostProcessingAnimationValue = 0F;
-                    }
-
-                    _statusMainFormController.SetStorageHistoryPostProcessingProgress(
-                        storageHistoryPostProcessingAnimationValue,
-                        session.ScanStopwatch?.Elapsed,
-                        true);
-                };
-
-                if (_settings.StorageHistoryDetailsEnabled &&
-                    IsSelectedScanPath(session.RootPath))
-                {
-                    _statusMainFormController.SetStorageHistoryPostProcessingProgress(
-                        storageHistoryPostProcessingAnimationValue,
-                        session.ScanStopwatch?.Elapsed,
-                        true);
-                    storageHistoryPostProcessingTimer.Start();
-                }
-
-                try
-                {
-                    if (_settings.StorageHistoryDetailsEnabled)
-                    {
-                        storageHistoryDetailsSnapshot = rootEntry;
-
-                        try
-                        {
-                            C2FluxScanner storageHistoryDetailsScanner =
-                                new C2FluxScanner(_settings);
-
-                            FileSystemEntry ntfsStorageHistoryDetailsSnapshot =
-                                await storageHistoryDetailsScanner
-                                    .CaptureStorageHistoryDetailsSnapshotAsync(
-                                        rootEntry.FullPath,
-                                        session.CancellationTokenSource.Token);
-
-                            if (ntfsStorageHistoryDetailsSnapshot != null)
-                            {
-                                storageHistoryDetailsSnapshot =
-                                    ntfsStorageHistoryDetailsSnapshot;
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw;
-                        }
-                        catch (Exception exception)
-                        {
-                            try
-                            {
-                                NtQueryDirectoryScanner storageHistoryDetailsFallbackScanner =
-                                    new NtQueryDirectoryScanner(_settings);
-
-                                FileSystemEntry fallbackStorageHistoryDetailsSnapshot =
-                                    await storageHistoryDetailsFallbackScanner.ScanAsync(
-                                        rootEntry.FullPath,
-                                        null,
-                                        session.CancellationTokenSource.Token,
-                                        session.PauseTokenSource.Token);
-
-                                if (fallbackStorageHistoryDetailsSnapshot != null)
-                                {
-                                    storageHistoryDetailsSnapshot =
-                                        fallbackStorageHistoryDetailsSnapshot;
-                                }
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                throw;
-                            }
-                            catch (Exception fallbackException)
-                            {
-                                AppAlertLog.AddError(
-                                    "StorageHistory",
-                                    "Storage History details snapshot could not be captured.",
-                                    "Path: " + rootEntry.FullPath +
-                                    Environment.NewLine +
-                                    "MFT snapshot error:" +
-                                    Environment.NewLine +
-                                    exception +
-                                    Environment.NewLine +
-                                    Environment.NewLine +
-                                    "Fallback snapshot error:" +
-                                    Environment.NewLine +
-                                    fallbackException);
-                            }
-                        }
-                    }
-
-                    DateTime? storageHistoryRecordedAtUtc =
-                        StorageHistoryService.AddRecord(
-                            rootEntry.FullPath,
-                            rootEntry.SizeBytes);
-
-                    if (storageHistoryRecordedAtUtc.HasValue &&
-                        _settings.StorageHistoryDetailsEnabled &&
-                        storageHistoryDetailsSnapshot != null)
-                    {
-                        await Task.Run(
-                            () =>
-                                StorageHistoryDetailsService.AddSnapshot(
-                                    rootEntry.FullPath,
-                                    storageHistoryRecordedAtUtc.Value,
-                                    storageHistoryDetailsSnapshot));
-                    }
-
-                    if (storageHistoryRecordedAtUtc.HasValue &&
-                        storageHistoryView != null &&
-                        !storageHistoryView.IsDisposed)
-                    {
-                        storageHistoryView.RefreshHistory();
-                    }
-                }
-                finally
-                {
-                    storageHistoryPostProcessingTimer.Stop();
-                }
-
-                uiTransitionPhaseStopwatch.Stop();
-
-                TimeSpan storageHistoryRecordElapsed =
-                    uiTransitionPhaseStopwatch.Elapsed;
-
-                uiTransitionPhaseStopwatch.Restart();
                 _treeEntryController.FlushPendingLiveTreeUpdate();
                 uiTransitionPhaseStopwatch.Stop();
 
@@ -1924,6 +1791,283 @@ namespace c2flux
                     finalStatusElapsed =
                         uiTransitionPhaseStopwatch.Elapsed;
                 }
+
+                uiTransitionPhaseStopwatch.Restart();
+
+                FileSystemEntry storageHistoryDetailsSnapshot = null;
+                bool storageHistoryDetailsSavingTitleActive = false;
+                bool storageHistoryDetailsProgressActive = false;
+                IProgress<double> storageHistoryDetailsOverallProgress = null;
+                int storageHistoryDetailsLastDisplayedPercent = -1;
+
+                try
+                {
+                    if (_settings.StorageHistoryDetailsEnabled)
+                    {
+                        storageHistoryDetailsOverallProgress =
+                            new Progress<double>(
+                                percent =>
+                                {
+                                    if (!storageHistoryDetailsProgressActive ||
+                                        !IsCurrentScanSession(session) ||
+                                        !IsSelectedScanPath(session.RootPath))
+                                    {
+                                        return;
+                                    }
+
+                                    double normalizedPercent =
+                                        Math.Max(
+                                            0D,
+                                            Math.Min(
+                                                100D,
+                                                percent));
+
+                                    int displayedPercent =
+                                        (int)Math.Round(
+                                            normalizedPercent);
+
+                                    if (displayedPercent <=
+                                        storageHistoryDetailsLastDisplayedPercent)
+                                    {
+                                        return;
+                                    }
+
+                                    storageHistoryDetailsLastDisplayedPercent =
+                                        displayedPercent;
+
+                                    _statusMainFormController.SetStorageHistoryPostProcessingProgress(
+                                        displayedPercent / 100F,
+                                        session.ScanStopwatch?.Elapsed,
+                                        true);
+
+                                    Text =
+                                        "Saving History details to SQLite-DB " +
+                                        displayedPercent.ToString() +
+                                        "%";
+                                });
+
+                        storageHistoryDetailsSnapshot = rootEntry;
+
+                        try
+                        {
+                            C2FluxScanner storageHistoryDetailsScanner =
+                                new C2FluxScanner(_settings);
+
+                            storageHistoryDetailsSavingTitleActive = true;
+                            storageHistoryDetailsProgressActive = true;
+
+                            storageHistoryDetailsOverallProgress.Report(
+                                0D);
+
+                            IProgress<double> storageHistoryDetailsSnapshotProgress =
+                                new Progress<double>(
+                                    snapshotPercent =>
+                                    {
+                                        double normalizedSnapshotPercent =
+                                            Math.Max(
+                                                0D,
+                                                Math.Min(
+                                                    100D,
+                                                    snapshotPercent));
+
+                                        storageHistoryDetailsOverallProgress.Report(
+                                            normalizedSnapshotPercent *
+                                            0.25D);
+                                    });
+
+                            Stopwatch storageHistoryDetailsMftStopwatch =
+                                Stopwatch.StartNew();
+
+                            FileSystemEntry ntfsStorageHistoryDetailsSnapshot =
+                                await storageHistoryDetailsScanner
+                                    .CaptureStorageHistoryDetailsSnapshotAsync(
+                                        rootEntry.FullPath,
+                                        session.CancellationTokenSource.Token,
+                                        storageHistoryDetailsSnapshotProgress);
+
+                            storageHistoryDetailsMftStopwatch.Stop();
+
+                            System.Diagnostics.Debug.WriteLine(
+                                "StorageHistory Timing: " +
+                                $"MFT attempt={storageHistoryDetailsMftStopwatch.Elapsed.TotalMilliseconds:F0} ms");
+
+                            if (ntfsStorageHistoryDetailsSnapshot != null)
+                            {
+                                storageHistoryDetailsSnapshot =
+                                    ntfsStorageHistoryDetailsSnapshot;
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch (Exception exception)
+                        {
+                            try
+                            {
+                                NtQueryDirectoryScanner storageHistoryDetailsFallbackScanner =
+                                    new NtQueryDirectoryScanner(_settings);
+
+                                int storageHistoryDetailsFallbackStartPercent =
+                                    Math.Max(
+                                        0,
+                                        storageHistoryDetailsLastDisplayedPercent);
+
+                                long storageHistoryDetailsFallbackTargetBytes =
+                                    Math.Max(
+                                        1L,
+                                        rootEntry.SizeBytes);
+
+                                IProgress<ScanProgress> storageHistoryDetailsFallbackProgress =
+                                    new Progress<ScanProgress>(
+                                        fallbackProgress =>
+                                        {
+                                            if (fallbackProgress == null)
+                                                return;
+
+                                            double fallbackRatio =
+                                                Math.Max(
+                                                    0D,
+                                                    Math.Min(
+                                                        1D,
+                                                        (double)fallbackProgress.ScannedBytes /
+                                                        storageHistoryDetailsFallbackTargetBytes));
+
+                                            double fallbackOverallPercent =
+                                                storageHistoryDetailsFallbackStartPercent +
+                                                ((25D -
+                                                  storageHistoryDetailsFallbackStartPercent) *
+                                                 fallbackRatio);
+
+                                            storageHistoryDetailsOverallProgress.Report(
+                                                fallbackOverallPercent);
+                                        });
+
+                                Stopwatch storageHistoryDetailsFallbackStopwatch =
+                                    Stopwatch.StartNew();
+
+                                FileSystemEntry fallbackStorageHistoryDetailsSnapshot =
+                                    await storageHistoryDetailsFallbackScanner.ScanAsync(
+                                        rootEntry.FullPath,
+                                        storageHistoryDetailsFallbackProgress,
+                                        session.CancellationTokenSource.Token,
+                                        session.PauseTokenSource.Token,
+                                        false);
+
+                                storageHistoryDetailsFallbackStopwatch.Stop();
+
+                                System.Diagnostics.Debug.WriteLine(
+                                    "StorageHistory Timing: " +
+                                    $"Fallback scan={storageHistoryDetailsFallbackStopwatch.Elapsed.TotalMilliseconds:F0} ms");
+
+                                storageHistoryDetailsOverallProgress.Report(
+                                    25D);
+
+                                if (fallbackStorageHistoryDetailsSnapshot != null)
+                                {
+                                    storageHistoryDetailsSnapshot =
+                                        fallbackStorageHistoryDetailsSnapshot;
+                                }
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                throw;
+                            }
+                            catch (Exception fallbackException)
+                            {
+                                AppAlertLog.AddError(
+                                    "StorageHistory",
+                                    "Storage History details snapshot could not be captured.",
+                                    "Path: " + rootEntry.FullPath +
+                                    Environment.NewLine +
+                                    "MFT snapshot error:" +
+                                    Environment.NewLine +
+                                    exception +
+                                    Environment.NewLine +
+                                    Environment.NewLine +
+                                    "Fallback snapshot error:" +
+                                    Environment.NewLine +
+                                    fallbackException);
+                            }
+                        }
+                    }
+
+                    DateTime? storageHistoryRecordedAtUtc =
+                        StorageHistoryService.AddRecord(
+                            rootEntry.FullPath,
+                            rootEntry.SizeBytes);
+
+                    if (storageHistoryRecordedAtUtc.HasValue &&
+                        _settings.StorageHistoryDetailsEnabled &&
+                        storageHistoryDetailsSnapshot != null)
+                    {
+                        IProgress<double> storageHistoryDetailsSaveProgress =
+                            new Progress<double>(
+                                savePercent =>
+                                {
+                                    double normalizedSavePercent =
+                                        Math.Max(
+                                            0D,
+                                            Math.Min(
+                                                100D,
+                                                savePercent));
+
+                                    storageHistoryDetailsOverallProgress.Report(
+                                        25D +
+                                        (normalizedSavePercent * 0.75D));
+                                });
+
+                        storageHistoryDetailsSavingTitleActive = true;
+
+                        storageHistoryDetailsOverallProgress.Report(
+                            25D);
+
+                        Stopwatch storageHistoryDetailsSaveStopwatch =
+                            Stopwatch.StartNew();
+
+                        await Task.Run(
+                            () =>
+                                StorageHistoryDetailsService.AddSnapshot(
+                                    rootEntry.FullPath,
+                                    storageHistoryRecordedAtUtc.Value,
+                                    storageHistoryDetailsSnapshot,
+                                    storageHistoryDetailsSaveProgress,
+                                    _settings.StorageHistoryDetailsAutoCompactEnabled,
+                                    _settings.StorageHistoryDetailsAutoPurgeEnabled,
+                                    _settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays,
+                                    _settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive));
+
+                        storageHistoryDetailsSaveStopwatch.Stop();
+
+                        System.Diagnostics.Debug.WriteLine(
+                            "StorageHistory Timing: " +
+                            $"AddSnapshot total={storageHistoryDetailsSaveStopwatch.Elapsed.TotalMilliseconds:F0} ms");
+                    }
+
+                    if (storageHistoryRecordedAtUtc.HasValue &&
+                        storageHistoryView != null &&
+                        !storageHistoryView.IsDisposed)
+                    {
+                        storageHistoryView.RefreshHistory();
+                    }
+                }
+                finally
+                {
+                    storageHistoryDetailsProgressActive = false;
+
+                    if (storageHistoryDetailsSavingTitleActive &&
+                        IsCurrentScanSession(session) &&
+                        IsSelectedScanPath(session.RootPath))
+                    {
+                        Text =
+                            AppConstants.FullApplicationName;
+                    }
+                }
+
+                uiTransitionPhaseStopwatch.Stop();
+
+                TimeSpan storageHistoryRecordElapsed =
+                    uiTransitionPhaseStopwatch.Elapsed;
 
                 uiTransitionStopwatch.Stop();
 
@@ -2351,7 +2495,7 @@ namespace c2flux
             toolStripButtonScan.Text = string.Empty;
             AntdThemeService.SetToolTip(toolStripButtonScan, scanning ? LocalizationService.GetText("Toolbar.ScanCancel") : LocalizationService.GetText("Toolbar.ScanStart"));
             toolStripButtonScan.Enabled = true;
-            _driveComboBoxController.SetEnabled(true);
+            _driveComboBoxController.SetEnabled(!scanning);
             toolStripButtonOpenFolder.Enabled = !scanning;
             toolStripButtonPause.Enabled = scanning;
 

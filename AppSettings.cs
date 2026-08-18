@@ -55,7 +55,8 @@ namespace c2flux
 
         public static bool IsSaveBlocked { get; private set; }
 
-        public bool ShowFilesInTree { get; set; }
+        //changed with v1.3.0
+        public bool ShowFilesInTree { get; set; } = true;
         public bool C2FluxScan { get; set; }
         public bool SkipReparsePoints { get; set; } = true;
         public bool ShowPartitionPanel { get; set; } = true;
@@ -135,6 +136,10 @@ namespace c2flux
         public int StorageHistoryWindowHeight { get; set; }
         public int StorageHistoryGradientIntensityPercent { get; set; } = 55;
         public bool StorageHistoryDetailsEnabled { get; set; }
+        public bool StorageHistoryDetailsAutoCompactEnabled { get; set; }
+        public bool StorageHistoryDetailsAutoPurgeEnabled { get; set; }
+        public int StorageHistoryDetailsAutoPurgeMaximumAgeDays { get; set; } = 90;
+        public int StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive { get; set; } = 20;
         public string StorageHistoryRangeMode { get; set; } = "Last30Days";
         public DateTime StorageHistoryCustomFromDate { get; set; } = DateTime.Today.AddDays(-29);
         public DateTime StorageHistoryCustomToDate { get; set; } = DateTime.Today;
@@ -233,6 +238,12 @@ namespace c2flux
                 settings.ScanHistoryMaximumScansPerPath = Math.Max(
                     1,
                     settings.ScanHistoryMaximumScansPerPath);
+                settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays = Math.Max(
+                    1,
+                    settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays);
+                settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive = Math.Max(
+                    1,
+                    settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive);
                 settings.MaximumLogFileSizeMb = Math.Max(
                     1,
                     settings.MaximumLogFileSizeMb);

@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -23,10 +23,13 @@ public sealed partial class NtfsReader
     internal async Task InitializeAsync(
         DriveInfo driveInfo,
         RetrieveMode retrieveMode,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        uint mftReadBufferSizeBytes = 0,
+        IProgress<double> progress = null)
     {
         _driveInfo = driveInfo;
         _retrieveMode = retrieveMode;
+        _mftReadBufferSizeBytes = mftReadBufferSizeBytes;
         _driveRootPrefix = _driveInfo.Name.TrimEnd(['\\']);
 
         var builder = new StringBuilder(1024);
@@ -59,8 +62,17 @@ public sealed partial class NtfsReader
 
         try
         {
+            progress?.Report(0D);
+
             await InitializeDiskInfoAsync(cancellationToken).ConfigureAwait(false);
-            _nodes = await ProcessMftAsync(cancellationToken).ConfigureAwait(false);
+
+            progress?.Report(1D);
+
+            _nodes = await ProcessMftAsync(
+                cancellationToken,
+                progress).ConfigureAwait(false);
+
+            progress?.Report(100D);
         }
         finally
         {
@@ -150,7 +162,8 @@ public sealed partial class NtfsReader
 
     private async Task<byte[]> ProcessBitmapDataAsync(
         List<Stream> mftStreams,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<double> progress = null)
     {
         ulong vcn = 0;
         ulong maxMftBitmapBytes = 0;
@@ -170,6 +183,7 @@ public sealed partial class NtfsReader
 
         vcn = 0;
         ulong realVcn = 0;
+        ulong processedBitmapBytes = 0;
 
         foreach (Fragment fragment in bitmapStream.Fragments)
         {
@@ -183,6 +197,15 @@ public sealed partial class NtfsReader
                     .ConfigureAwait(false);
 
                 realVcn += fragment.NextVcn - vcn;
+                processedBitmapBytes += (ulong)length;
+
+                if (maxMftBitmapBytes > 0)
+                {
+                    progress?.Report(
+                        1D +
+                        ((double)processedBitmapBytes /
+                         maxMftBitmapBytes));
+                }
             }
 
             vcn = fragment.NextVcn;
@@ -197,9 +220,14 @@ public sealed partial class NtfsReader
     /// parsing runs synchronously between reads and never crosses an await point while
     /// holding a pinned pointer.
     /// </summary>
-    private async Task<Node[]> ProcessMftAsync(CancellationToken cancellationToken)
+    private async Task<Node[]> ProcessMftAsync(
+        CancellationToken cancellationToken,
+        IProgress<double> progress = null)
     {
-        uint bufferSize = (Environment.OSVersion.Version.Major >= 6 ? 256u : 64u) * 1024;
+        uint bufferSize =
+            _mftReadBufferSizeBytes > 0
+                ? _mftReadBufferSizeBytes
+                : (Environment.OSVersion.Version.Major >= 6 ? 256u : 64u) * 1024;
 
         // Rent a buffer from the shared pool to avoid a large heap allocation.
         // ArrayPool may return a larger array; always use bufferSize for sizing, not data.Length.
@@ -229,9 +257,14 @@ public sealed partial class NtfsReader
         // ProcessBitmapDataAsync would throw "No Bitmap Data".  Fall back to extracting the
         // bytes directly from the managed byte[] that is still in `data`.
         _bitmapData = SearchStream(mftStreams, AttributeType.AttributeBitmap) != null
-            ? await ProcessBitmapDataAsync(mftStreams, cancellationToken).ConfigureAwait(false)
+            ? await ProcessBitmapDataAsync(
+                mftStreams,
+                cancellationToken,
+                progress).ConfigureAwait(false)
             : TryExtractResidentBitmapDataAt(data, _diskInfo.BytesPerMftRecord)
               ?? throw new Exception("No Bitmap Data");
+
+        progress?.Report(2D);
 
         OnBitmapDataAvailable();
 
@@ -259,10 +292,32 @@ public sealed partial class NtfsReader
         ulong blockStart = 0, blockEnd = 0, realVcn = 0, vcn = 0;
         int fragmentIndex = 0;
         int fragmentCount = dataStream.Fragments.Count;
+        int lastReportedProgressPercent = 1;
 
         for (uint nodeIndex = 1; nodeIndex < maxInode; nodeIndex++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            int currentProgressPercent =
+                maxInode <= 1
+                    ? 100
+                    : 2 +
+                      (int)Math.Floor(
+                          ((double)nodeIndex /
+                           (maxInode - 1D)) *
+                          98D);
+
+            if (currentProgressPercent >
+                lastReportedProgressPercent)
+            {
+                lastReportedProgressPercent =
+                    currentProgressPercent;
+
+                progress?.Report(
+                    Math.Min(
+                        100D,
+                        currentProgressPercent));
+            }
 
             // Skip inodes the bitmap says are free.
             if ((_bitmapData[nodeIndex >> 3] & BitmapMasks[nodeIndex % 8]) == 0)

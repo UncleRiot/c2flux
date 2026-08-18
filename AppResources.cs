@@ -43,7 +43,7 @@ namespace c2flux
                 if (_storageHistoryDetailsPreviewImage == null)
                 {
                     _storageHistoryDetailsPreviewImage = LoadBitmap(
-                        "c2flux.Ressources.storage-history-details.png");
+                        "c2flux.Ressources.scan-history-details.png");
                 }
 
                 return _storageHistoryDetailsPreviewImage;

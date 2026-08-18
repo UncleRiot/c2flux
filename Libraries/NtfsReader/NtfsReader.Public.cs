@@ -141,13 +141,20 @@ public sealed partial class NtfsReader
     public static async Task<NtfsReader> CreateAsync(
         DriveInfo driveInfo,
         RetrieveMode retrieveMode,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        uint mftReadBufferSizeBytes = 0,
+        IProgress<double> progress = null)
     {
         if (driveInfo == null)
             throw new ArgumentNullException(nameof(driveInfo));
 
         var reader = new NtfsReader();
-        await reader.InitializeAsync(driveInfo, retrieveMode, cancellationToken).ConfigureAwait(false);
+        await reader.InitializeAsync(
+            driveInfo,
+            retrieveMode,
+            cancellationToken,
+            mftReadBufferSizeBytes,
+            progress).ConfigureAwait(false);
         return reader;
     }
 

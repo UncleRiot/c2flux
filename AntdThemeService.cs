@@ -681,7 +681,7 @@ namespace c2flux
         public const int SettingsDialogGeneralTabHeight = 32;
 
         // Tab Export
-        public const int SettingsDialogExportTabLeft = 102;
+        public const int SettingsDialogExportTabLeft = 290;
         public const int SettingsDialogExportTabTop = 16;
         public const int SettingsDialogExportTabWidth = 80;
         public const int SettingsDialogExportTabHeight = 32;
@@ -693,13 +693,13 @@ namespace c2flux
         public const int SettingsDialogColorsTabHeight = 32;
 
         // Tab UI
-        public const int SettingsDialogUiTabLeft = 186;
+        public const int SettingsDialogUiTabLeft = 102;
         public const int SettingsDialogUiTabTop = 16;
         public const int SettingsDialogUiTabWidth = 80;
         public const int SettingsDialogUiTabHeight = 32;
 
         // Tab Statistics
-        public const int SettingsDialogStatisticsTabLeft = 270;
+        public const int SettingsDialogStatisticsTabLeft = 186;
         public const int SettingsDialogStatisticsTabTop = 16;
         public const int SettingsDialogStatisticsTabWidth = 100;
         public const int SettingsDialogStatisticsTabHeight = 32;
@@ -845,104 +845,104 @@ namespace c2flux
 
         // Checkbox Show files in tree
         public const int SettingsGeneralShowFilesCheckboxLeft = 24;
-        public const int SettingsGeneralShowFilesCheckboxTop = 24;
+        public const int SettingsGeneralShowFilesCheckboxTop = 64;
         public const int SettingsGeneralShowFilesCheckboxWidth = 420;
         public const int SettingsGeneralShowFilesCheckboxHeight = 24;
 
         // Checkbox c²flux Scan
         public const int SettingsGeneralC2FluxScanCheckboxLeft = 24;
-        public const int SettingsGeneralC2FluxScanCheckboxTop = 60;
+        public const int SettingsGeneralC2FluxScanCheckboxTop = 100;
         public const int SettingsGeneralC2FluxScanCheckboxWidth = 360;
         public const int SettingsGeneralC2FluxScanCheckboxHeight = 24;
 
         // Button c²flux Scan help
         public const int SettingsGeneralC2FluxScanHelpButtonLeft = 145;
-        public const int SettingsGeneralC2FluxScanHelpButtonTop = 60;
+        public const int SettingsGeneralC2FluxScanHelpButtonTop = 100;
         public const int SettingsGeneralC2FluxScanHelpButtonWidth = 24;
         public const int SettingsGeneralC2FluxScanHelpButtonHeight = 24;
         public const int SettingsGeneralC2FluxScanHelpButtonRadius = 12;
 
         // Checkbox Skip reparse points
         public const int SettingsGeneralSkipReparsePointsCheckboxLeft = 24;
-        public const int SettingsGeneralSkipReparsePointsCheckboxTop = 96;
+        public const int SettingsGeneralSkipReparsePointsCheckboxTop = 136;
         public const int SettingsGeneralSkipReparsePointsCheckboxWidth = 420;
         public const int SettingsGeneralSkipReparsePointsCheckboxHeight = 24;
 
         // Checkbox Show partition panel
         public const int SettingsGeneralShowPartitionPanelCheckboxLeft = 24;
-        public const int SettingsGeneralShowPartitionPanelCheckboxTop = 132;
+        public const int SettingsGeneralShowPartitionPanelCheckboxTop = 172;
         public const int SettingsGeneralShowPartitionPanelCheckboxWidth = 420;
         public const int SettingsGeneralShowPartitionPanelCheckboxHeight = 24;
 
         // Checkbox Start elevated
         public const int SettingsGeneralStartElevatedCheckboxLeft = 24;
-        public const int SettingsGeneralStartElevatedCheckboxTop = 168;
+        public const int SettingsGeneralStartElevatedCheckboxTop = 172;
         public const int SettingsGeneralStartElevatedCheckboxWidth = 420;
         public const int SettingsGeneralStartElevatedCheckboxHeight = 24;
 
         // Checkbox Show elevation prompt
         public const int SettingsGeneralShowElevationPromptCheckboxLeft = 24;
-        public const int SettingsGeneralShowElevationPromptCheckboxTop = 204;
+        public const int SettingsGeneralShowElevationPromptCheckboxTop = 208;
         public const int SettingsGeneralShowElevationPromptCheckboxWidth = 420;
         public const int SettingsGeneralShowElevationPromptCheckboxHeight = 24;
 
         // Checkbox Explorer context menu: Scan drive
         public const int SettingsGeneralShellContextMenuCheckboxLeft = 24;
-        public const int SettingsGeneralShellContextMenuCheckboxTop = 240;
+        public const int SettingsGeneralShellContextMenuCheckboxTop = 244;
         public const int SettingsGeneralShellContextMenuCheckboxWidth = 420;
         public const int SettingsGeneralShellContextMenuCheckboxHeight = 24;
 
         // Checkbox Explorer context menu: Search
         public const int SettingsGeneralShellSearchContextMenuCheckboxLeft = 24;
-        public const int SettingsGeneralShellSearchContextMenuCheckboxTop = 276;
+        public const int SettingsGeneralShellSearchContextMenuCheckboxTop = 280;
         public const int SettingsGeneralShellSearchContextMenuCheckboxWidth = 420;
         public const int SettingsGeneralShellSearchContextMenuCheckboxHeight = 24;
 
         // Checkbox Auto check for updates
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxLeft = 24;
-        public const int SettingsGeneralAutoCheckForUpdatesCheckboxTop = 312;
+        public const int SettingsGeneralAutoCheckForUpdatesCheckboxTop = 316;
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxWidth = 420;
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxHeight = 24;
 
         // Text Language
         public const int SettingsGeneralLanguageLabelLeft = 34;
-        public const int SettingsGeneralLanguageLabelTop = 358;
+        public const int SettingsGeneralLanguageLabelTop = 26;
         public const int SettingsGeneralLanguageLabelWidth = 70;
         public const int SettingsGeneralLanguageLabelHeight = 32;
 
         // Auswahlfeld Language
         public const int SettingsGeneralLanguageSelectLeft = 104;
-        public const int SettingsGeneralLanguageSelectTop = 356;
+        public const int SettingsGeneralLanguageSelectTop = 24;
         public const int SettingsGeneralLanguageSelectWidth = 216;
         public const int SettingsGeneralLanguageSelectHeight = 32;
 
         // Button Add language
         public const int SettingsGeneralAddLanguageButtonLeft = 320;
-        public const int SettingsGeneralAddLanguageButtonTop = 356;
+        public const int SettingsGeneralAddLanguageButtonTop = 24;
         public const int SettingsGeneralAddLanguageButtonWidth = 32;
         public const int SettingsGeneralAddLanguageButtonHeight = 32;
 
         // Button Delete language
         public const int SettingsGeneralDeleteLanguageButtonLeft = 346;
-        public const int SettingsGeneralDeleteLanguageButtonTop = 356;
+        public const int SettingsGeneralDeleteLanguageButtonTop = 24;
         public const int SettingsGeneralDeleteLanguageButtonWidth = 32;
         public const int SettingsGeneralDeleteLanguageButtonHeight = 32;
 
         // Text Layout
         public const int SettingsGeneralLayoutLabelLeft = 34;
-        public const int SettingsGeneralLayoutLabelTop = 398;
+        public const int SettingsGeneralLayoutLabelTop = 358;
         public const int SettingsGeneralLayoutLabelWidth = 70;
         public const int SettingsGeneralLayoutLabelHeight = 32;
 
         // Auswahlfeld Layout
         public const int SettingsGeneralLayoutSelectLeft = 104;
-        public const int SettingsGeneralLayoutSelectTop = 396;
+        public const int SettingsGeneralLayoutSelectTop = 356;
         public const int SettingsGeneralLayoutSelectWidth = 216;
         public const int SettingsGeneralLayoutSelectHeight = 32;
 
         // Scrollbereich General
         public const int SettingsGeneralScrollContentWidth = 460;
-        public const int SettingsGeneralScrollContentHeight = 452;
+        public const int SettingsGeneralScrollContentHeight = 412;
 
         // ============================================================
         // Settings - Export
@@ -1002,20 +1002,20 @@ namespace c2flux
 
         // Text Bar chart height
         public const int SettingsUiBarChartHeightLabelLeft = 34;
-        public const int SettingsUiBarChartHeightLabelTop = 76;
+        public const int SettingsUiBarChartHeightLabelTop = 62;
         public const int SettingsUiBarChartHeightLabelWidth = 120;
         public const int SettingsUiBarChartHeightLabelHeight = 28;
 
         // Eingabefeld Bar chart height
         public const int SettingsUiBarChartHeightInputLeft = 150;
-        public const int SettingsUiBarChartHeightInputTop = 74;
+        public const int SettingsUiBarChartHeightInputTop = 60;
         public const int SettingsUiBarChartHeightInputWidth = 56;
         public const int SettingsUiBarChartHeightInputHeight = 34;
 
         // Text Default bar chart height
         public const int SettingsUiBarChartHeightDefaultLabelLeft = 210;
         
-        public const int SettingsUiBarChartHeightDefaultLabelTop = 76;
+        public const int SettingsUiBarChartHeightDefaultLabelTop = 62;
         public const int SettingsUiBarChartHeightDefaultLabelWidth = 160;
         public const int SettingsUiBarChartHeightDefaultLabelHeight = 28;
 
@@ -1056,6 +1056,54 @@ namespace c2flux
         public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipMaximumWidth = 500;
         public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipPadding = 10;
         public const int SettingsStatisticsStorageHistoryDetailsHelpToolTipTextImageSpacing = 8;
+
+        // Text Storage History details database size
+        public const int SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelLeft = 32;
+        public const int SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelTop = 60;
+        public const int SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelWidth = 400;
+        public const int SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelHeight = 24;
+
+        // Text Storage History details reusable space
+        public const int SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelLeft = 32;
+        public const int SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelTop = 88;
+        public const int SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelWidth = 400;
+        public const int SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelHeight = 24;
+
+        // Checkbox Storage History details auto-compact
+        public const int SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxLeft = 24;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxTop = 124;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxWidth = 250;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxHeight = 24;
+
+        // Checkbox Storage History details auto-purge
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxLeft = 24;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxTop = 160;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxWidth = 250;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxHeight = 24;
+
+        // Text Storage History details auto-purge maximum age
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelLeft = 32;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelTop = 196;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelWidth = 220;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelHeight = 32;
+
+        // Input Storage History details auto-purge maximum age
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputLeft = 261;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputTop = 196;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputWidth = 60;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputHeight = 32;
+
+        // Text Storage History details auto-purge maximum snapshots
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelLeft = 32;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelTop = 232;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelWidth = 220;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelHeight = 32;
+
+        // Input Storage History details auto-purge maximum snapshots
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputLeft = 261;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputTop = 232;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputWidth = 60;
+        public const int SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputHeight = 32;
 
         // Text Database path
         public const int SettingsStatisticsDatabasePathLabelLeft = 32;

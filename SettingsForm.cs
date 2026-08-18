@@ -74,6 +74,14 @@ namespace c2flux
         private AntdUI.Input textBoxScanHistoryDatabasePath;
         private AntdUI.Button buttonBrowseScanHistoryDatabasePath;
         private AntdUI.Label labelScanHistoryDatabaseSize;
+        private AntdUI.Label labelStorageHistoryDetailsDatabaseSize;
+        private AntdUI.Label labelStorageHistoryDetailsReusableSpace;
+        private AntdUI.Checkbox checkBoxStorageHistoryDetailsAutoCompact;
+        private AntdUI.Checkbox checkBoxStorageHistoryDetailsAutoPurge;
+        private AntdUI.Label labelStorageHistoryDetailsAutoPurgeMaximumAgeDays;
+        private AntdUI.Input textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays;
+        private AntdUI.Label labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive;
+        private AntdUI.Input textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive;
         private AntdUI.Label labelScanHistoryMaximumScansPerPath;
         private AntdUI.Input textBoxScanHistoryMaximumScansPerPath;
         private AntdUI.Label labelLogLevel;
@@ -687,7 +695,7 @@ namespace c2flux
             {
                 Name = "labelSunburstDepth",
                 Text = LocalizationService.GetText("Settings.SunburstDepth"),
-                Location = new Point(34, 118),
+                Location = new Point(34, 98),
                 Size = new Size(120, 28),
                 TextAlign = ContentAlignment.MiddleLeft
             };
@@ -695,7 +703,7 @@ namespace c2flux
             textBoxSunburstDepth = new AntdUI.Input
             {
                 Name = "textBoxSunburstDepth",
-                Location = new Point(150, 116),
+                Location = new Point(150, 96),
                 Size = new Size(56, 34),
                 TextAlign = HorizontalAlignment.Right,
                 MaxLength = 2
@@ -705,7 +713,7 @@ namespace c2flux
             {
                 Name = "labelSunburstDepthHint",
                 Text = LocalizationService.GetText("Settings.SunburstDepthHint"),
-                Location = new Point(210, 118),
+                Location = new Point(210, 98),
                 Size = new Size(220, 28),
                 TextAlign = ContentAlignment.MiddleLeft
             };
@@ -714,7 +722,7 @@ namespace c2flux
             {
                 Name = "labelSunburstMaxItems",
                 Text = LocalizationService.GetText("Settings.SunburstMaxItems"),
-                Location = new Point(34, 160),
+                Location = new Point(34, 134),
                 Size = new Size(120, 28),
                 TextAlign = ContentAlignment.MiddleLeft
             };
@@ -722,7 +730,7 @@ namespace c2flux
             textBoxSunburstMaxItems = new AntdUI.Input
             {
                 Name = "textBoxSunburstMaxItems",
-                Location = new Point(150, 158),
+                Location = new Point(150, 132),
                 Size = new Size(80, 34),
                 TextAlign = HorizontalAlignment.Right,
                 MaxLength = 5
@@ -790,6 +798,8 @@ namespace c2flux
                     this,
                     28) +
                 storageHistoryDetailsTextWidth;
+            checkBoxStorageHistoryDetails.CheckedChanged +=
+                checkBoxStorageHistoryDetails_CheckedChanged;
 
             buttonStorageHistoryDetailsHelp = new AntdUI.Button
             {
@@ -821,6 +831,104 @@ namespace c2flux
                 buttonStorageHistoryDetailsHelp,
                 LocalizationService.GetText(
                     "Settings.StorageHistoryDetailsHelp"));
+
+            labelStorageHistoryDetailsDatabaseSize = new AntdUI.Label
+            {
+                Name = "labelStorageHistoryDetailsDatabaseSize",
+                Location = new Point(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelLeft,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelTop),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsDatabaseSizeLabelHeight),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            labelStorageHistoryDetailsReusableSpace = new AntdUI.Label
+            {
+                Name = "labelStorageHistoryDetailsReusableSpace",
+                Location = new Point(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelLeft,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelTop),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsReusableSpaceLabelHeight),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            checkBoxStorageHistoryDetailsAutoCompact = AntdThemeService.CreateSettingsCheckBox(
+                "checkBoxStorageHistoryDetailsAutoCompact",
+                LocalizationService.GetText("Settings.StorageHistoryDetailsAutoCompact"),
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxLeft,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxTop,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxWidth,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoCompactCheckboxHeight,
+                backgroundSecondary);
+
+            checkBoxStorageHistoryDetailsAutoPurge = AntdThemeService.CreateSettingsCheckBox(
+                "checkBoxStorageHistoryDetailsAutoPurge",
+                LocalizationService.GetText("Settings.StorageHistoryDetailsAutoPurge"),
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxLeft,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxTop,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxWidth,
+                AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeCheckboxHeight,
+                backgroundSecondary);
+            checkBoxStorageHistoryDetailsAutoPurge.CheckedChanged +=
+                checkBoxStorageHistoryDetailsAutoPurge_CheckedChanged;
+
+            labelStorageHistoryDetailsAutoPurgeMaximumAgeDays = new AntdUI.Label
+            {
+                Name = "labelStorageHistoryDetailsAutoPurgeMaximumAgeDays",
+                Text = LocalizationService.GetText(
+                    "Settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays"),
+                Location = new Point(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelLeft,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelTop),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeLabelHeight),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays = new AntdUI.Input
+            {
+                Name = "textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays",
+                Location = new Point(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputLeft,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputTop),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumAgeInputHeight),
+                TextAlign = HorizontalAlignment.Right,
+                MaxLength = 5
+            };
+
+            labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive = new AntdUI.Label
+            {
+                Name = "labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive",
+                Text = LocalizationService.GetText(
+                    "Settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive"),
+                Location = new Point(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelLeft,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelTop),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsLabelHeight),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive = new AntdUI.Input
+            {
+                Name = "textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive",
+                Location = new Point(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputLeft,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputTop),
+                Size = new Size(
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputWidth,
+                    AntdThemeService.SettingsStatisticsStorageHistoryDetailsAutoPurgeMaximumSnapshotsInputHeight),
+                TextAlign = HorizontalAlignment.Right,
+                MaxLength = 5
+            };
 
             labelScanHistoryDatabasePath = new AntdUI.Label
             {
@@ -983,7 +1091,6 @@ namespace c2flux
             panelGeneral.Controls.Add(checkBoxC2FluxScan);
             panelGeneral.Controls.Add(buttonC2FluxScanHelp);
             panelGeneral.Controls.Add(checkBoxSkipReparsePoints);
-            panelGeneral.Controls.Add(checkBoxShowPartitionPanel);
             panelGeneral.Controls.Add(checkBoxStartElevatedOnStartup);
             panelGeneral.Controls.Add(checkBoxShowElevationPromptOnStartup);
             panelGeneral.Controls.Add(checkBoxShellContextMenuEnabled);
@@ -1017,11 +1124,18 @@ namespace c2flux
             panelLayout.Controls.Add(labelSunburstDepthHint);
             panelLayout.Controls.Add(labelSunburstMaxItems);
             panelLayout.Controls.Add(textBoxSunburstMaxItems);
+            panelLayout.Controls.Add(checkBoxShowPartitionPanel);
 
-            panelStatistics.Controls.Add(checkBoxSaveScanHistory);
-            panelStatistics.Controls.Add(buttonSaveScanHistoryHelp);
             panelStatistics.Controls.Add(checkBoxStorageHistoryDetails);
             panelStatistics.Controls.Add(buttonStorageHistoryDetailsHelp);
+            panelStatistics.Controls.Add(labelStorageHistoryDetailsDatabaseSize);
+            panelStatistics.Controls.Add(labelStorageHistoryDetailsReusableSpace);
+            panelStatistics.Controls.Add(checkBoxStorageHistoryDetailsAutoCompact);
+            panelStatistics.Controls.Add(checkBoxStorageHistoryDetailsAutoPurge);
+            panelStatistics.Controls.Add(labelStorageHistoryDetailsAutoPurgeMaximumAgeDays);
+            panelStatistics.Controls.Add(textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays);
+            panelStatistics.Controls.Add(labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive);
+            panelStatistics.Controls.Add(textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive);
             panelStatistics.Controls.Add(labelScanHistoryDatabasePath);
             panelStatistics.Controls.Add(textBoxScanHistoryDatabasePath);
             panelStatistics.Controls.Add(buttonBrowseScanHistoryDatabasePath);
@@ -1110,6 +1224,7 @@ namespace c2flux
 
         private void buttonStatisticsTab_Click(object sender, EventArgs e)
         {
+            UpdateStorageHistoryDetailsDatabaseInfo();
             ShowPage(panelStatistics);
         }
 
@@ -1129,6 +1244,80 @@ namespace c2flux
             labelMaximumLogFileSizeMb.Enabled = autoSaveLog;
             textBoxMaximumLogFileSizeMb.Enabled = autoSaveLog;
             labelMaximumLogFileSizeUnit.Enabled = autoSaveLog;
+        }
+
+        private void checkBoxStorageHistoryDetails_CheckedChanged(
+            object sender,
+            EventArgs e)
+        {
+            UpdateStorageHistoryDetailsAutoPurgeControls();
+        }
+
+        private void checkBoxStorageHistoryDetailsAutoPurge_CheckedChanged(
+            object sender,
+            EventArgs e)
+        {
+            UpdateStorageHistoryDetailsAutoPurgeControls();
+        }
+
+        private void UpdateStorageHistoryDetailsAutoPurgeControls()
+        {
+            bool storageHistoryDetailsEnabled =
+                checkBoxStorageHistoryDetails.Checked;
+            bool autoPurgeEnabled =
+                storageHistoryDetailsEnabled &&
+                checkBoxStorageHistoryDetailsAutoPurge.Checked;
+
+            labelStorageHistoryDetailsDatabaseSize.Enabled =
+                storageHistoryDetailsEnabled;
+            labelStorageHistoryDetailsReusableSpace.Enabled =
+                storageHistoryDetailsEnabled;
+            checkBoxStorageHistoryDetailsAutoCompact.Enabled =
+                storageHistoryDetailsEnabled;
+            checkBoxStorageHistoryDetailsAutoPurge.Enabled =
+                storageHistoryDetailsEnabled;
+            labelStorageHistoryDetailsAutoPurgeMaximumAgeDays.Enabled =
+                autoPurgeEnabled;
+            textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays.Enabled =
+                autoPurgeEnabled;
+            labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Enabled =
+                autoPurgeEnabled;
+            textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Enabled =
+                autoPurgeEnabled;
+        }
+
+        private void UpdateStorageHistoryDetailsDatabaseInfo()
+        {
+            string databaseSize =
+                LocalizationService.GetText(
+                    "Settings.DatabaseSizeUnavailable");
+            string reusableSpace =
+                LocalizationService.GetText(
+                    "Settings.DatabaseSizeUnavailable");
+
+            if (StorageHistoryDetailsService.TryGetDatabaseStorageInfo(
+                out long databaseSizeBytes,
+                out long reusableSpaceBytes))
+            {
+                databaseSize =
+                    SizeFormatter.Format(
+                        databaseSizeBytes);
+                reusableSpace =
+                    SizeFormatter.Format(
+                        reusableSpaceBytes);
+            }
+
+            labelStorageHistoryDetailsDatabaseSize.Text =
+                string.Format(
+                    LocalizationService.GetText(
+                        "Settings.StorageHistoryDetailsDatabaseSize"),
+                    databaseSize);
+
+            labelStorageHistoryDetailsReusableSpace.Text =
+                string.Format(
+                    LocalizationService.GetText(
+                        "Settings.StorageHistoryDetailsReusableSpace"),
+                    reusableSpace);
         }
 
         private void checkBoxSaveScanHistory_CheckedChanged(object sender, EventArgs e)
@@ -1548,6 +1737,14 @@ namespace c2flux
                 _settings.ScanHistoryMaximumScansPerPath.ToString();
             checkBoxSaveScanHistory.Checked = _settings.SaveScanHistory;
             checkBoxStorageHistoryDetails.Checked = _settings.StorageHistoryDetailsEnabled;
+            checkBoxStorageHistoryDetailsAutoCompact.Checked =
+                _settings.StorageHistoryDetailsAutoCompactEnabled;
+            checkBoxStorageHistoryDetailsAutoPurge.Checked =
+                _settings.StorageHistoryDetailsAutoPurgeEnabled;
+            textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays.Text =
+                _settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays.ToString();
+            textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Text =
+                _settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.ToString();
             comboBoxLogLevel.SelectedValue = _settings.LogLevel;
             if (comboBoxLogLevel.SelectedIndex < 0)
             {
@@ -1557,6 +1754,8 @@ namespace c2flux
             textBoxMaximumLogFileSizeMb.Text =
                 _settings.MaximumLogFileSizeMb.ToString();
             UpdateScanHistoryDatabasePathVisibility();
+            UpdateStorageHistoryDetailsAutoPurgeControls();
+            UpdateStorageHistoryDetailsDatabaseInfo();
             UpdateLoggingControls();
 
             partitionFillLightColor = Color.FromArgb(_settings.PartitionFillColorLightArgb);
@@ -1621,6 +1820,50 @@ namespace c2flux
                 textBoxMaximumLogFileSizeMb.Focus();
                 textBoxMaximumLogFileSizeMb.SelectAll();
                 return false;
+            }
+
+            int storageHistoryDetailsAutoPurgeMaximumAgeDays =
+                _settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays;
+            int storageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive =
+                _settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive;
+
+            if (checkBoxStorageHistoryDetailsAutoPurge.Checked)
+            {
+                if (!int.TryParse(
+                        textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays.Text.Trim(),
+                        out storageHistoryDetailsAutoPurgeMaximumAgeDays) ||
+                    storageHistoryDetailsAutoPurgeMaximumAgeDays < 1)
+                {
+                    MessageBox.Show(
+                        this,
+                        LocalizationService.GetText(
+                            "Settings.StorageHistoryDetailsAutoPurgeMaximumAgeDaysInvalid"),
+                        Text,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    ShowPage(panelStatistics);
+                    textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays.Focus();
+                    textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays.SelectAll();
+                    return false;
+                }
+
+                if (!int.TryParse(
+                        textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Text.Trim(),
+                        out storageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive) ||
+                    storageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive < 1)
+                {
+                    MessageBox.Show(
+                        this,
+                        LocalizationService.GetText(
+                            "Settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDriveInvalid"),
+                        Text,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    ShowPage(panelStatistics);
+                    textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Focus();
+                    textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.SelectAll();
+                    return false;
+                }
             }
 
             if (!int.TryParse(
@@ -1746,6 +1989,14 @@ namespace c2flux
             _settings.SunburstMaxItems = sunburstMaxItems;
             _settings.SaveScanHistory = checkBoxSaveScanHistory.Checked;
             _settings.StorageHistoryDetailsEnabled = checkBoxStorageHistoryDetails.Checked;
+            _settings.StorageHistoryDetailsAutoCompactEnabled =
+                checkBoxStorageHistoryDetailsAutoCompact.Checked;
+            _settings.StorageHistoryDetailsAutoPurgeEnabled =
+                checkBoxStorageHistoryDetailsAutoPurge.Checked;
+            _settings.StorageHistoryDetailsAutoPurgeMaximumAgeDays =
+                storageHistoryDetailsAutoPurgeMaximumAgeDays;
+            _settings.StorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive =
+                storageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive;
             _settings.ScanHistoryDatabasePath = selectedScanHistoryDatabasePath;
             _settings.ScanHistoryMaximumScansPerPath = scanHistoryMaximumScansPerPath;
             ScanHistoryService.ConfigureRetention(scanHistoryMaximumScansPerPath);

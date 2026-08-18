@@ -13,6 +13,11 @@ namespace c2flux
         private static readonly string HistoryFilePath = System.IO.Path.Combine(
             AppContext.BaseDirectory,
             "ScanHistory",
+            "scan_history.json");
+
+        private static readonly string PreviousHistoryFilePath = System.IO.Path.Combine(
+            AppContext.BaseDirectory,
+            "ScanHistory",
             "storage_history.json");
 
         private static readonly string LegacyHistoryFilePath = System.IO.Path.Combine(
@@ -313,7 +318,7 @@ namespace c2flux
             string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             string backupFilePath = System.IO.Path.Combine(
                 directoryPath,
-                "storage_history.corrupt." + timestamp + ".json");
+                "scan_history.corrupt." + timestamp + ".json");
 
             int suffix = 1;
 
@@ -321,7 +326,7 @@ namespace c2flux
             {
                 backupFilePath = System.IO.Path.Combine(
                     directoryPath,
-                    "storage_history.corrupt." + timestamp + "." + suffix + ".json");
+                    "scan_history.corrupt." + timestamp + "." + suffix + ".json");
 
                 suffix++;
             }
@@ -331,14 +336,23 @@ namespace c2flux
 
         private static void MigrateLegacyHistoryFile()
         {
-            if (File.Exists(HistoryFilePath) ||
-                !File.Exists(LegacyHistoryFilePath))
-            {
+            if (File.Exists(HistoryFilePath))
                 return;
-            }
 
             Directory.CreateDirectory(
                 System.IO.Path.GetDirectoryName(HistoryFilePath));
+
+            if (File.Exists(PreviousHistoryFilePath))
+            {
+                File.Move(
+                    PreviousHistoryFilePath,
+                    HistoryFilePath);
+
+                return;
+            }
+
+            if (!File.Exists(LegacyHistoryFilePath))
+                return;
 
             File.Move(
                 LegacyHistoryFilePath,
