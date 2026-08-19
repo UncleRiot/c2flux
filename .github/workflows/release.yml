@@ -5,6 +5,13 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v1.3.4"
+        required: true
+        type: string
+
 permissions:
   contents: write
 
@@ -13,10 +20,28 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Release-Tag ermitteln
+        id: release_tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+              $tag = "${{ inputs.tag }}"
+          }
+          else {
+              $tag = "${{ github.ref_name }}"
+          }
+
+          if (-not $tag.StartsWith("v")) {
+              throw "Release tag must start with 'v'"
+          }
+
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
       - name: Repository auschecken
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ steps.release_tag.outputs.tag }}
+          fetch-depth: 0
 
       - name: .NET 8 einrichten
         uses: actions/setup-dotnet@v4
@@ -30,7 +55,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = "${{ steps.release_tag.outputs.tag }}"
           $version = $tag.TrimStart("v")
           $baseVersion = $version.Split("-")[0]
           $assemblyVersion = "$baseVersion.0"
@@ -62,7 +87,8 @@ jobs:
       - name: GitHub Release erstellen
         uses: softprops/action-gh-release@v3
         with:
-          name: c2flux ${{ github.ref_name }}
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: c2flux ${{ steps.release_tag.outputs.tag }}
           files: c2flux-v${{ steps.version.outputs.version }}-win-x64.zip
           generate_release_notes: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
@@ -72,8 +98,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = "${{ steps.release_tag.outputs.tag }}"
           $body = gh release view $tag --json body --jq '.body'
+
+          git fetch origin "${{ github.event.repository.default_branch }}"
+          git checkout "${{ github.event.repository.default_branch }}"
+          git pull --ff-only origin "${{ github.event.repository.default_branch }}"
 
           $existing = ""
           if (Test-Path "CHANGELOG.md") {
@@ -88,6 +118,7 @@ jobs:
           }
 
           $section = "$heading`r`n`r`n$body`r`n`r`n"
+
           [System.IO.File]::WriteAllText(
               (Join-Path $PWD "CHANGELOG.md"),
               $section + $existing,
@@ -106,5 +137,5 @@ jobs:
               exit 0
           }
 
-          git commit -m "Update CHANGELOG for ${{ github.ref_name }}"
+          git commit -m "Update CHANGELOG for ${{ steps.release_tag.outputs.tag }}"
           git push origin "HEAD:${{ github.event.repository.default_branch }}"
