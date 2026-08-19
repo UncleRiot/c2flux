@@ -9,7 +9,7 @@ on:
     inputs:
       tag:
         description: "Release tag, e.g. v1.3.4"
-        required: true
+        required: false
         type: string
 
       backfill_changelog:
@@ -27,6 +27,7 @@ jobs:
 
     steps:
       - name: Release-Tag ermitteln
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         id: release_tag
         shell: pwsh
         run: |
@@ -37,27 +38,42 @@ jobs:
               $tag = "${{ github.ref_name }}"
           }
 
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+              throw "Release tag is required"
+          }
+
           if (-not $tag.StartsWith("v")) {
               throw "Release tag must start with 'v'"
           }
 
           "tag=$tag" >> $env:GITHUB_OUTPUT
 
-      - name: Repository auschecken
+      - name: Release-Quellstand auschecken
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.release_tag.outputs.tag }}
           fetch-depth: 0
 
+      - name: Default-Branch für Backfill auschecken
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_changelog }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
       - name: .NET 8 einrichten
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
       - name: Abhängigkeiten wiederherstellen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         run: dotnet restore c2flux.sln
 
       - name: Versionsinformationen ermitteln
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         id: version
         shell: pwsh
         run: |
@@ -72,6 +88,7 @@ jobs:
           "is_prerelease=$($isPrerelease.ToString().ToLower())" >> $env:GITHUB_OUTPUT
 
       - name: Projekt veröffentlichen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         run: >
           dotnet publish c2flux.csproj
           --configuration Release
@@ -84,6 +101,7 @@ jobs:
           -p:InformationalVersion=${{ steps.version.outputs.version }}
 
       - name: ZIP erstellen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         shell: pwsh
         run: |
           Compress-Archive `
@@ -91,6 +109,7 @@ jobs:
             -DestinationPath "c2flux-v${{ steps.version.outputs.version }}-win-x64.zip"
 
       - name: GitHub Release erstellen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release_tag.outputs.tag }}
@@ -99,7 +118,8 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
 
-      - name: Default-Branch für CHANGELOG auschecken
+      - name: Default-Branch für CHANGELOG aktualisieren
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         shell: pwsh
         run: |
           git fetch origin "${{ github.event.repository.default_branch }}"
@@ -197,5 +217,12 @@ jobs:
               exit 0
           }
 
-          git commit -m "Update CHANGELOG for ${{ steps.release_tag.outputs.tag }}"
+          if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ inputs.backfill_changelog }}" -eq "true") {
+              $commitMessage = "Rebuild CHANGELOG from GitHub releases"
+          }
+          else {
+              $commitMessage = "Update CHANGELOG for ${{ steps.release_tag.outputs.tag }}"
+          }
+
+          git commit -m $commitMessage
           git push origin "HEAD:${{ github.event.repository.default_branch }}"
