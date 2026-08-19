@@ -14,6 +14,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 
 
 [![Download c2flux](https://img.shields.io/github/v/release/UncleRiot/c2flux?label=%E2%AC%87%EF%B8%8F%20Download&style=for-the-badge&color=brightgreen)](https://github.com/UncleRiot/c2flux/releases/latest)
+[![Changelog](https://img.shields.io/badge/%F0%9F%93%9D%20Changelog-View-blue?style=for-the-badge)](CHANGELOG.md)
 
 <br>
 <br>
