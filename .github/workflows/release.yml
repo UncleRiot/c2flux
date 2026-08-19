@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: .NET 8 einrichten
         uses: actions/setup-dotnet@v4
@@ -64,3 +66,45 @@ jobs:
           files: c2flux-v${{ steps.version.outputs.version }}-win-x64.zip
           generate_release_notes: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
+
+      - name: CHANGELOG.md aktualisieren
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $body = gh release view $tag --json body --jq '.body'
+
+          $existing = ""
+          if (Test-Path "CHANGELOG.md") {
+              $existing = Get-Content "CHANGELOG.md" -Raw -Encoding UTF8
+          }
+
+          $heading = "## Changelog $tag"
+
+          if ($existing -match [regex]::Escape($heading)) {
+              Write-Host "$heading already exists"
+              exit 0
+          }
+
+          $section = "$heading`r`n`r`n$body`r`n`r`n"
+          [System.IO.File]::WriteAllText(
+              (Join-Path $PWD "CHANGELOG.md"),
+              $section + $existing,
+              [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: CHANGELOG.md committen
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add CHANGELOG.md
+
+          if (git diff --cached --quiet) {
+              exit 0
+          }
+
+          git commit -m "Update CHANGELOG for ${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"
