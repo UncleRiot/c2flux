@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+﻿﻿using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -248,6 +248,9 @@ public sealed partial class NtfsReader
         if ((_retrieveMode & RetrieveMode.StandardInformations) == RetrieveMode.StandardInformations)
             _standardInformations = new StandardInformation[1];
 
+        if ((_retrieveMode & RetrieveMode.LastWriteTimes) == RetrieveMode.LastWriteTimes)
+            _lastWriteTimes = new ulong[1];
+
         if (!ProcessMftRecordAt(data, 0, _diskInfo.BytesPerMftRecord, 0, out Node mftNode, mftStreams, true))
             throw new Exception("Can't interpret MFT Record");
 
@@ -281,6 +284,13 @@ public sealed partial class NtfsReader
             StandardInformation mftInfo = _standardInformations[0];
             _standardInformations = new StandardInformation[maxInode];
             _standardInformations[0] = mftInfo;
+        }
+
+        if ((_retrieveMode & RetrieveMode.LastWriteTimes) == RetrieveMode.LastWriteTimes)
+        {
+            ulong mftLastWriteTime = _lastWriteTimes[0];
+            _lastWriteTimes = new ulong[maxInode];
+            _lastWriteTimes[0] = mftLastWriteTime;
         }
 
         if ((_retrieveMode & RetrieveMode.Streams) == RetrieveMode.Streams)

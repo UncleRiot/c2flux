@@ -1,3 +1,6 @@
+// not used anymore. Initially for filtering while scanning *1
+/*
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,3 +60,4 @@ namespace c2flux
         }
     }
 }
+*/

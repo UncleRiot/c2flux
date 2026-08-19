@@ -1,4 +1,4 @@
-﻿namespace System.IO.Filesystem.Ntfs;
+﻿﻿namespace System.IO.Filesystem.Ntfs;
 
 /// <summary>
 /// Allow one to retrieve only needed information to reduce memory footprint.
@@ -15,6 +15,11 @@ public enum RetrieveMode
     /// Retrieve the lastModified, lastAccessed and creationTime.
     /// </summary>
     StandardInformations = 1,
+
+    /// <summary>
+    /// Retrieve only the file modification time in addition to minimal information.
+    /// </summary>
+    LastWriteTimes = 8,
 
     /// <summary>
     /// Retrieve file's streams information.

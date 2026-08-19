@@ -1307,6 +1307,12 @@ namespace c2flux
             object sender,
             EventArgs e)
         {
+            if (checkBoxStorageHistoryDetails.Checked)
+            {
+                checkBoxShowFilesInTree.Checked = true;
+            }
+
+            checkBoxShowFilesInTree.Enabled = !checkBoxStorageHistoryDetails.Checked;
             UpdateStorageHistoryDetailsAutoPurgeControls();
         }
 

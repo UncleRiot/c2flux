@@ -747,18 +747,26 @@ namespace c2flux
             if (entry == null)
                 return;
 
-            if (!entry.IsDirectory)
-            {
-                AddFileState(files, entry);
-                return;
-            }
+            Stack<FileSystemEntry> stack = new Stack<FileSystemEntry>();
+            stack.Push(entry);
 
-            if (entry.Children == null)
-                return;
-
-            foreach (FileSystemEntry child in entry.Children)
+            while (stack.Count > 0)
             {
-                AddFilesRecursive(files, child);
+                FileSystemEntry current = stack.Pop();
+
+                if (!current.IsDirectory)
+                {
+                    AddFileState(files, current);
+                    continue;
+                }
+
+                if (current.Children == null)
+                    continue;
+
+                for (int index = current.Children.Count - 1; index >= 0; index--)
+                {
+                    stack.Push(current.Children[index]);
+                }
             }
         }
 

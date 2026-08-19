@@ -395,9 +395,6 @@ namespace c2flux
                     phaseStopwatch.Restart();
                     LogDiagnostic("Cleanup started", rootEntry.FullPath, 0, null);
                     CleanupOrphans(connection);
-                    connection.Close();
-                    SqliteConnection.ClearAllPools();
-                    VacuumDatabase();
                     LogDiagnostic(
                         "Cleanup completed",
                         rootEntry.FullPath,
@@ -924,8 +921,6 @@ namespace c2flux
                 Environment.NewLine +
                 "Invalid paths: " + diagnostic.InvalidPathCount +
                 Environment.NewLine +
-                "AllFiles references: " + diagnostic.AllFilesReferenceCount +
-                Environment.NewLine +
                 "Children references: " + diagnostic.ChildrenReferenceCount +
                 Environment.NewLine +
                 "Path filter time: " + GetElapsedMilliseconds(diagnostic.PathFilterTicks) + " ms" +
@@ -935,8 +930,6 @@ namespace c2flux
                 "EntryData creation time: " + GetElapsedMilliseconds(diagnostic.EntryDataCreationTicks) + " ms" +
                 Environment.NewLine +
                 "Dictionary insert time: " + GetElapsedMilliseconds(diagnostic.DictionaryInsertTicks) + " ms" +
-                Environment.NewLine +
-                "AllFiles traversal dispatch time: " + GetElapsedMilliseconds(diagnostic.AllFilesTraversalTicks) + " ms" +
                 Environment.NewLine +
                 "Children traversal dispatch time: " + GetElapsedMilliseconds(diagnostic.ChildrenTraversalTicks) + " ms" +
                 Environment.NewLine +
@@ -1609,13 +1602,11 @@ namespace c2flux
             public long DuplicateReferenceCount { get; set; }
             public long OutsideRootCount { get; set; }
             public long InvalidPathCount { get; set; }
-            public long AllFilesReferenceCount { get; set; }
             public long ChildrenReferenceCount { get; set; }
             public long PathFilterTicks { get; set; }
             public long DuplicateLookupTicks { get; set; }
             public long EntryDataCreationTicks { get; set; }
             public long DictionaryInsertTicks { get; set; }
-            public long AllFilesTraversalTicks { get; set; }
             public long ChildrenTraversalTicks { get; set; }
             public string LastPath { get; set; }
         }

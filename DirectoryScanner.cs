@@ -16,6 +16,7 @@ namespace c2flux
         private const int LiveSnapshotDepth = 1;
         private const int MaxLiveChildrenPerDirectory = 100;
         private const int FIND_FIRST_EX_LARGE_FETCH = 2;
+        private const int ERROR_NO_MORE_FILES = 18;
         private const uint FILE_SHARE_READ = 0x00000001;
         private const uint FILE_SHARE_WRITE = 0x00000002;
         private const uint FILE_SHARE_DELETE = 0x00000004;
@@ -244,117 +245,68 @@ namespace c2flux
 
         private void ScanDirectoryContents(FileSystemEntry entry, IProgress<ScanProgress> progress, CancellationToken cancellationToken, PauseToken pauseToken, Action<long> addSizeToAncestors)
         {
-            if (_settings.SkipReparsePoints)
-            {
-
-                cancellationToken.ThrowIfCancellationRequested();
-                pauseToken.WaitWhilePaused(cancellationToken);
-
-                foreach (Win32FileSystemEntry fileSystemEntry in EnumerateFileSystemEntries(entry.FullPath))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    pauseToken.WaitWhilePaused(cancellationToken);
-
-                    if (ScanPathFilter.IsExcluded(fileSystemEntry.FullPath, _settings.ExcludedPaths))
-                        continue;
-
-                    if (fileSystemEntry.IsDirectory)
-                    {
-                        if (_settings.SkipReparsePoints && fileSystemEntry.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                            continue;
-
-                        FileSystemEntry childEntry = new FileSystemEntry
-                        {
-                            Name = fileSystemEntry.Name,
-                            FullPath = fileSystemEntry.FullPath,
-                            IsDirectory = true
-                        };
-
-                        entry.Children.Add(childEntry);
-                        _scannedDirectories++;
-
-                        ReportProgress(childEntry.FullPath, progress, false);
-
-                        ScanDirectoryContents(
-                            childEntry,
-                            progress,
-                            cancellationToken,
-                            pauseToken,
-                            sizeDelta =>
-                            {
-                                entry.SizeBytes += sizeDelta;
-                                addSizeToAncestors?.Invoke(sizeDelta);
-                            });
-
-                        ReportProgress(childEntry.FullPath, progress, false);
-                        continue;
-                    }
-
-                    long fileLength = _scanCacheService.GetLengthAndUpdate(
-                        fileSystemEntry.FullPath,
-                        fileSystemEntry.SizeBytes,
-                        fileSystemEntry.LastWriteTimeUtcTicks,
-                        (int)fileSystemEntry.Attributes);
-
-                    _scannedFiles++;
-                    _scannedBytes += fileLength;
-                    entry.SizeBytes += fileLength;
-                    addSizeToAncestors?.Invoke(fileLength);
-
-                    FileSystemEntry fileEntry = new FileSystemEntry
-                    {
-                        Name = fileSystemEntry.Name,
-                        FullPath = fileSystemEntry.FullPath,
-                        SizeBytes = fileLength,
-                        IsDirectory = false,
-                        LastWriteTimeUtc = fileSystemEntry.LastWriteTimeUtcTicks > 0
-                            ? DateTime.FromFileTimeUtc(fileSystemEntry.LastWriteTimeUtcTicks)
-                            : DateTime.MinValue
-                    };
-
-                    _liveRootEntry.AllFiles.Add(fileEntry);
-
-                    if (_settings.ShowFilesInTree)
-                    {
-                        entry.Children.Add(fileEntry);
-                    }
-
-                    ReportProgress(fileSystemEntry.FullPath, progress, false);
-                }
-                        return;
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
-            pauseToken.WaitWhilePaused(cancellationToken);
-
-            DirectoryIdentity directoryIdentity = default;
-            bool directoryIdentityAdded = false;
-
-            if (TryGetDirectoryIdentity(entry.FullPath, out directoryIdentity))
-            {
-                if (_activeDirectoryIdentities.Any(
-                        activeDirectoryIdentity =>
-                            activeDirectoryIdentity.Matches(directoryIdentity)))
-                {
-                    return;
-                }
-
-                _activeDirectoryIdentities.Add(directoryIdentity);
-                directoryIdentityAdded = true;
-            }
+            int activeIdentityBaseCount = _activeDirectoryIdentities.Count;
+            Stack<(FileSystemEntry Entry, IEnumerator<Win32FileSystemEntry> Enumerator, bool IdentityAdded)> stack =
+                new Stack<(FileSystemEntry Entry, IEnumerator<Win32FileSystemEntry> Enumerator, bool IdentityAdded)>();
 
             try
             {
-                foreach (Win32FileSystemEntry fileSystemEntry in EnumerateFileSystemEntries(entry.FullPath))
+                bool rootIdentityAdded = false;
+
+                if (!_settings.SkipReparsePoints &&
+                    TryGetDirectoryIdentity(entry.FullPath, out DirectoryIdentity rootIdentity))
+                {
+                    if (_activeDirectoryIdentities.Any(activeDirectoryIdentity => activeDirectoryIdentity.Matches(rootIdentity)))
+                        return;
+
+                    _activeDirectoryIdentities.Add(rootIdentity);
+                    rootIdentityAdded = true;
+                }
+
+                stack.Push((
+                    entry,
+                    EnumerateFileSystemEntries(entry.FullPath).GetEnumerator(),
+                    rootIdentityAdded));
+
+                while (stack.Count > 0)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     pauseToken.WaitWhilePaused(cancellationToken);
 
-                    if (ScanPathFilter.IsExcluded(fileSystemEntry.FullPath, _settings.ExcludedPaths))
+                    (FileSystemEntry Entry, IEnumerator<Win32FileSystemEntry> Enumerator, bool IdentityAdded) frame = stack.Peek();
+
+                    if (!frame.Enumerator.MoveNext())
+                    {
+                        frame.Enumerator.Dispose();
+                        stack.Pop();
+
+                        if (frame.IdentityAdded)
+                        {
+                            _activeDirectoryIdentities.RemoveAt(_activeDirectoryIdentities.Count - 1);
+                        }
+
+                        if (stack.Count > 0)
+                        {
+                            ReportProgress(frame.Entry.FullPath, progress, false);
+                        }
+
                         continue;
+                    }
+
+                    Win32FileSystemEntry fileSystemEntry = frame.Enumerator.Current;
+
+                    // not used anymore. Initially for filtering while scanning *1
+                    // if (ScanPathFilter.IsExcluded(fileSystemEntry.FullPath, _settings.ExcludedPaths))
+                    //    continue;
 
                     if (fileSystemEntry.IsDirectory)
                     {
+                        if (_settings.SkipReparsePoints &&
+                            fileSystemEntry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            continue;
+                        }
+
                         FileSystemEntry childEntry = new FileSystemEntry
                         {
                             Name = fileSystemEntry.Name,
@@ -362,23 +314,31 @@ namespace c2flux
                             IsDirectory = true
                         };
 
-                        entry.Children.Add(childEntry);
+                        frame.Entry.Children.Add(childEntry);
                         _scannedDirectories++;
 
                         ReportProgress(childEntry.FullPath, progress, false);
 
-                        ScanDirectoryContents(
-                            childEntry,
-                            progress,
-                            cancellationToken,
-                            pauseToken,
-                            sizeDelta =>
-                            {
-                                entry.SizeBytes += sizeDelta;
-                                addSizeToAncestors?.Invoke(sizeDelta);
-                            });
+                        bool childIdentityAdded = false;
 
-                        ReportProgress(childEntry.FullPath, progress, false);
+                        if (!_settings.SkipReparsePoints &&
+                            TryGetDirectoryIdentity(childEntry.FullPath, out DirectoryIdentity childIdentity))
+                        {
+                            if (_activeDirectoryIdentities.Any(activeDirectoryIdentity => activeDirectoryIdentity.Matches(childIdentity)))
+                            {
+                                ReportProgress(childEntry.FullPath, progress, false);
+                                continue;
+                            }
+
+                            _activeDirectoryIdentities.Add(childIdentity);
+                            childIdentityAdded = true;
+                        }
+
+                        stack.Push((
+                            childEntry,
+                            EnumerateFileSystemEntries(childEntry.FullPath).GetEnumerator(),
+                            childIdentityAdded));
+
                         continue;
                     }
 
@@ -390,7 +350,12 @@ namespace c2flux
 
                     _scannedFiles++;
                     _scannedBytes += fileLength;
-                    entry.SizeBytes += fileLength;
+
+                    foreach ((FileSystemEntry Entry, IEnumerator<Win32FileSystemEntry> Enumerator, bool IdentityAdded) activeFrame in stack)
+                    {
+                        activeFrame.Entry.SizeBytes += fileLength;
+                    }
+
                     addSizeToAncestors?.Invoke(fileLength);
 
                     FileSystemEntry fileEntry = new FileSystemEntry
@@ -408,7 +373,7 @@ namespace c2flux
 
                     if (_settings.ShowFilesInTree)
                     {
-                        entry.Children.Add(fileEntry);
+                        frame.Entry.Children.Add(fileEntry);
                     }
 
                     ReportProgress(fileSystemEntry.FullPath, progress, false);
@@ -416,13 +381,17 @@ namespace c2flux
             }
             finally
             {
-                if (directoryIdentityAdded)
+                while (stack.Count > 0)
                 {
-                    _activeDirectoryIdentities.RemoveAt(
-                        _activeDirectoryIdentities.Count - 1);
+                    stack.Pop().Enumerator.Dispose();
+                }
+
+                while (_activeDirectoryIdentities.Count > activeIdentityBaseCount)
+                {
+                    _activeDirectoryIdentities.RemoveAt(_activeDirectoryIdentities.Count - 1);
                 }
             }
-                }
+        }
 
 
         private IEnumerable<Win32FileSystemEntry> EnumerateFileSystemEntries(string directoryPath)
@@ -467,6 +436,17 @@ namespace c2flux
                     };
                 }
                 while (FindNextFile(findHandle, out findData));
+
+                int errorCode = Marshal.GetLastWin32Error();
+                if (errorCode != ERROR_NO_MORE_FILES)
+                {
+                    AddSkippedDirectory(
+                        directoryPath,
+                        LocalizationService.Format(
+                            "Alert.Win32Error",
+                            errorCode,
+                            new Win32Exception(errorCode).Message));
+                }
             }
             finally
             {
@@ -675,25 +655,42 @@ namespace c2flux
 
         private void SortChildrenRecursive(FileSystemEntry entry)
         {
-            foreach (FileSystemEntry child in entry.Children)
+            Stack<(FileSystemEntry Entry, bool Visited)> stack =
+                new Stack<(FileSystemEntry Entry, bool Visited)>();
+
+            stack.Push((entry, false));
+
+            while (stack.Count > 0)
             {
-                if (child.IsDirectory)
+                (FileSystemEntry Entry, bool Visited) current = stack.Pop();
+
+                if (!current.Visited)
                 {
-                    SortChildrenRecursive(child);
+                    stack.Push((current.Entry, true));
+
+                    foreach (FileSystemEntry child in current.Entry.Children)
+                    {
+                        if (child.IsDirectory)
+                        {
+                            stack.Push((child, false));
+                        }
+                    }
+
+                    continue;
                 }
+
+                current.Entry.Children.Sort((left, right) =>
+                {
+                    int sizeCompare = right.SizeBytes.CompareTo(left.SizeBytes);
+
+                    if (sizeCompare != 0)
+                    {
+                        return sizeCompare;
+                    }
+
+                    return string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
+                });
             }
-
-            entry.Children.Sort((left, right) =>
-            {
-                int sizeCompare = right.SizeBytes.CompareTo(left.SizeBytes);
-
-                if (sizeCompare != 0)
-                {
-                    return sizeCompare;
-                }
-
-                return string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
-            });
         }
     }
 }

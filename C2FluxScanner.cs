@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -50,7 +50,7 @@ namespace c2flux
 
                 NtfsReader reader = new NtfsReader(
                     driveInfo,
-                    RetrieveMode.Minimal,
+                    RetrieveMode.LastWriteTimes,
                     MftReadBufferSizeBytes);
 
                 List<INode> nodes = NtfsReaderFastNodeProvider.GetNodes(
@@ -65,10 +65,11 @@ namespace c2flux
                 string normalizedRootPath =
                     NormalizeDirectoryPath(rootEntry.FullPath);
 
-                bool hasExcludedPaths =
-                    _settings.ExcludedPaths != null &&
-                    _settings.ExcludedPaths.Any(
-                        path => !string.IsNullOrWhiteSpace(path));
+                // not used anymore. Initially for filtering while scanning *1
+                // bool hasExcludedPaths =
+                //    _settings.ExcludedPaths != null &&
+                //    _settings.ExcludedPaths.Any(
+                //        path => !string.IsNullOrWhiteSpace(path));
 
                 Dictionary<uint, INode> directoryNodesByNodeIndex =
                     new Dictionary<uint, INode>();
@@ -135,8 +136,12 @@ namespace c2flux
                         continue;
                     }
 
+                    // not used anymore. Initially for filtering while scanning *1
+                    // Kept for scan progress display; excluded-path filtering is disabled.
                     string filterPath = string.Empty;
 
+                    // not used anymore. Initially for filtering while scanning *1
+                    /*
                     if (hasExcludedPaths)
                     {
                         if (isDirectory)
@@ -191,6 +196,7 @@ namespace c2flux
                             continue;
                         }
                     }
+                    */
 
                     if (isDirectory)
                     {
@@ -330,7 +336,10 @@ namespace c2flux
                             FullPath = null,
                             ParentEntry = parentEntry,
                             SizeBytes = nodeSize,
-                            IsDirectory = false
+                            IsDirectory = false,
+                            LastWriteTimeUtc =
+                                reader.GetLastWriteTimeUtc(
+                                    fileNode.NodeIndex)
                         };
 
                     lazyFilePathCount++;
@@ -530,7 +539,7 @@ namespace c2flux
                 NtfsReader reader =
                     await NtfsReader.CreateAsync(
                         driveInfo,
-                        RetrieveMode.Minimal,
+                        RetrieveMode.LastWriteTimes,
                         cancellationToken,
                         MftReadBufferSizeBytes,
                         mftProgress).ConfigureAwait(false);
@@ -654,7 +663,10 @@ namespace c2flux
                             Name = node.Name,
                             FullPath = filePath,
                             SizeBytes = ConvertNodeSize(node.Size),
-                            IsDirectory = false
+                            IsDirectory = false,
+                            LastWriteTimeUtc =
+                                reader.GetLastWriteTimeUtc(
+                                    node.NodeIndex)
                         });
                 }
 
@@ -839,70 +851,92 @@ namespace c2flux
                 return existingEntry;
             }
 
-            if (!directoryNodesByNodeIndex.TryGetValue(
-                nodeIndex,
-                out INode directoryNode))
-            {
-                return null;
-            }
+            List<INode> pendingNodes = new List<INode>();
+            HashSet<uint> visitedNodeIndices = new HashSet<uint>();
+            uint currentNodeIndex = nodeIndex;
+            FileSystemEntry parentEntry = null;
 
-            FileSystemEntry parentEntry;
-
-            if (directoryNode.ParentNodeIndex ==
-                NtfsRootDirectoryNodeIndex)
+            while (true)
             {
-                parentEntry = rootEntry;
-            }
-            else
-            {
-                parentEntry = EnsureDirectoryEntryByNodeIndex(
-                    directoryNode.ParentNodeIndex,
-                    rootEntry,
-                    directoryNodesByNodeIndex,
-                    directoryEntriesByNodeIndex,
-                    directoryEntriesByPath);
-            }
+                if (directoryEntriesByNodeIndex.TryGetValue(
+                    currentNodeIndex,
+                    out existingEntry))
+                {
+                    parentEntry = existingEntry;
+                    break;
+                }
 
-            if (parentEntry == null ||
-                string.IsNullOrWhiteSpace(directoryNode.Name))
-            {
-                string fallbackPath = directoryNode.FullName;
-
-                if (string.IsNullOrWhiteSpace(fallbackPath))
+                if (!visitedNodeIndices.Add(currentNodeIndex) ||
+                    !directoryNodesByNodeIndex.TryGetValue(
+                        currentNodeIndex,
+                        out INode currentNode))
                 {
                     return null;
                 }
 
-                FileSystemEntry fallbackEntry =
-                    EnsureDirectoryEntry(
-                        fallbackPath,
-                        rootEntry,
-                        directoryEntriesByPath);
+                pendingNodes.Add(currentNode);
 
-                if (fallbackEntry != null)
+                if (currentNode.ParentNodeIndex == NtfsRootDirectoryNodeIndex)
                 {
-                    directoryEntriesByNodeIndex[nodeIndex] =
-                        fallbackEntry;
+                    parentEntry = rootEntry;
+                    break;
                 }
 
-                return fallbackEntry;
+                currentNodeIndex = currentNode.ParentNodeIndex;
             }
 
-            FileSystemEntry directoryEntry =
-                new FileSystemEntry
+            for (int index = pendingNodes.Count - 1; index >= 0; index--)
+            {
+                INode directoryNode = pendingNodes[index];
+
+                if (parentEntry == null ||
+                    string.IsNullOrWhiteSpace(directoryNode.Name))
                 {
-                    Name = directoryNode.Name,
-                    FullPath = null,
-                    ParentEntry = parentEntry,
-                    IsDirectory = true
-                };
+                    string fallbackPath = directoryNode.FullName;
 
-            parentEntry.Children.Add(directoryEntry);
+                    if (string.IsNullOrWhiteSpace(fallbackPath))
+                    {
+                        return null;
+                    }
 
-            directoryEntriesByNodeIndex[nodeIndex] =
-                directoryEntry;
+                    FileSystemEntry fallbackEntry =
+                        EnsureDirectoryEntry(
+                            fallbackPath,
+                            rootEntry,
+                            directoryEntriesByPath);
 
-            return directoryEntry;
+                    if (fallbackEntry == null)
+                    {
+                        return null;
+                    }
+
+                    directoryEntriesByNodeIndex[directoryNode.NodeIndex] =
+                        fallbackEntry;
+                    parentEntry = fallbackEntry;
+                    continue;
+                }
+
+                FileSystemEntry directoryEntry =
+                    new FileSystemEntry
+                    {
+                        Name = directoryNode.Name,
+                        FullPath = null,
+                        ParentEntry = parentEntry,
+                        IsDirectory = true
+                    };
+
+                parentEntry.Children.Add(directoryEntry);
+
+                directoryEntriesByNodeIndex[directoryNode.NodeIndex] =
+                    directoryEntry;
+                parentEntry = directoryEntry;
+            }
+
+            return directoryEntriesByNodeIndex.TryGetValue(
+                nodeIndex,
+                out FileSystemEntry result)
+                    ? result
+                    : null;
         }
 
         private FileSystemEntry EnsureDirectoryEntry(
@@ -928,84 +962,164 @@ namespace c2flux
                 return null;
             }
 
-            string parentPath =
-                GetParentDirectoryPath(
-                    normalizedDirectoryPath);
+            Stack<string> pendingPaths = new Stack<string>();
+            HashSet<string> visitedPaths =
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string currentPath = normalizedDirectoryPath;
+            FileSystemEntry parentEntry = null;
 
-            FileSystemEntry parentEntry =
-                string.IsNullOrWhiteSpace(parentPath)
-                    ? rootEntry
-                    : EnsureDirectoryEntry(
-                        parentPath,
-                        rootEntry,
-                        directoryEntriesByPath);
-
-            if (parentEntry == null)
+            while (true)
             {
-                return null;
+                if (directoryEntriesByPath.TryGetValue(
+                    currentPath,
+                    out existingEntry))
+                {
+                    parentEntry = existingEntry;
+                    break;
+                }
+
+                if (!visitedPaths.Add(currentPath))
+                {
+                    return null;
+                }
+
+                pendingPaths.Push(currentPath);
+
+                string parentPath =
+                    GetParentDirectoryPath(currentPath);
+
+                if (string.IsNullOrWhiteSpace(parentPath))
+                {
+                    parentEntry = rootEntry;
+                    break;
+                }
+
+                currentPath = NormalizeDirectoryPath(parentPath);
+
+                if (!currentPath.StartsWith(
+                    rootEntry.FullPath,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
             }
 
-            FileSystemEntry directoryEntry =
-                new FileSystemEntry
+            while (pendingPaths.Count > 0)
+            {
+                string path = pendingPaths.Pop();
+
+                if (directoryEntriesByPath.TryGetValue(
+                    path,
+                    out existingEntry))
                 {
-                    Name =
-                        GetDirectoryName(
-                            normalizedDirectoryPath),
-                    FullPath =
-                        normalizedDirectoryPath,
-                    IsDirectory = true
-                };
+                    parentEntry = existingEntry;
+                    continue;
+                }
 
-            parentEntry.Children.Add(directoryEntry);
-            directoryEntriesByPath[
-                normalizedDirectoryPath] =
-                directoryEntry;
+                FileSystemEntry directoryEntry =
+                    new FileSystemEntry
+                    {
+                        Name =
+                            GetDirectoryName(path),
+                        FullPath =
+                            path,
+                        IsDirectory = true
+                    };
 
-            return directoryEntry;
+                parentEntry.Children.Add(directoryEntry);
+                directoryEntriesByPath[path] =
+                    directoryEntry;
+                parentEntry = directoryEntry;
+            }
+
+            return directoryEntriesByPath.TryGetValue(
+                normalizedDirectoryPath,
+                out FileSystemEntry result)
+                    ? result
+                    : null;
         }
 
         private void PropagateDirectorySizes(
             FileSystemEntry entry)
         {
-            foreach (FileSystemEntry child in entry.Children)
+            Stack<(FileSystemEntry Entry, bool Visited)> stack =
+                new Stack<(FileSystemEntry Entry, bool Visited)>();
+
+            stack.Push((entry, false));
+
+            while (stack.Count > 0)
             {
-                if (!child.IsDirectory)
+                (FileSystemEntry Entry, bool Visited) current = stack.Pop();
+
+                if (!current.Visited)
                 {
+                    stack.Push((current.Entry, true));
+
+                    foreach (FileSystemEntry child in current.Entry.Children)
+                    {
+                        if (child.IsDirectory)
+                        {
+                            stack.Push((child, false));
+                        }
+                    }
+
                     continue;
                 }
 
-                PropagateDirectorySizes(child);
-                entry.SizeBytes += child.SizeBytes;
+                foreach (FileSystemEntry child in current.Entry.Children)
+                {
+                    if (child.IsDirectory)
+                    {
+                        current.Entry.SizeBytes += child.SizeBytes;
+                    }
+                }
             }
         }
 
         private void SortChildrenRecursive(
             FileSystemEntry entry)
         {
-            foreach (FileSystemEntry child in entry.Children)
+            Stack<(FileSystemEntry Entry, bool Visited)> stack =
+                new Stack<(FileSystemEntry Entry, bool Visited)>();
+
+            stack.Push((entry, false));
+
+            while (stack.Count > 0)
             {
-                if (child.IsDirectory)
+                (FileSystemEntry Entry, bool Visited) current = stack.Pop();
+
+                if (!current.Visited)
                 {
-                    SortChildrenRecursive(child);
+                    stack.Push((current.Entry, true));
+
+                    foreach (FileSystemEntry child in current.Entry.Children)
+                    {
+                        if (child.IsDirectory)
+                        {
+                            stack.Push((child, false));
+                        }
+                    }
+
+                    continue;
                 }
+
+                current.Entry.Children.Sort((left, right) =>
+                {
+                    int sizeCompare =
+                        right.SizeBytes.CompareTo(
+                            left.SizeBytes);
+
+                    if (sizeCompare != 0)
+                    {
+                        return sizeCompare;
+                    }
+
+                    return string.Compare(
+                        left.Name,
+                        right.Name,
+                        StringComparison.OrdinalIgnoreCase);
+                });
             }
-
-            entry.Children.Sort((left, right) =>
-            {
-                int sizeCompare =
-                    right.SizeBytes.CompareTo(
-                        left.SizeBytes);
-
-                if (sizeCompare != 0)
-                {
-                    return sizeCompare;
-                }
-
-                return string.Compare(
-                    left.Name,
-                    right.Name,
-                    StringComparison.OrdinalIgnoreCase);
-            });
         }
 
         private string NormalizePath(string path)

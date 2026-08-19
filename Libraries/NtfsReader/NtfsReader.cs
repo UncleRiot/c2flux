@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+﻿﻿using System.Buffers;
 using System.Collections.Generic;
 using Microsoft.Win32.SafeHandles;
 
@@ -15,6 +15,7 @@ public sealed partial class NtfsReader : IDisposable
     internal DiskInfoWrapper _diskInfo;
     internal Node[] _nodes;
     internal StandardInformation[] _standardInformations;
+    internal ulong[] _lastWriteTimes;
     internal Stream[][] _streams;
     internal DriveInfo _driveInfo;
     // Cached drive root (e.g. "C:") used when building full node paths. Computed once
@@ -545,6 +546,10 @@ public sealed partial class NtfsReader : IDisposable
 
                         node.Attributes |= (Attributes)attributeStandardInformation->FileAttributes;
 
+                        if ((_retrieveMode & RetrieveMode.LastWriteTimes) == RetrieveMode.LastWriteTimes)
+                            _lastWriteTimes[nodeIndex] =
+                                attributeStandardInformation->FileChangeTime;
+
                         if ((_retrieveMode & RetrieveMode.StandardInformations) == RetrieveMode.StandardInformations)
                             _standardInformations[nodeIndex] =
                                 new StandardInformation(
@@ -947,6 +952,9 @@ public sealed partial class NtfsReader : IDisposable
             if ((_retrieveMode & RetrieveMode.StandardInformations) == RetrieveMode.StandardInformations)
                 _standardInformations = new StandardInformation[1]; //allocate some space for $MFT record
 
+            if ((_retrieveMode & RetrieveMode.LastWriteTimes) == RetrieveMode.LastWriteTimes)
+                _lastWriteTimes = new ulong[1];
+
             if (!ProcessMftRecord(buffer, _diskInfo.BytesPerMftRecord, 0, out Node mftNode, mftStreams, true))
                 throw new Exception("Can't interpret MFT Record");
 
@@ -975,6 +983,13 @@ public sealed partial class NtfsReader : IDisposable
                 StandardInformation mftRecordInformation = _standardInformations[0];
                 _standardInformations = new StandardInformation[maxInode];
                 _standardInformations[0] = mftRecordInformation;
+            }
+
+            if ((_retrieveMode & RetrieveMode.LastWriteTimes) == RetrieveMode.LastWriteTimes)
+            {
+                ulong mftRecordLastWriteTime = _lastWriteTimes[0];
+                _lastWriteTimes = new ulong[maxInode];
+                _lastWriteTimes[0] = mftRecordLastWriteTime;
             }
 
             if ((_retrieveMode & RetrieveMode.Streams) == RetrieveMode.Streams)
@@ -1051,5 +1066,14 @@ public sealed partial class NtfsReader : IDisposable
         {
             ArrayPool<byte>.Shared.Return(data);
         }
+    }
+
+    public DateTime GetLastWriteTimeUtc(uint nodeIndex)
+    {
+        ulong fileTimeUtc = _lastWriteTimes[nodeIndex];
+
+        return fileTimeUtc == 0
+            ? DateTime.MinValue
+            : DateTime.FromFileTimeUtc((long)fileTimeUtc);
     }
 }

@@ -173,8 +173,10 @@ namespace c2flux
 
                 FileSystemEntry rootEntry = CreateRootEntry(driveRoot);
                 string normalizedRootPath = NormalizeDirectoryPath(rootEntry.FullPath);
-                bool hasExcludedPaths = _settings.ExcludedPaths != null &&
-                    _settings.ExcludedPaths.Any(path => !string.IsNullOrWhiteSpace(path));
+
+                // not used anymore. Initially for filtering while scanning *1
+                // bool hasExcludedPaths = _settings.ExcludedPaths != null &&
+                //    _settings.ExcludedPaths.Any(path => !string.IsNullOrWhiteSpace(path));
 
                 Dictionary<string, FileSystemEntry> directoryEntriesByPath = new Dictionary<string, FileSystemEntry>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -287,12 +289,15 @@ namespace c2flux
                         continue;
                     }
 
+                    // not used anymore. Initially for filtering while scanning *1
+                    /*
                     if (hasExcludedPaths && ScanPathFilter.IsExcluded(fullPath, _settings.ExcludedPaths))
                     {
                         filteringTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
                         filteringAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
                         continue;
                     }
+                    */
 
                     filteringTicks += Stopwatch.GetTimestamp() - measurementStartTicks;
                     filteringAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - measurementStartAllocatedBytes;
@@ -604,62 +609,145 @@ namespace c2flux
                 return null;
             }
 
-            string parentPath = GetParentDirectoryPath(normalizedDirectoryPath);
-            FileSystemEntry parentEntry = string.IsNullOrWhiteSpace(parentPath)
-                ? rootEntry
-                : EnsureDirectoryEntry(parentPath, rootEntry, directoryEntriesByPath);
+            Stack<string> pendingPaths = new Stack<string>();
+            HashSet<string> visitedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string currentPath = normalizedDirectoryPath;
+            FileSystemEntry parentEntry = null;
 
-            if (parentEntry == null)
+            while (true)
             {
-                return null;
+                if (directoryEntriesByPath.TryGetValue(currentPath, out existingEntry))
+                {
+                    parentEntry = existingEntry;
+                    break;
+                }
+
+                if (!visitedPaths.Add(currentPath))
+                {
+                    return null;
+                }
+
+                pendingPaths.Push(currentPath);
+
+                string parentPath = GetParentDirectoryPath(currentPath);
+
+                if (string.IsNullOrWhiteSpace(parentPath))
+                {
+                    parentEntry = rootEntry;
+                    break;
+                }
+
+                currentPath = NormalizeDirectoryPath(parentPath);
+
+                if (!currentPath.StartsWith(rootEntry.FullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
             }
 
-            FileSystemEntry directoryEntry = new FileSystemEntry
+            while (pendingPaths.Count > 0)
             {
-                Name = GetDirectoryName(normalizedDirectoryPath),
-                FullPath = normalizedDirectoryPath,
-                IsDirectory = true
-            };
+                string path = pendingPaths.Pop();
 
-            parentEntry.Children.Add(directoryEntry);
-            directoryEntriesByPath[normalizedDirectoryPath] = directoryEntry;
+                if (directoryEntriesByPath.TryGetValue(path, out existingEntry))
+                {
+                    parentEntry = existingEntry;
+                    continue;
+                }
 
-            return directoryEntry;
+                FileSystemEntry directoryEntry = new FileSystemEntry
+                {
+                    Name = GetDirectoryName(path),
+                    FullPath = path,
+                    IsDirectory = true
+                };
+
+                parentEntry.Children.Add(directoryEntry);
+                directoryEntriesByPath[path] = directoryEntry;
+                parentEntry = directoryEntry;
+            }
+
+            return directoryEntriesByPath.TryGetValue(
+                normalizedDirectoryPath,
+                out FileSystemEntry result)
+                    ? result
+                    : null;
         }
 
         private void PropagateDirectorySizes(FileSystemEntry entry)
         {
-            foreach (FileSystemEntry child in entry.Children)
-            {
-                if (!child.IsDirectory)
-                    continue;
+            Stack<(FileSystemEntry Entry, bool Visited)> stack =
+                new Stack<(FileSystemEntry Entry, bool Visited)>();
 
-                PropagateDirectorySizes(child);
-                entry.SizeBytes += child.SizeBytes;
+            stack.Push((entry, false));
+
+            while (stack.Count > 0)
+            {
+                (FileSystemEntry Entry, bool Visited) current = stack.Pop();
+
+                if (!current.Visited)
+                {
+                    stack.Push((current.Entry, true));
+
+                    foreach (FileSystemEntry child in current.Entry.Children)
+                    {
+                        if (child.IsDirectory)
+                        {
+                            stack.Push((child, false));
+                        }
+                    }
+
+                    continue;
+                }
+
+                foreach (FileSystemEntry child in current.Entry.Children)
+                {
+                    if (child.IsDirectory)
+                    {
+                        current.Entry.SizeBytes += child.SizeBytes;
+                    }
+                }
             }
         }
 
         private void SortChildrenRecursive(FileSystemEntry entry)
         {
-            foreach (FileSystemEntry child in entry.Children)
+            Stack<(FileSystemEntry Entry, bool Visited)> stack =
+                new Stack<(FileSystemEntry Entry, bool Visited)>();
+
+            stack.Push((entry, false));
+
+            while (stack.Count > 0)
             {
-                if (child.IsDirectory)
+                (FileSystemEntry Entry, bool Visited) current = stack.Pop();
+
+                if (!current.Visited)
                 {
-                    SortChildrenRecursive(child);
+                    stack.Push((current.Entry, true));
+
+                    foreach (FileSystemEntry child in current.Entry.Children)
+                    {
+                        if (child.IsDirectory)
+                        {
+                            stack.Push((child, false));
+                        }
+                    }
+
+                    continue;
                 }
+
+                current.Entry.Children.Sort((left, right) =>
+                {
+                    int sizeCompare = right.SizeBytes.CompareTo(left.SizeBytes);
+
+                    if (sizeCompare != 0)
+                    {
+                        return sizeCompare;
+                    }
+
+                    return string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
+                });
             }
-
-            entry.Children.Sort((left, right) =>
-            {
-                int sizeCompare = right.SizeBytes.CompareTo(left.SizeBytes);
-
-                if (sizeCompare != 0)
-                {
-                    return sizeCompare;
-                }
-
-                return string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
-            });
         }
 
         private FileSystemEntry CreateLiveSnapshot(FileSystemEntry rootEntry)

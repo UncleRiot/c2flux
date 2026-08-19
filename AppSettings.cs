@@ -75,7 +75,9 @@ namespace c2flux
         public bool ShellContextMenuEnabled { get; set; }
         public bool ShellSearchContextMenuEnabled { get; set; }
         public bool AutoCheckForUpdates { get; set; } = true;
-        public List<string> ExcludedPaths { get; set; } = new List<string>();
+        
+        // not used anymore. Initially for filtering while scanning *1
+        // public List<string> ExcludedPaths { get; set; } = new List<string>();
         public bool EntryColumnNameVisible { get; set; } = true;
         public bool EntryColumnSizeVisible { get; set; } = true;
         public bool EntryColumnPercentVisible { get; set; } = true;

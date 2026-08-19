@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
+
+// not used anymore. Initially for filtering while scanning *1
+// using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
@@ -55,7 +57,9 @@ namespace c2flux
         private int _skippedDirectories;
         private FileInformationConfiguration _fileInformationConfiguration;
         private PauseToken _pauseToken;
-        private CompiledPathFilter _pathFilter;
+
+        // not used anymore. Initially for filtering while scanning *1
+        // private CompiledPathFilter _pathFilter;
         private ConcurrentBag<List<FileSystemEntry>> _workerFileBatches;
         private bool _prepareDirectoryTree;
 
@@ -98,7 +102,9 @@ namespace c2flux
                         FileIdFullDirectoryInformationClass,
                         FileIdFullDirectoryInformationFileNameOffset));
                 _workQueue = new BlockingCollection<WorkItem>();
-                _pathFilter = new CompiledPathFilter(_settings.ExcludedPaths);
+
+                // not used anymore. Initially for filtering while scanning *1
+                // _pathFilter = new CompiledPathFilter(_settings.ExcludedPaths);
                 _workerFileBatches = new ConcurrentBag<List<FileSystemEntry>>();
 
                 ReportProgress(rootPath, progress, true);
@@ -417,8 +423,9 @@ namespace c2flux
             bool isDirectory = attributes.HasFlag(FileAttributes.Directory);
             string fullPath = Path.Combine(directoryEntry.FullPath, name);
 
-            if (_pathFilter.IsExcluded(fullPath))
-                return 0;
+            // not used anymore. Initially for filtering while scanning *1
+            // if (_pathFilter.IsExcluded(fullPath))
+            //    return 0;
 
             if (isDirectory)
             {
@@ -992,6 +999,8 @@ namespace c2flux
             public IntPtr Information;
         }
 
+        // not used anymore. Initially for filtering while scanning *1
+        /*
         private sealed class CompiledPathFilter
         {
             private readonly List<string> _pathPrefixes =
@@ -1085,6 +1094,7 @@ namespace c2flux
                 }
             }
         }
+        */
 
         private sealed class FileInformationConfiguration
         {

@@ -27,6 +27,8 @@ namespace c2flux
             Stack<FileSystemEntry> pendingEntries = new Stack<FileSystemEntry>();
             pendingEntries.Push(rootEntry);
 
+            bool useAllFiles = rootEntry.AllFiles.Count > 0;
+
             int processed = 0;
 
             while (pendingEntries.Count > 0)
@@ -52,8 +54,27 @@ namespace c2flux
 
                 if (entry.IsDirectory)
                 {
-                    PushEntries(entry.Children, pendingEntries);
-                    PushEntries(entry.AllFiles, pendingEntries);
+                    if (useAllFiles)
+                    {
+                        for (int index = entry.Children.Count - 1; index >= 0; index--)
+                        {
+                            FileSystemEntry child = entry.Children[index];
+
+                            if (child != null && child.IsDirectory)
+                            {
+                                pendingEntries.Push(child);
+                            }
+                        }
+
+                        if (ReferenceEquals(entry, rootEntry))
+                        {
+                            PushEntries(rootEntry.AllFiles, pendingEntries);
+                        }
+                    }
+                    else
+                    {
+                        PushEntries(entry.Children, pendingEntries);
+                    }
                 }
 
                 if (processed % 500 == 0)
