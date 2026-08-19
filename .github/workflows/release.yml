@@ -12,6 +12,12 @@ on:
         required: true
         type: string
 
+      backfill_changelog:
+        description: "Rebuild CHANGELOG.md from all GitHub releases"
+        required: true
+        default: false
+        type: boolean
+
 permissions:
   contents: write
 
@@ -93,17 +99,71 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
 
-      - name: CHANGELOG.md aktualisieren
+      - name: Default-Branch für CHANGELOG auschecken
+        shell: pwsh
+        run: |
+          git fetch origin "${{ github.event.repository.default_branch }}"
+          git checkout "${{ github.event.repository.default_branch }}"
+          git pull --ff-only origin "${{ github.event.repository.default_branch }}"
+
+      - name: CHANGELOG.md vollständig aus Releases neu aufbauen
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_changelog }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releases = gh api `
+              --paginate `
+              "repos/${{ github.repository }}/releases?per_page=100" `
+              | ConvertFrom-Json
+
+          $publishedReleases = $releases |
+              Where-Object {
+                  -not $_.draft -and
+                  -not [string]::IsNullOrWhiteSpace($_.tag_name)
+              } |
+              Sort-Object {
+                  [DateTime]$_.published_at
+              } -Descending
+
+          $sections = New-Object System.Collections.Generic.List[string]
+
+          foreach ($release in $publishedReleases) {
+              $tag = $release.tag_name
+              $body = [string]$release.body
+
+              $section = "## Changelog $tag"
+
+              if (-not [string]::IsNullOrWhiteSpace($body)) {
+                  $section += "`r`n`r`n" + $body.Trim()
+              }
+
+              $sections.Add($section)
+          }
+
+          $content = [string]::Join(
+              "`r`n`r`n",
+              $sections
+          )
+
+          if (-not [string]::IsNullOrEmpty($content)) {
+              $content += "`r`n"
+          }
+
+          [System.IO.File]::WriteAllText(
+              (Join-Path $PWD "CHANGELOG.md"),
+              $content,
+              [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: Neues Release in CHANGELOG.md ergänzen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "${{ steps.release_tag.outputs.tag }}"
           $body = gh release view $tag --json body --jq '.body'
-
-          git fetch origin "${{ github.event.repository.default_branch }}"
-          git checkout "${{ github.event.repository.default_branch }}"
-          git pull --ff-only origin "${{ github.event.repository.default_branch }}"
 
           $existing = ""
           if (Test-Path "CHANGELOG.md") {
