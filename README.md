@@ -7,6 +7,7 @@
 A huge thank you to everyone behind these projects — you’re amazing! Thanks for making such great work available to the community. ❤️
 
 - [itsWindows11.NtfsReader](https://github.com/itsWindows11/NtfsReader)
+  (This project includes a modified version of itsWindows11/NtfsReader)
 - [AntdUI](https://github.com/AntdUI/AntdUI)
 
 ---
