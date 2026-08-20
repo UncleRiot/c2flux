@@ -39,6 +39,8 @@ namespace c2flux
         private AntdUI.Checkbox checkBoxShellContextMenuEnabled;
         private AntdUI.Checkbox checkBoxShellSearchContextMenuEnabled;
         private AntdUI.Checkbox checkBoxAutoCheckForUpdates;
+        private AntdUI.Label labelRedundancyCacheSize;
+        private AntdUI.Button buttonClearRedundancyCache;
         private AntdUI.Label labelLanguage;
         private AntdUI.Select comboBoxLanguage;
         private AntdUI.Button buttonAddLanguage;
@@ -555,6 +557,32 @@ namespace c2flux
                 AntdThemeService.SettingsGeneralAutoCheckForUpdatesCheckboxWidth,
                 AntdThemeService.SettingsGeneralAutoCheckForUpdatesCheckboxHeight,
                 backgroundSecondary);
+
+            labelRedundancyCacheSize =
+                AntdThemeService.CreateSettingsLabel(
+                    "labelRedundancyCacheSize",
+                    string.Empty,
+                    AntdThemeService.SettingsGeneralRedundancyCacheSizeLabelLeft,
+                    AntdThemeService.SettingsGeneralRedundancyCacheSizeLabelTop,
+                    AntdThemeService.SettingsGeneralRedundancyCacheSizeLabelWidth,
+                    AntdThemeService.SettingsGeneralRedundancyCacheSizeLabelHeight);
+
+            buttonClearRedundancyCache =
+                new AntdUI.Button
+                {
+                    Name = "buttonClearRedundancyCache",
+                    Text = LocalizationService.GetText(
+                        "Settings.ClearRedundancyCache"),
+                    Location = new Point(
+                        AntdThemeService.SettingsGeneralClearRedundancyCacheButtonLeft,
+                        AntdThemeService.SettingsGeneralClearRedundancyCacheButtonTop),
+                    Size = new Size(
+                        AntdThemeService.SettingsGeneralClearRedundancyCacheButtonWidth,
+                        AntdThemeService.SettingsGeneralClearRedundancyCacheButtonHeight),
+                    Type = AntdUI.TTypeMini.Default
+                };
+            buttonClearRedundancyCache.Click +=
+                buttonClearRedundancyCache_Click;
 
             labelLanguage = AntdThemeService.CreateSettingsLabel(
                 "labelLanguage",
@@ -1153,6 +1181,8 @@ namespace c2flux
             panelGeneral.Controls.Add(checkBoxShellContextMenuEnabled);
             panelGeneral.Controls.Add(checkBoxShellSearchContextMenuEnabled);
             panelGeneral.Controls.Add(checkBoxAutoCheckForUpdates);
+            panelGeneral.Controls.Add(labelRedundancyCacheSize);
+            panelGeneral.Controls.Add(buttonClearRedundancyCache);
             panelGeneral.Controls.Add(labelLanguage);
             panelGeneral.Controls.Add(comboBoxLanguage);
             panelGeneral.Controls.Add(buttonAddLanguage);
@@ -1333,18 +1363,40 @@ namespace c2flux
 
             labelStorageHistoryDetailsDatabaseSize.Enabled =
                 storageHistoryDetailsEnabled;
+            labelStorageHistoryDetailsDatabaseSize.ForeColor =
+                storageHistoryDetailsEnabled
+                    ? AntdThemeService.TextPrimary
+                    : AntdThemeService.MainDisabledButtonTextColor;
+
             labelStorageHistoryDetailsReusableSpace.Enabled =
                 storageHistoryDetailsEnabled;
+            labelStorageHistoryDetailsReusableSpace.ForeColor =
+                storageHistoryDetailsEnabled
+                    ? AntdThemeService.TextPrimary
+                    : AntdThemeService.MainDisabledButtonTextColor;
+
             checkBoxStorageHistoryDetailsAutoCompact.Enabled =
                 storageHistoryDetailsEnabled;
             checkBoxStorageHistoryDetailsAutoPurge.Enabled =
                 storageHistoryDetailsEnabled;
+
             labelStorageHistoryDetailsAutoPurgeMaximumAgeDays.Enabled =
                 autoPurgeEnabled;
+            labelStorageHistoryDetailsAutoPurgeMaximumAgeDays.ForeColor =
+                autoPurgeEnabled
+                    ? AntdThemeService.TextPrimary
+                    : AntdThemeService.MainDisabledButtonTextColor;
+
             textBoxStorageHistoryDetailsAutoPurgeMaximumAgeDays.Enabled =
                 autoPurgeEnabled;
+
             labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Enabled =
                 autoPurgeEnabled;
+            labelStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.ForeColor =
+                autoPurgeEnabled
+                    ? AntdThemeService.TextPrimary
+                    : AntdThemeService.MainDisabledButtonTextColor;
+
             textBoxStorageHistoryDetailsAutoPurgeMaximumSnapshotsPerDrive.Enabled =
                 autoPurgeEnabled;
         }
@@ -1381,6 +1433,30 @@ namespace c2flux
                     LocalizationService.GetText(
                         "Settings.StorageHistoryDetailsReusableSpace"),
                     reusableSpace);
+        }
+
+        private void UpdateRedundancyCacheInfo()
+        {
+            long cacheSizeBytes =
+                RedundancyHashCacheService.GetCacheSizeBytes();
+
+            labelRedundancyCacheSize.Text =
+                string.Format(
+                    LocalizationService.GetText(
+                        "Settings.RedundancyCacheSize"),
+                    SizeFormatter.Format(
+                        cacheSizeBytes));
+
+            buttonClearRedundancyCache.Enabled =
+                cacheSizeBytes > 0;
+        }
+
+        private void buttonClearRedundancyCache_Click(
+            object sender,
+            EventArgs e)
+        {
+            RedundancyHashCacheService.Clear();
+            UpdateRedundancyCacheInfo();
         }
 
         private void checkBoxSaveScanHistory_CheckedChanged(object sender, EventArgs e)
@@ -1842,6 +1918,7 @@ namespace c2flux
             UpdateStorageHistoryDetailsAutoPurgeControls();
             UpdateStorageHistoryDetailsDatabaseInfo();
             UpdateLoggingControls();
+            UpdateRedundancyCacheInfo();
 
             partitionFillLightColor = Color.FromArgb(_settings.PartitionFillColorLightArgb);
             partitionFillDarkColor = Color.FromArgb(_settings.PartitionFillColorDarkArgb);

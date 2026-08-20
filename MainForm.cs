@@ -1540,6 +1540,14 @@ namespace c2flux
                 return;
             }
 
+            string normalizedRootPath = NormalizeScanPath(rootPath);
+
+            if (_scanSessions.ContainsKey(normalizedRootPath))
+            {
+                ShowScanSession(rootPath);
+                return;
+            }
+
             await StartScanAsync(rootPath);
         }
 
@@ -1575,10 +1583,32 @@ namespace c2flux
         {
             Stopwatch scanStopwatch = Stopwatch.StartNew();
             string normalizedRootPath = NormalizeScanPath(rootPath);
+            ViewMode sessionViewMode = _settings.SelectedViewMode;
 
-            if (_scanSessions.TryGetValue(normalizedRootPath, out ScanSession existingSession) && existingSession.IsRunning)
+            if (_scanSessions.TryGetValue(normalizedRootPath, out ScanSession existingSession))
             {
-                existingSession.CancellationTokenSource.Cancel();
+                sessionViewMode = existingSession.ViewMode;
+
+                if (existingSession.IsRunning)
+                {
+                    existingSession.CancellationTokenSource.Cancel();
+                }
+
+                if (existingSession.AnalysisView != null)
+                {
+                    panelRightViewHost.Controls.Remove(
+                        existingSession.AnalysisView);
+
+                    if (ReferenceEquals(
+                            analysisView,
+                            existingSession.AnalysisView))
+                    {
+                        analysisView = null;
+                    }
+
+                    existingSession.AnalysisView.Dispose();
+                    existingSession.AnalysisView = null;
+                }
             }
 
             ScanSession session = new ScanSession
@@ -1588,7 +1618,9 @@ namespace c2flux
                 PauseTokenSource = new PauseTokenSource(),
                 IsRunning = true,
                 ScanTargetBytes = 0,
-                ScanStopwatch = scanStopwatch
+                ScanStopwatch = scanStopwatch,
+                ViewMode = sessionViewMode,
+                AnalysisVisible = false
             };
 
             _scanSessions[normalizedRootPath] = session;
@@ -1655,6 +1687,16 @@ namespace c2flux
 
             _treeEntryController.RestoreRootEntryVisibility(normalizedRootPath);
             _treeEntryController.ClearPendingLiveTreeUpdate(normalizedRootPath);
+
+            if (IsSelectedScanPath(session.RootPath))
+            {
+                HideAnalysisView();
+                HideStorageHistoryView();
+                _layoutMainFormController.SetViewMode(
+                    session.ViewMode,
+                    true);
+                RefreshMainViewButtonIcons();
+            }
 
             RenderScanResult(initialRootEntry);
             SetScanningState(true);
@@ -2328,6 +2370,8 @@ namespace c2flux
             {
                 _statusMainFormController.UpdateStatusStripForDrive(rootPath);
             }
+
+            RestoreScanSessionView(session);
         }
 
         private void UpdateSelectedScanStatus(
@@ -2564,6 +2608,7 @@ namespace c2flux
             HideAnalysisView();
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.Table, _suspendPersistentSettingsSave);
+            UpdateCurrentScanSessionViewState(ViewMode.Table, false);
             RefreshMainViewButtonIcons();
         }
 
@@ -2572,6 +2617,7 @@ namespace c2flux
             HideAnalysisView();
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.PieChart, _suspendPersistentSettingsSave);
+            UpdateCurrentScanSessionViewState(ViewMode.PieChart, false);
             RefreshMainViewButtonIcons();
         }
 
@@ -2580,6 +2626,7 @@ namespace c2flux
             HideAnalysisView();
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.BarChart, _suspendPersistentSettingsSave);
+            UpdateCurrentScanSessionViewState(ViewMode.BarChart, false);
             RefreshMainViewButtonIcons();
         }
 
@@ -2588,6 +2635,7 @@ namespace c2flux
             HideAnalysisView();
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.Sunburst, _suspendPersistentSettingsSave);
+            UpdateCurrentScanSessionViewState(ViewMode.Sunburst, false);
             RefreshMainViewButtonIcons();
         }
 
@@ -2596,6 +2644,7 @@ namespace c2flux
             HideAnalysisView();
             HideStorageHistoryView();
             _layoutMainFormController.SetViewMode(ViewMode.Treemap, _suspendPersistentSettingsSave);
+            UpdateCurrentScanSessionViewState(ViewMode.Treemap, false);
             RefreshMainViewButtonIcons();
         }
 
@@ -2623,6 +2672,55 @@ namespace c2flux
 
         private void SelectedEntryChanged(FileSystemEntry entry)
         {
+            if (entry != null)
+            {
+                FileSystemEntry selectedRootEntry =
+                    _treeEntryController.GetRootEntry(entry);
+
+                if (selectedRootEntry != null &&
+                    !string.IsNullOrWhiteSpace(
+                        selectedRootEntry.FullPath))
+                {
+                    string selectedRootPath =
+                        NormalizeScanPath(
+                            selectedRootEntry.FullPath);
+
+                    if (_scanSessions.TryGetValue(
+                            selectedRootPath,
+                            out ScanSession selectedSession) &&
+                        selectedSession.RootEntry != null &&
+                        !ReferenceEquals(
+                            _currentRootEntry,
+                            selectedSession.RootEntry))
+                    {
+                        _currentRootEntry =
+                            selectedSession.RootEntry;
+
+                        _layoutMainFormController.SetRootEntry(
+                            selectedSession.RootEntry);
+
+                        SetScanningState(
+                            selectedSession.IsRunning);
+
+                        if (selectedSession.IsRunning &&
+                            selectedSession.LatestProgress != null)
+                        {
+                            UpdateSelectedScanStatus(
+                                selectedSession,
+                                selectedSession.LatestProgress);
+                        }
+                        else
+                        {
+                            _statusMainFormController.UpdateStatusStripForDrive(
+                                selectedSession.RootPath);
+                        }
+
+                        RestoreScanSessionView(
+                            selectedSession);
+                    }
+                }
+            }
+
             _selectedEntry = entry;
             _layoutMainFormController.BindGrid(entry);
 
@@ -2684,6 +2782,47 @@ namespace c2flux
             return fileCount;
         }
 
+        private void UpdateCurrentScanSessionViewState(
+            ViewMode viewMode,
+            bool analysisVisible)
+        {
+            ScanSession session =
+                _scanSessions.Values.FirstOrDefault(
+                    currentSession =>
+                        currentSession.RootEntry != null &&
+                        ReferenceEquals(
+                            currentSession.RootEntry,
+                            _currentRootEntry));
+
+            if (session == null)
+                return;
+
+            session.ViewMode = viewMode;
+            session.AnalysisVisible = analysisVisible;
+        }
+
+        private void RestoreScanSessionView(
+            ScanSession session)
+        {
+            if (session == null)
+                return;
+
+            if (session.AnalysisVisible &&
+                !session.IsRunning &&
+                session.RootEntry != null)
+            {
+                ShowAnalysisView(session);
+                return;
+            }
+
+            HideAnalysisView();
+            HideStorageHistoryView();
+            _layoutMainFormController.SetViewMode(
+                session.ViewMode,
+                true);
+            RefreshMainViewButtonIcons();
+        }
+
         private void HideAnalysisView()
         {
             if (analysisView != null)
@@ -2697,24 +2836,59 @@ namespace c2flux
 
         private void ShowAnalysisView()
         {
-            if (analysisView != null)
+            ScanSession session = _scanSessions.Values.FirstOrDefault(
+                currentSession =>
+                    currentSession.RootEntry != null &&
+                    ReferenceEquals(
+                        currentSession.RootEntry,
+                        _currentRootEntry));
+
+            if (session == null)
+                return;
+
+            ShowAnalysisView(session);
+        }
+
+        private void ShowAnalysisView(
+            ScanSession session)
+        {
+            if (session == null ||
+                session.RootEntry == null)
             {
-                panelRightViewHost.Controls.Remove(analysisView);
-                analysisView.Dispose();
+                return;
             }
 
-            analysisView = new AdvancedFeaturesForm(_currentRootEntry, _settings, dataGridViewEntries)
+            if (analysisView != null &&
+                !ReferenceEquals(
+                    analysisView,
+                    session.AnalysisView))
             {
-                TopLevel = false,
-                FormBorderStyle = FormBorderStyle.None,
-                AutoSize = false,
-                MinimumSize = Size.Empty,
-                MaximumSize = Size.Empty,
-                Dock = DockStyle.Fill,
-                Visible = false
-            };
+                analysisView.Visible = false;
+            }
 
-            panelRightViewHost.Controls.Add(analysisView);
+            if (session.AnalysisView == null ||
+                session.AnalysisView.IsDisposed)
+            {
+                session.AnalysisView =
+                    new AdvancedFeaturesForm(
+                        session.RootEntry,
+                        _settings,
+                        dataGridViewEntries)
+                    {
+                        TopLevel = false,
+                        FormBorderStyle = FormBorderStyle.None,
+                        AutoSize = false,
+                        MinimumSize = Size.Empty,
+                        MaximumSize = Size.Empty,
+                        Dock = DockStyle.Fill,
+                        Visible = false
+                    };
+
+                panelRightViewHost.Controls.Add(
+                    session.AnalysisView);
+            }
+
+            analysisView = session.AnalysisView;
 
             HideStorageHistoryView();
 
@@ -2734,6 +2908,7 @@ namespace c2flux
             toolStripButtonSunburst.Toggle = false;
             toolStripButtonTreemap.Toggle = false;
             toolStripButtonAnalysis.Toggle = true;
+            session.AnalysisVisible = true;
             RefreshMainViewButtonIcons();
         }
 
@@ -3415,6 +3590,9 @@ namespace c2flux
             public bool IsRunning { get; set; }
             public bool WasCanceled { get; set; }
             public int SkippedDirectories { get; set; }
+            public ViewMode ViewMode { get; set; } = ViewMode.Table;
+            public bool AnalysisVisible { get; set; }
+            public AdvancedFeaturesForm AnalysisView { get; set; }
             public HashSet<string> SkippedDirectoryDetailSet { get; } = new HashSet<string>();
             public List<string> SkippedDirectoryDetails { get; } = new List<string>();
         }

@@ -440,18 +440,24 @@ namespace c2flux
         // Analysis
         // ============================================================
 
-        // Tabs File types / Largest files
+        // Tabs Extensions / File types / Redundancies / Largest files
         public const int AnalysisTabWidth = 120;
         public const int AnalysisTabHeight = 30;
         public const int AnalysisTabHorizontalPadding = 12;
         public const int AnalysisTabVerticalPadding = 4;
         public const float AnalysisTabAccentHeight = 2F;
 
-        // Tabelle File types - Spaltenbreiten in Prozent
+        // Tabelle Extensions - Spaltenbreiten in Prozent
         public const int AnalysisFileTypeColumnWidthPercent = 14;
         public const int AnalysisUsageColumnWidthPercent = 18;
         public const int AnalysisSizeGbColumnWidthPercent = 22;
         public const int AnalysisSizeMbColumnWidthPercent = 46;
+
+        // Tabelle File types - Spaltenbreiten in Prozent
+        public const int AnalysisFileTypeCategoryColumnWidthPercent = 24;
+
+        // Tabelle Redundancies - Spaltenbreiten in Prozent
+        public const int AnalysisRedundancyNameColumnWidthPercent = 42;
 
         // Tabelle Largest files - Spaltenbreiten in Prozent
         public const int AnalysisLargestFilesNameColumnWidthPercent = 22;
@@ -916,6 +922,16 @@ namespace c2flux
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxWidth = 420;
         public const int SettingsGeneralAutoCheckForUpdatesCheckboxHeight = 24;
 
+        public const int SettingsGeneralRedundancyCacheSizeLabelLeft = 34;
+        public const int SettingsGeneralRedundancyCacheSizeLabelTop = 396;
+        public const int SettingsGeneralRedundancyCacheSizeLabelWidth = 390;
+        public const int SettingsGeneralRedundancyCacheSizeLabelHeight = 28;
+
+        public const int SettingsGeneralClearRedundancyCacheButtonLeft = 34;
+        public const int SettingsGeneralClearRedundancyCacheButtonTop = 428;
+        public const int SettingsGeneralClearRedundancyCacheButtonWidth = 220;
+        public const int SettingsGeneralClearRedundancyCacheButtonHeight = 32;
+
         // Text Language
         public const int SettingsGeneralLanguageLabelLeft = 34;
         public const int SettingsGeneralLanguageLabelTop = 26;
@@ -954,7 +970,7 @@ namespace c2flux
 
         // Scrollbereich General
         public const int SettingsGeneralScrollContentWidth = 460;
-        public const int SettingsGeneralScrollContentHeight = 456;
+        public const int SettingsGeneralScrollContentHeight = 480;
 
         // ============================================================
         // Settings - Export
@@ -1508,7 +1524,7 @@ namespace c2flux
             ApplyMainButtonVisualStyle(button);
         }
 
-        // Tabs File types / Largest files - vollständige zentrale Darstellung
+        // Tabs Extensions / File types / Largest files - vollständige zentrale Darstellung
         public static void ConfigureAnalysisTabs(
             AntdUI.Tabs tabs)
         {
