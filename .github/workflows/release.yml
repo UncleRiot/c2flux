@@ -5,6 +5,19 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v1.3.4"
+        required: false
+        type: string
+
+      backfill_changelog:
+        description: "Rebuild CHANGELOG.md from all GitHub releases"
+        required: true
+        default: false
+        type: boolean
+
 permissions:
   contents: write
 
@@ -13,22 +26,58 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Repository auschecken
+      - name: Release-Tag ermitteln
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
+        id: release_tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+              $tag = "${{ inputs.tag }}"
+          }
+          else {
+              $tag = "${{ github.ref_name }}"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+              throw "Release tag is required"
+          }
+
+          if (-not $tag.StartsWith("v")) {
+              throw "Release tag must start with 'v'"
+          }
+
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Release-Quellstand auschecken
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release_tag.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Default-Branch für Backfill auschecken
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_changelog }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
 
       - name: .NET 8 einrichten
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
       - name: Abhängigkeiten wiederherstellen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         run: dotnet restore c2flux.sln
 
       - name: Versionsinformationen ermitteln
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         id: version
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = "${{ steps.release_tag.outputs.tag }}"
           $version = $tag.TrimStart("v")
           $baseVersion = $version.Split("-")[0]
           $assemblyVersion = "$baseVersion.0"
@@ -39,6 +88,7 @@ jobs:
           "is_prerelease=$($isPrerelease.ToString().ToLower())" >> $env:GITHUB_OUTPUT
 
       - name: Projekt veröffentlichen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         run: >
           dotnet publish c2flux.csproj
           --configuration Release
@@ -51,6 +101,7 @@ jobs:
           -p:InformationalVersion=${{ steps.version.outputs.version }}
 
       - name: ZIP erstellen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         shell: pwsh
         run: |
           Compress-Archive `
@@ -58,9 +109,120 @@ jobs:
             -DestinationPath "c2flux-v${{ steps.version.outputs.version }}-win-x64.zip"
 
       - name: GitHub Release erstellen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
         uses: softprops/action-gh-release@v3
         with:
-          name: c2flux ${{ github.ref_name }}
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: c2flux ${{ steps.release_tag.outputs.tag }}
           files: c2flux-v${{ steps.version.outputs.version }}-win-x64.zip
           generate_release_notes: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
+
+      - name: Default-Branch für CHANGELOG aktualisieren
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
+        shell: pwsh
+        run: |
+          git fetch origin "${{ github.event.repository.default_branch }}"
+          git checkout "${{ github.event.repository.default_branch }}"
+          git pull --ff-only origin "${{ github.event.repository.default_branch }}"
+
+      - name: CHANGELOG.md vollständig aus Releases neu aufbauen
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_changelog }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releases = gh api `
+              --paginate `
+              "repos/${{ github.repository }}/releases?per_page=100" `
+              | ConvertFrom-Json
+
+          $publishedReleases = $releases |
+              Where-Object {
+                  -not $_.draft -and
+                  -not [string]::IsNullOrWhiteSpace($_.tag_name)
+              } |
+              Sort-Object {
+                  [DateTime]$_.published_at
+              } -Descending
+
+          $sections = New-Object System.Collections.Generic.List[string]
+
+          foreach ($release in $publishedReleases) {
+              $tag = $release.tag_name
+              $body = [string]$release.body
+
+              $section = "## Changelog $tag"
+
+              if (-not [string]::IsNullOrWhiteSpace($body)) {
+                  $section += "`r`n`r`n" + $body.Trim()
+              }
+
+              $sections.Add($section)
+          }
+
+          $content = [string]::Join(
+              "`r`n`r`n",
+              $sections
+          )
+
+          if (-not [string]::IsNullOrEmpty($content)) {
+              $content += "`r`n"
+          }
+
+          [System.IO.File]::WriteAllText(
+              (Join-Path $PWD "CHANGELOG.md"),
+              $content,
+              [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: Neues Release in CHANGELOG.md ergänzen
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_changelog) }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ steps.release_tag.outputs.tag }}"
+          $body = gh release view $tag --json body --jq '.body'
+
+          $existing = ""
+          if (Test-Path "CHANGELOG.md") {
+              $existing = Get-Content "CHANGELOG.md" -Raw -Encoding UTF8
+          }
+
+          $heading = "## Changelog $tag"
+
+          if ($existing -match [regex]::Escape($heading)) {
+              Write-Host "$heading already exists"
+              exit 0
+          }
+
+          $section = "$heading`r`n`r`n$body`r`n`r`n"
+
+          [System.IO.File]::WriteAllText(
+              (Join-Path $PWD "CHANGELOG.md"),
+              $section + $existing,
+              [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: CHANGELOG.md committen
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add CHANGELOG.md
+
+          if (git diff --cached --quiet) {
+              exit 0
+          }
+
+          if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ inputs.backfill_changelog }}" -eq "true") {
+              $commitMessage = "Rebuild CHANGELOG from GitHub releases"
+          }
+          else {
+              $commitMessage = "Update CHANGELOG for ${{ steps.release_tag.outputs.tag }}"
+          }
+
+          git commit -m $commitMessage
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"

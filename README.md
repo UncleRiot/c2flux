@@ -7,13 +7,15 @@
 A huge thank you to everyone behind these projects — you’re amazing! Thanks for making such great work available to the community. ❤️
 
 - [itsWindows11.NtfsReader](https://github.com/itsWindows11/NtfsReader)
+  (This project includes a modified version of itsWindows11/NtfsReader)
 - [AntdUI](https://github.com/AntdUI/AntdUI)
 
 ---
 **Scan your drives, get an overview of used disk space, find everything. Fast**
 
 
-[![Download c2flux](https://img.shields.io/badge/⬇️%20Download-c2flux%20v1.3.3-brightgreen?style=for-the-badge)](https://github.com/UncleRiot/c2flux/releases/download/v1.3.2/c2flux-v1.3.3-win-x64.zip)
+[![Download c2flux](https://img.shields.io/github/v/release/UncleRiot/c2flux?label=%E2%AC%87%EF%B8%8F%20Download&style=for-the-badge&color=brightgreen)](https://github.com/UncleRiot/c2flux/releases/latest)
+[![Changelog](https://img.shields.io/badge/%F0%9F%93%9D%20Changelog-View-blue?style=for-the-badge)](CHANGELOG.md)
 
 <br>
 <br>
