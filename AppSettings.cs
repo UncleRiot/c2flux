@@ -37,6 +37,7 @@ namespace c2flux
 
     public sealed class AppSettings
     {
+        // Central persisted application settings model with validation, migration and safe-save handling.
         private static readonly string SettingsDirectoryPath =
             System.IO.Path.Combine(
                 System.AppContext.BaseDirectory,
@@ -190,6 +191,7 @@ namespace c2flux
         public int EntryColumnPercentWidth { get; set; }
         public int EntryColumnPathWidth { get; set; }
 
+        // Loads, validates and normalizes persisted settings before they are used by the application.
         public static AppSettings Load()
         {
             StartupWarningMessage = null;
@@ -294,6 +296,7 @@ namespace c2flux
             }
         }
 
+        // Migrates toolbar visibility defaults for older settings versions.
         public void EnsureToolbarButtonVisibilitySettings()
         {
             if (ToolbarButtonVisibilitySettingsVersion >= 1)
@@ -315,6 +318,7 @@ namespace c2flux
             ToolbarButtonVisibilitySettingsVersion = 1;
         }
 
+        // Backs up invalid settings and falls back to defaults without risking further data loss.
         private static AppSettings HandleInvalidSettingsFile()
         {
             string backupFilePath =
@@ -345,6 +349,7 @@ namespace c2flux
             return new AppSettings();
         }
 
+        // Creates a unique timestamped backup path for a corrupt settings file.
         private static string CreateInvalidSettingsBackupFilePath()
         {
             string backupFileNameWithoutExtension =
@@ -372,6 +377,7 @@ namespace c2flux
             return backupFilePath;
         }
 
+        // Moves the legacy root-level settings file into the current Settings directory.
         private static void MigrateLegacySettingsFile()
         {
             if (System.IO.File.Exists(SettingsFilePath) ||
@@ -415,6 +421,7 @@ namespace c2flux
             }
         }
 
+        // Saves atomically through a temporary file; failures block further saves for this session.
         public void Save()
         {
             if (IsSaveBlocked)

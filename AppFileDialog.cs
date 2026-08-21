@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Last comment Update 2026-08-21 09:20
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -18,6 +19,8 @@ namespace c2flux
 
     internal sealed class AppFileDialog : Form
     {
+        // Custom themed file dialog; all visual layout and styling must come from AntdThemeService.
+        // All visible UI text must use LocalizationService.
         private readonly AppSettings _settings;
         private readonly AppFileDialogMode _mode;
         private readonly string _filter;
@@ -319,6 +322,7 @@ namespace c2flux
                 AppFileDialog_Resize;
         }
 
+        // Parses standard WinForms-style filter strings into internal filter entries.
         private void ParseFilters()
         {
             _filters.Clear();
@@ -573,6 +577,7 @@ namespace c2flux
                 : systemRoot;
         }
 
+        // Central navigation path; updates history, address, entries and dialog state.
         private void NavigateTo(
             string path,
             bool addToHistory)
@@ -654,6 +659,7 @@ namespace c2flux
             }
         }
 
+        // Rebuilds the current directory listing using search text and the active file filter.
         private void RefreshEntries()
         {
             if (string.IsNullOrWhiteSpace(
@@ -882,6 +888,7 @@ namespace c2flux
             NavigateHistory(target);
         }
 
+        // Navigates without creating a new history entry.
         private void NavigateHistory(
             string target)
         {
@@ -968,6 +975,7 @@ namespace c2flux
             }
         }
 
+        // Central validation and completion path for folder, open-file and save-file modes.
         private void buttonConfirm_Click(
             object sender,
             EventArgs e)
@@ -1092,6 +1100,7 @@ namespace c2flux
             Close();
         }
 
+        // Adds the configured or selected filter extension only when the path has none.
         private string ApplyDefaultExtension(
             string fileName)
         {
@@ -1340,6 +1349,7 @@ namespace c2flux
                     "Common.OK"));
         }
 
+        // Reuses Windows shell icons through the shared ImageList and releases native handles.
         private string EnsureShellIcon(
             string path)
         {
@@ -1435,6 +1445,7 @@ namespace c2flux
         private const uint SHGFI_ICON = 0x000000100;
         private const uint SHGFI_SMALLICON = 0x000000001;
 
+        // Reduces ListView flicker and delegates header remainder painting to AntdThemeService.
         private sealed class DoubleBufferedListView : ListView
         {
             private const int LVM_FIRST = 0x1000;
@@ -1540,6 +1551,7 @@ namespace c2flux
             }
         }
 
+        // Internal representation of one file-dialog description and its wildcard patterns.
         private sealed class FileDialogFilter
         {
             public FileDialogFilter(

@@ -1,4 +1,5 @@
-﻿﻿using System;
+﻿// last comment update 2026-08-21, 09:12
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
@@ -11,6 +12,8 @@ namespace c2flux
 {
     public sealed class AboutForm : Form
     {
+        // UI design, spacing, colors and sizing must follow AntdThemeService.
+        // Do not introduce local visual constants unless technically required.
 
         private readonly AppSettings _settings;
 
@@ -48,6 +51,7 @@ namespace c2flux
             Shown += AboutForm_Shown;
         }
 
+        // High-DPI fallback layout for 150%+ scaling.
         private void AboutForm_Shown(
             object sender,
             EventArgs e)
@@ -226,12 +230,14 @@ namespace c2flux
             }
         }
 
+        // Keeps embedded images visually compatible with the active theme.
         private void ConfigureImageBackgrounds()
         {
             pictureBoxMolotov.BackColor = Color.Transparent;
             pictureBoxKoFi.BackColor = Color.Transparent;
         }
 
+        // Link colors adapt to the current light/dark theme.
         private void ConfigureLinkColors()
         {
             bool useDarkMode = BackColor.GetBrightness() < 0.5f;
@@ -256,6 +262,7 @@ namespace c2flux
             linkLabelHelp.VisitedLinkColor = linkColor;
         }
 
+        // Builds the About UI; visible texts must use LocalizationService.
         private void InitializeComponent()
         {
             AutoScaleMode = AutoScaleMode.Dpi;
@@ -277,6 +284,7 @@ namespace c2flux
             pictureBoxMolotov = new PictureBox
             {
                 Name = "pictureBoxMolotov",
+                
                 Image = CreateCircularMolotovImage(),
                 Size = new Size(82, 82),
                 Location = new Point(20, 24),
@@ -365,6 +373,7 @@ namespace c2flux
             pictureBoxKoFi = new PictureBox
             {
                 Name = "pictureBoxKoFi",
+                
                 Image = CreateKoFiImage(),
                 Size = new Size(179, 42),
                 Location = new Point(20, 244),
@@ -399,6 +408,7 @@ namespace c2flux
             AcceptButton = buttonOk;
         }
 
+        // Creates the embedded circular application image at runtime.
         private Bitmap CreateCircularMolotovImage()
         {
             Bitmap output = new Bitmap(82, 82, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -441,6 +451,7 @@ namespace c2flux
             return output;
         }
 
+        // Loads the embedded Ko-fi image and removes its white background.
         private Image CreateKoFiImage()
         {
             using Stream stream = typeof(AboutForm).Assembly.GetManifestResourceStream("c2flux.Ressources.ko-fi.png");
@@ -468,7 +479,7 @@ namespace c2flux
             return output;
         }
 
-
+        // Updates the release status without blocking the UI thread.
         private async Task UpdateGitHubStatusAsync()
         {
             try

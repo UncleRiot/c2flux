@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿// Last comment Update 2026-08-21 09:33
+using System.Drawing;
 using System.IO;
 using System.Reflection;
 
@@ -6,10 +7,12 @@ namespace c2flux
 {
     public static class AppResources
     {
+        // Central access point for embedded application images and icons.
         private static Icon _applicationIcon;
         private static Bitmap _applicationImage;
         private static Bitmap _storageHistoryDetailsPreviewImage;
 
+        // Lazily loads and reuses the embedded application icon.
         public static Icon ApplicationIcon
         {
             get
@@ -23,6 +26,7 @@ namespace c2flux
             }
         }
 
+        // Lazily loads and reuses the embedded application image.
         public static Bitmap ApplicationImage
         {
             get
@@ -36,6 +40,7 @@ namespace c2flux
             }
         }
 
+        // Lazily loads and reuses the Storage History preview image.
         public static Bitmap StorageHistoryDetailsPreviewImage
         {
             get
@@ -50,6 +55,7 @@ namespace c2flux
             }
         }
 
+        // Loads an embedded icon and falls back to the system application icon.
         private static Icon LoadIcon(string resourceName)
         {
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
@@ -65,6 +71,7 @@ namespace c2flux
             }
         }
 
+        // Loads an embedded bitmap and falls back to the system application image.
         private static Bitmap LoadBitmap(string resourceName)
         {
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);

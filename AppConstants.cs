@@ -1,7 +1,9 @@
+// Last comment Update 2026-08-21 09:20
 namespace c2flux
 {
     public static class AppConstants
     {
+        // Central source of truth for application identity and external URLs.
         public const string ApplicationName = "c² flux";
         public const string FullApplicationName =
             "c² flux - Tree Scanner";

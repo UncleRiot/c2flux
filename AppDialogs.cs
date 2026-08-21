@@ -1,10 +1,14 @@
-﻿using System;
+﻿// Last comment Update 2026-08-21 09:20
+using System;
 using System.Windows.Forms;
 
 namespace c2flux
 {
     public static class AppDialogs
     {
+        // Central entry point for application dialogs.
+        // Visual styling must come from AntdThemeService; all visible UI text must use LocalizationService or
+        // already-localized parameters.
         private const int IDI_QUESTION = 32514;
         private const int IDI_WARNING = 32515;
         private const int DI_NORMAL = 0x0003;
@@ -24,7 +28,7 @@ namespace c2flux
             IntPtr hbrFlickerFreeDraw,
             int diFlags);
 
-
+        // Uses the current AntdUI theme when no AppSettings instance is available.
         public static DialogResult ShowWarningOk(
             string messageText,
             string title,
@@ -80,6 +84,7 @@ namespace c2flux
             return dialogForm.ShowDialog(owner);
         }
 
+        // Returns both the user's elevation choice and the "do not show again" state.
         public static ElevationPromptResult ShowElevationPrompt(AppSettings settings)
         {
             using DialogForm dialogForm = new DialogForm(
@@ -206,6 +211,7 @@ namespace c2flux
             return result;
         }
 
+        // Fixed warning dialog using the shared application theme.
         private sealed class WarningOkDialogForm : Form
         {
             private readonly AppSettings _settings;
@@ -311,6 +317,7 @@ namespace c2flux
             }
         }
 
+        // Fixed Yes/No warning dialog using the shared application theme.
         private sealed class WarningYesNoDialogForm : Form
         {
             private readonly AppSettings _settings;
@@ -431,6 +438,7 @@ namespace c2flux
             }
         }
 
+        // Elevation prompt with an additional persisted user choice.
         private sealed class DialogForm : Form
         {
             private readonly AppSettings _settings;
@@ -732,6 +740,7 @@ namespace c2flux
             }
         }
 
+        // Draws the native Windows warning icon without external image assets.
         private sealed class NativeWarningIconControl : Control
         {
             public NativeWarningIconControl()
@@ -783,6 +792,7 @@ namespace c2flux
             }
         }
 
+        // Draws the native Windows question icon without external image assets.
         private sealed class NativeQuestionIconControl : Control
         {
             public NativeQuestionIconControl()

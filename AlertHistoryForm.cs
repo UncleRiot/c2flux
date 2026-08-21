@@ -1,3 +1,4 @@
+// last comment update 2026-08-21, 09:12
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,6 +12,8 @@ namespace c2flux
 {
     public sealed class AlertHistoryForm : Form
     {
+        // All visual design, colors, spacing and sizing must come from AntdThemeService.
+        // All visible UI text must use LocalizationService.
         private readonly AppSettings _settings;
         private readonly Image _informationSymbolImage = StatusSymbolRenderer.CreateBitmap(StatusSymbolKind.Information);
         private readonly Image _warningSymbolImage = StatusSymbolRenderer.CreateBitmap(StatusSymbolKind.Warning);
@@ -35,7 +38,7 @@ namespace c2flux
             AntdThemeService.Apply(this, _settings.Layout);
             AntdThemeService.ApplyTable(dataGridViewAlerts);
             LoadAlerts();
-
+            
             AppAlertLog.Changed += AppAlertLog_Changed;
         }
 
@@ -259,6 +262,7 @@ namespace c2flux
             UpdateDetails();
         }
 
+        // Refreshes the alert list on the UI thread when the global alert log changes.
         private void AppAlertLog_Changed(object sender, EventArgs e)
         {
             if (IsDisposed)
@@ -273,6 +277,7 @@ namespace c2flux
             LoadAlerts();
         }
 
+        // Reloads alerts while preserving selection and the current sort order.
         private void LoadAlerts()
         {
             List<AppAlertEntry> selectedEntries = GetSelectedEntries();
@@ -281,6 +286,7 @@ namespace c2flux
 
             if (!string.IsNullOrWhiteSpace(_sortColumnName))
             {
+                // Central sort mapping for all sortable alert columns.
                 entries = SortAlerts(entries, _sortColumnName, _sortDirection);
             }
 
@@ -296,6 +302,7 @@ namespace c2flux
             }
 
             UpdateButtonState();
+            
             UpdateDetails();
         }
 
@@ -326,6 +333,7 @@ namespace c2flux
             LoadAlerts();
         }
 
+        // Central sort mapping for all sortable alert columns.
         private static List<AppAlertEntry> SortAlerts(
             IEnumerable<AppAlertEntry> entries,
             string columnName,
@@ -444,6 +452,7 @@ namespace c2flux
             buttonDeleteAll.Enabled = hasEntries;
         }
 
+        // Shows details only for a single selected alert.
         private void UpdateDetails()
         {
             List<AppAlertEntry> selectedEntries = GetSelectedEntries();

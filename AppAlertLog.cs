@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Last comment Update 2026-08-21 09:20
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -61,6 +62,7 @@ namespace c2flux
 
     public static class AppAlertLog
     {
+        // Thread-safe in-memory alert store with optional CSV persistence.
         private const string LogDirectoryName = "Logs";
         private const string LogFileName = "WTF.log";
         private const string PreviousLogFileName = "WTF.previous.log";
@@ -75,6 +77,7 @@ namespace c2flux
 
         public static event EventHandler Changed;
 
+        // Updates logging behavior used by all subsequent alert writes.
         public static void Configure(
             AppLogLevel logLevel,
             bool autoSaveLog,
@@ -145,6 +148,7 @@ namespace c2flux
             Add(severity, category, message, details, false);
         }
 
+        // Single write path for all alerts; raises Changed after the locked update.
         private static void Add(
             AppAlertSeverity severity,
             string category,
@@ -186,6 +190,7 @@ namespace c2flux
             OnChanged();
         }
 
+        // Returns detached copies so callers cannot mutate the shared alert store.
         public static List<AppAlertEntry> GetEntries()
         {
             lock (SyncRoot)
@@ -264,6 +269,7 @@ namespace c2flux
             OnChanged();
         }
 
+        // Appends CSV log entries and rotates once the configured size limit is reached.
         private static void TryWriteEntryToFile(AppAlertEntry entry)
         {
             try
@@ -350,7 +356,8 @@ namespace c2flux
 
             return "\"" + text.Replace("\"", "\"\"") + "\"";
         }
-
+        
+        // Creates a detached snapshot of a stored alert entry.
         private static AppAlertEntry Clone(AppAlertEntry entry)
         {
             return new AppAlertEntry
@@ -365,6 +372,7 @@ namespace c2flux
             };
         }
 
+        // Notifies UI consumers after alert state changes.
         private static void OnChanged()
         {
             Changed?.Invoke(null, EventArgs.Empty);

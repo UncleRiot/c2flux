@@ -1,8 +1,9 @@
-﻿// Reminder to myself: Only use centralized settings in AntdThemeServices.cs, no local configuration/positioning of buttons/tables/etc
+﻿// Reminder to myself: Only use centralized settings in AntdThemeService.cs, no local configuration/positioning of buttons/tables/etc
 // Sign temporal "workarounds" in classes before and after the corresponding functions - syntax:
 // Don't forget to add notices!!!!!
 // "// Local workaround Start: Description"
 // "// Local workaround End: Description"
+// Last comment Update 2026-08-21 09:20
 
 using System;
 using System.Drawing;
@@ -14,6 +15,8 @@ using System.Windows.Forms;
 
 namespace c2flux
 {
+    // Central source of truth for application-wide UI design, sizing, colors and control styling.
+    // Forms and controls must not introduce local visual constants unless technically unavoidable.
     public static class AntdThemeService
     {
         private sealed class ClickThroughToolStrip : ToolStrip
@@ -78,6 +81,7 @@ namespace c2flux
             }
         }
 
+        // Bridges the application's LocalizationService into AntdUI controls.
         public static void ConfigureLocalization()
         {
             CultureInfo culture = GetApplicationCultureInfo();
@@ -86,6 +90,7 @@ namespace c2flux
             AntdUI.Localization.SetLanguage(GetAntdUiCultureId(culture));
         }
 
+        // Maps the current application language to the culture used by AntdUI and date controls.
         private static CultureInfo GetApplicationCultureInfo()
         {
             string languageCode = LocalizationService.NormalizeLanguageCode(
@@ -140,6 +145,7 @@ namespace c2flux
             return "en-US";
         }
 
+        // Applies culture-specific calendar formats to AntdUI's internal date picker popup.
         private static void ApplyDatePickerLocalization(
             AntdUI.DatePicker datePicker)
         {
@@ -1524,7 +1530,8 @@ namespace c2flux
             ApplyMainButtonVisualStyle(button);
         }
 
-        // Tabs Extensions / File types / Largest files - vollständige zentrale Darstellung
+        
+        // Shared visual configuration for Analysis and Scan History tabs.
         public static void ConfigureAnalysisTabs(
             AntdUI.Tabs tabs)
         {
@@ -1557,7 +1564,8 @@ namespace c2flux
 
 
 
-        // Analysis-Tabellen verwenden dieselbe AntdUI-Table-Konfiguration wie die Table-Ansicht.
+        
+        // Analysis tables intentionally reuse the application's central table styling.
         public static void ConfigureAnalysisTable(
             AntdUI.Table table)
         {
@@ -3161,6 +3169,7 @@ namespace c2flux
             }
         }
 
+        // Applies the complete centralized visual configuration to MainForm and its core controls.
         public static void ApplyMainForm(
             Form form,
             AppLayout layout,
@@ -3716,6 +3725,7 @@ namespace c2flux
             button.BackActive = PressedBackground;
         }
 
+        // Sets the global theme mode before controls are styled.
         public static void Apply(AppLayout layout)
         {
             _useDarkMode = ShouldUseDarkMode(layout);
@@ -3832,6 +3842,7 @@ namespace c2flux
             ApplyWindowsTheme(form, layout);
         }
 
+        // Applies native Windows dark-mode handling around system dialogs.
         public static DialogResult ShowNativeDialog(
             CommonDialog dialog,
             IWin32Window owner)
@@ -4014,6 +4025,7 @@ namespace c2flux
                 Color.Transparent;
         }
 
+        // Central visual setup for the custom file dialog; layout is handled separately.
         internal static void ConfigureAppFileDialog(
             Form form,
             AppLayout layout,
@@ -4247,6 +4259,7 @@ namespace c2flux
             button.Invalidate();
         }
 
+        // Central layout source for the custom file dialog.
         internal static void LayoutAppFileDialog(
             Form form,
             AppFileDialogMode mode,

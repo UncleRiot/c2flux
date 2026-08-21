@@ -1,4 +1,5 @@
-﻿using System;
+﻿// last comment update 2026-08-21, 09:12
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +14,8 @@ namespace c2flux
 {
     public sealed class AdvancedFeaturesForm : Form
     {
+        // All visual design, colors, spacing and sizing must come from AntdThemeService.
+        // All visible UI text must use LocalizationService.
         private sealed class FileTypeRow
         {
             public string Extension { get; set; }
@@ -534,6 +537,7 @@ namespace c2flux
             [".swo"] = "Advanced.FileType.TemporaryFiles",
                 };
 
+        // Shared Analysis table behavior; visual styling must remain centralized in AntdThemeService.
         private class Analysis_ResponsiveTableGrid : AntdUI.Table
         {
             public Analysis_ResponsiveTableGrid()
@@ -668,6 +672,7 @@ namespace c2flux
                         tabs.SelectedTab,
                         _redundanciesPage))
                 {
+                    
                     await LoadRedundanciesAsync();
                 }
             };
@@ -1071,6 +1076,7 @@ namespace c2flux
                 redundancyContent);
         }
 
+        // Redundancy analysis is lazy-loaded once and updates results progressively.
         private async Task LoadRedundanciesAsync()
         {
             if (_redundanciesLoaded ||
@@ -1201,6 +1207,7 @@ namespace c2flux
             }
         }
 
+        // Do not refresh while rows are expanded; refreshes can collapse or flicker the tree.
         private void FlushPendingRedundancyGroups(
             ConcurrentQueue<RedundancyAnalysisGroup> pendingGroups,
             long totalBytes,
@@ -1425,6 +1432,7 @@ namespace c2flux
             return low;
         }
 
+        // Stabilizes rapidly changing analysis phases to prevent progress-text flicker.
         private void UpdateRedundancyProgressPhase(
             RedundancyAnalysisPhase phase)
         {
@@ -1690,6 +1698,7 @@ namespace c2flux
 
         private void RefreshData()
         {
+            
             List<FileSystemEntry> files = GetFiles();
             long totalFileTypeBytes =
                 files.Sum(file => file.SizeBytes);
@@ -2048,6 +2057,7 @@ namespace c2flux
                 char.IsDigit(fileName[numberStart + 2]);
         }
 
+        // Prefer the scan's flat AllFiles source; recurse only as fallback.
         private List<FileSystemEntry> GetFiles()
         {
             if (_rootEntry.AllFiles != null &&
@@ -2115,6 +2125,7 @@ namespace c2flux
             _largestFilesGrid.ApplyAntdUIStyle();
         }
 
+        // Closing this form cancels its running redundancy analysis.
         protected override void OnFormClosing(
             FormClosingEventArgs e)
         {
