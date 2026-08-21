@@ -1,3 +1,10 @@
+## Changelog v1.3.5-beta.2
+
+- (Fix) Pinned SQLitePCLRaw to 2.1.13 to resolve the affected native SQLite dependency
+- (Change) Added and improved comments across multiple source files
+
+**Full Changelog**: https://github.com/UncleRiot/c2flux/compare/v1.3.5-beta.1...v1.3.5-beta.2
+
 ## Changelog v1.3.4
 
 Again, a bigger fix-release...

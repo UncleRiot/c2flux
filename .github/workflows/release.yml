@@ -187,7 +187,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "${{ steps.release_tag.outputs.tag }}"
-          $body = gh release view $tag --json body --jq '.body'
+          $release = gh release view $tag --json body | ConvertFrom-Json
+          $body = [string]$release.body
 
           $existing = ""
           if (Test-Path "CHANGELOG.md") {
