@@ -21,6 +21,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: c2flux-release-changelog
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
@@ -113,7 +117,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release_tag.outputs.tag }}
-          name: c2flux ${{ steps.release_tag.outputs.tag }}
+          name: ${{ steps.release_tag.outputs.tag }}
           files: c2flux-v${{ steps.version.outputs.version }}-win-x64.zip
           generate_release_notes: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
@@ -225,4 +229,8 @@ jobs:
           }
 
           git commit -m $commitMessage
-          git push origin "HEAD:${{ github.event.repository.default_branch }}"
+
+          $defaultBranch = "${{ github.event.repository.default_branch }}"
+          git fetch origin $defaultBranch
+          git rebase "origin/$defaultBranch"
+          git push origin "HEAD:$defaultBranch"
