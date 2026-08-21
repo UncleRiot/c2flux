@@ -27,6 +27,7 @@ namespace c2flux
         public bool UpdateAvailable { get; set; }
         public string LatestVersion { get; set; }
         public string DownloadUrl { get; set; }
+        public string ReleaseNotes { get; set; }
         public GitHubUpdateErrorKind ErrorKind { get; set; }
     }
 
@@ -98,6 +99,7 @@ namespace c2flux
                 SemanticVersion latestVersion = default;
                 string latestVersionText = string.Empty;
                 string downloadUrl = AppConstants.GitHubRepositoryUrl;
+                string releaseNotes = string.Empty;
 
                 foreach (JsonElement releaseElement in root.EnumerateArray())
                 {
@@ -156,6 +158,20 @@ namespace c2flux
                     {
                         downloadUrl = AppConstants.GitHubRepositoryUrl;
                     }
+
+                    if (releaseElement.TryGetProperty(
+                            "body",
+                            out JsonElement bodyElement) &&
+                        bodyElement.ValueKind == JsonValueKind.String)
+                    {
+                        releaseNotes =
+                            ExtractWhatsNew(
+                                bodyElement.GetString());
+                    }
+                    else
+                    {
+                        releaseNotes = string.Empty;
+                    }
                 }
 
                 if (!releaseFound)
@@ -175,6 +191,7 @@ namespace c2flux
                         latestVersion.CompareTo(currentVersion) > 0,
                     LatestVersion = latestVersionText,
                     DownloadUrl = downloadUrl,
+                    ReleaseNotes = releaseNotes,
                     ErrorKind = GitHubUpdateErrorKind.None
                 };
             }
@@ -276,8 +293,85 @@ namespace c2flux
                 UpdateAvailable = false,
                 LatestVersion = string.Empty,
                 DownloadUrl = string.Empty,
+                ReleaseNotes = string.Empty,
                 ErrorKind = errorKind
             };
+        }
+
+        private static string ExtractWhatsNew(
+            string releaseBody)
+        {
+            if (string.IsNullOrWhiteSpace(releaseBody))
+            {
+                return string.Empty;
+            }
+
+            string normalizedBody =
+                releaseBody.Replace(
+                    "\r\n",
+                    "\n");
+
+            string[] lines =
+                normalizedBody.Split('\n');
+
+            bool inWhatsNewSection = false;
+            List<string> releaseNoteLines =
+                new List<string>();
+
+            foreach (string rawLine in lines)
+            {
+                string line = rawLine.Trim();
+
+                if (!inWhatsNewSection)
+                {
+                    if (string.Equals(
+                            line,
+                            "## What's new",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        inWhatsNewSection = true;
+                    }
+
+                    continue;
+                }
+
+                if (line.StartsWith(
+                        "#",
+                        StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                if (!line.StartsWith(
+                        "- ",
+                        StringComparison.Ordinal) &&
+                    !line.StartsWith(
+                        "* ",
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                releaseNoteLines.Add(
+                    "• " +
+                    line.Substring(2).Trim());
+
+                if (releaseNoteLines.Count == 5)
+                {
+                    break;
+                }
+            }
+
+            if (releaseNoteLines.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return "What's new:" +
+                Environment.NewLine +
+                string.Join(
+                    Environment.NewLine,
+                    releaseNoteLines);
         }
 
         private static string GetReleasesApiUrl()

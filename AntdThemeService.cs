@@ -775,6 +775,8 @@ namespace c2flux
         // Fenster
         public const int UpdateAvailableDialogWidth = 420;
         public const int UpdateAvailableDialogHeight = 176;
+        public const int UpdateAvailableDialogWithReleaseNotesWidth = 520;
+        public const int UpdateAvailableDialogWithReleaseNotesHeight = 260;
 
         // Ausrufezeichen
         public const int UpdateAvailableIconLeft = 36;
@@ -787,6 +789,12 @@ namespace c2flux
         public const int UpdateAvailableMessageTop = 24;
         public const int UpdateAvailableMessageWidth = 324;
         public const int UpdateAvailableMessageHeight = 48;
+
+        // Release-Hinweise unterhalb der Update-Meldung
+        public const int UpdateAvailableReleaseNotesLeft = 80;
+        public const int UpdateAvailableReleaseNotesTop = 80;
+        public const int UpdateAvailableReleaseNotesWidth = 420;
+        public const int UpdateAvailableReleaseNotesHeight = 116;
 
         // Standardgröße der Dialogbuttons entsprechend AboutForm
         public const int UpdateAvailableButtonWidth = 90;
@@ -5113,6 +5121,8 @@ namespace c2flux
             Form form,
             PictureBox informationIcon,
             Label messageLabel,
+            Label releaseNotesLabel,
+            AntdUI.Button changelogButton,
             AntdUI.Button downloadButton,
             AntdUI.Button laterButton,
             AppLayout layout)
@@ -5120,16 +5130,26 @@ namespace c2flux
             if (form == null ||
                 informationIcon == null ||
                 messageLabel == null ||
+                releaseNotesLabel == null ||
+                changelogButton == null ||
                 downloadButton == null ||
                 laterButton == null)
             {
                 return;
             }
 
+            bool hasReleaseNotes =
+                !string.IsNullOrWhiteSpace(
+                    releaseNotesLabel.Text);
+
             form.StartPosition = FormStartPosition.CenterParent;
             form.ClientSize = new Size(
-                UpdateAvailableDialogWidth,
-                UpdateAvailableDialogHeight);
+                hasReleaseNotes
+                    ? UpdateAvailableDialogWithReleaseNotesWidth
+                    : UpdateAvailableDialogWidth,
+                hasReleaseNotes
+                    ? UpdateAvailableDialogWithReleaseNotesHeight
+                    : UpdateAvailableDialogHeight);
             form.MinimumSize = form.Size;
             form.MaximumSize = form.Size;
             form.MaximizeBox = false;
@@ -5155,20 +5175,46 @@ namespace c2flux
             messageLabel.AutoSize = false;
             messageLabel.TextAlign = ContentAlignment.MiddleLeft;
 
+            releaseNotesLabel.Location = new Point(
+                UpdateAvailableReleaseNotesLeft,
+                UpdateAvailableReleaseNotesTop);
+            releaseNotesLabel.Size = new Size(
+                UpdateAvailableReleaseNotesWidth,
+                UpdateAvailableReleaseNotesHeight);
+            releaseNotesLabel.AutoSize = false;
+            releaseNotesLabel.TextAlign = ContentAlignment.TopLeft;
+            releaseNotesLabel.Visible = hasReleaseNotes;
+
             int buttonTop =
                 form.ClientSize.Height -
                 UpdateAvailableButtonBottomMargin -
                 UpdateAvailableButtonHeight;
 
-            int laterButtonLeft =
+            int changelogButtonLeft =
                 form.ClientSize.Width -
                 UpdateAvailableButtonRightMargin -
+                UpdateAvailableButtonWidth;
+
+            int laterButtonLeft =
+                changelogButtonLeft -
+                UpdateAvailableButtonSpacing -
                 UpdateAvailableButtonWidth;
 
             int downloadButtonLeft =
                 laterButtonLeft -
                 UpdateAvailableButtonSpacing -
                 UpdateAvailableButtonWidth;
+
+            changelogButton.Location = new Point(
+                changelogButtonLeft,
+                buttonTop);
+            changelogButton.Size = new Size(
+                UpdateAvailableButtonWidth,
+                UpdateAvailableButtonHeight);
+            changelogButton.Anchor =
+                AnchorStyles.Bottom |
+                AnchorStyles.Right;
+            changelogButton.Type = AntdUI.TTypeMini.Default;
 
             downloadButton.Location = new Point(
                 downloadButtonLeft,
