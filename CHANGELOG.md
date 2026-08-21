@@ -1,3 +1,14 @@
+## Changelog v1.3.5-beta.3
+
+##What's new
+- (Feature) Added update notes preview
+
+##Changelog v1.3.5-beta.2
+- (Feature) Added release note previews to the update dialog and Changelog button also
+
+
+**Full Changelog**: https://github.com/UncleRiot/c2flux/compare/v1.3.5-beta.2...v1.3.5-beta.3
+
 ## Changelog v1.3.5-beta.2
 
 - (Fix) Pinned SQLitePCLRaw to 2.1.13 to resolve the affected native SQLite dependency
