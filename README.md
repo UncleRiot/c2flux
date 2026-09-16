@@ -1,8 +1,8 @@
-![Windows](https://img.shields.io/badge/Windows-10%2B-0078D6?logo=windows&logoColor=white) ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
+![Windows](https://img.shields.io/badge/Windows-10%2B-0078D6?logo=windows&logoColor=white) ![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
 
 # c² flux – Tree Scanner
 
-**1st a big thankyou:**
+**First, a big thank you:**
 
 A huge thank you to everyone behind these projects — you’re amazing! Thanks for making such great work available to the community. ❤️
 
@@ -11,11 +11,10 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 - [AntdUI](https://github.com/AntdUI/AntdUI)
 
 ---
-**Scan your drives, get an overview of used disk space, find everything. Fast**
 
+**Scan your drives, get an overview of used disk space, find everything. Fast.**
 
 [![Download c2flux](https://img.shields.io/github/v/release/UncleRiot/c2flux?label=%E2%AC%87%EF%B8%8F%20Download&style=for-the-badge&color=brightgreen)](https://github.com/UncleRiot/c2flux/releases/latest)
-[![Download c2flux pre-release](https://img.shields.io/github/v/release/UncleRiot/c2flux?include_prereleases&label=%E2%AC%87%EF%B8%8F%20Download%20pre-release&style=for-the-badge&color=orange)](https://github.com/UncleRiot/c2flux/releases)
 
 [![Changelog](https://img.shields.io/badge/%F0%9F%93%9D%20Changelog-View-blue?style=for-the-badge)](CHANGELOG.md)
 
@@ -25,7 +24,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 
 ✨ Bar Chart
 
-   <img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/08a7f8db-efa2-4adc-a022-bf3d24faa8f9" />
+<img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/08a7f8db-efa2-4adc-a022-bf3d24faa8f9" />
 
 <br>
 <br>
@@ -33,7 +32,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 
 ✨ Treemap
 
-   <img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/02a4e251-8e44-45d7-afe7-78b588d54823" />
+<img width="1267" height="751" alt="grafik" src="https://github.com/user-attachments/assets/02a4e251-8e44-45d7-afe7-78b588d54823" />
 
 <br>
 <br>
@@ -41,8 +40,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 
 ✨ Sunburst
 
-   <img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/be2ad86f-e7df-48bc-aaf3-04a08d1533eb" />
-
+<img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/be2ad86f-e7df-48bc-aaf3-04a08d1533eb" />
 
 <br>
 <br>
@@ -50,33 +48,34 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 
 ✨ Analysis
 
-   <img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/036d3c31-742a-4268-a011-c85d93d3da66" />
+<img width="1403" height="752" alt="grafik" src="https://github.com/user-attachments/assets/036d3c31-742a-4268-a011-c85d93d3da66" />
 
 <br>
 <br>
 <br>
 
-✨ Scan History - see, why your free drive space gets smaller and smaller
+✨ Scan History — see why your free drive space gets smaller and smaller
 
-   <img width="1481" height="840" alt="grafik" src="https://github.com/user-attachments/assets/a896b664-70d4-40bc-bc54-a99b1382876a" />
+<img width="1481" height="840" alt="grafik" src="https://github.com/user-attachments/assets/a896b664-70d4-40bc-bc54-a99b1382876a" />
 
 <br>
 <br>
 <br>
 
-🚀 Find files at lightspeed (example, more than 700k files):
+🚀 Find files at lightspeed (example: more than 700k files)
 
 Search from everywhere, directly!
 
-   <img width="500" height="193" alt="grafik" src="https://github.com/user-attachments/assets/1606aee2-6b9a-4965-be65-ef40e1551530" />
+<img width="500" height="193" alt="grafik" src="https://github.com/user-attachments/assets/1606aee2-6b9a-4965-be65-ef40e1551530" />
 
+<br>
+<br>
 
-<br><br>
 <img width="453" height="30" alt="grafik" src="https://github.com/user-attachments/assets/7a2fe76e-b99e-43f7-962d-78eb7d964108" />
+
 <br>
 
 <img width="648" height="519" alt="grafik" src="https://github.com/user-attachments/assets/4585438f-301b-4a32-90ac-1c1bbd744f96" />
-
 
 <br>
 
@@ -84,7 +83,7 @@ Search from everywhere, directly!
 
 - ⚡ **Fast drive and folder scanning with strong caching mechanisms**
 - 🚀 **Regular and MFT-based scanning**
-  - **MFT scan:** Fastest possible scan mode when running as Administrator
+  - **MFT scan:** Fastest scan mode when running as Administrator
   - **Regular scan:** Fast first scan, super-fast subsequent scans through caching
 - 🔎 **Super-fast global search**
   - 🔴 Find files and folders instantly
@@ -106,7 +105,7 @@ Search from everywhere, directly!
 
 ### 🚀 MFT Scan
 
-Fastest possible scan mode.
+Fastest scan mode.
 
 > **Requires administrator privileges.**
 
@@ -126,7 +125,6 @@ Fastest possible scan mode.
 
 <br>
 
-
 ## Visualization & Analysis
 
 - Multiple visualization and display styles
@@ -143,9 +141,9 @@ Fastest possible scan mode.
 
 ## Requirements
 
-- Windows 7 or newer
+- Windows 10 or newer
 - Windows x64
-- .NET 8 Desktop Runtime
+- .NET 10 Desktop Runtime
 
 > NTFS MFT scanning requires administrator privileges.
 
