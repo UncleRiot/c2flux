@@ -25,6 +25,7 @@ namespace c2flux
         private string _currentToolTipText;
         private int _barHeight = 14;
 
+        [System.ComponentModel.DefaultValue(14)]
         public int BarHeight
         {
             get => _barHeight;

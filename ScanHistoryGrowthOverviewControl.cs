@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -387,6 +387,7 @@ namespace c2flux
                 Controls.Add(_verticalScrollBar);
             }
 
+            [System.ComponentModel.DefaultValue(74)]
             public int RowHeight { get; set; }
 
             public event EventHandler<GrowthOverviewPathEventArgs> PathActivated;

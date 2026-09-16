@@ -69,9 +69,13 @@ namespace c2flux
         public event EventHandler<SelectedEntryChangedEventArgs> SelectedEntryChanged;
         public event EventHandler<EntryMouseClickEventArgs> EntryMouseClick;
 
+        [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
         public ImageList EntryImageList { get; set; }
+
+        [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
         public ShellIconService ShellIconService { get; set; }
 
+        [System.ComponentModel.DefaultValue(22)]
         public int RowHeight
         {
             get { return _rowHeight; }
