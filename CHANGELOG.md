@@ -1,3 +1,22 @@
+## Changelog v1.4.0
+
+## What's new
+
+* (Change) Migrated c² flux from .NET 8 to .NET 10
+* (Fix) Updated WinForms property serialization metadata for .NET 10 compatibility
+* (Change) Updated the GitHub release workflow to use .NET 10
+* (Change) Updated documented requirements to Windows 10+ and .NET 10 Desktop Runtime
+
+## Changelog v1.4.0
+
+* (Change) Updated `c2flux` target framework from `net8.0-windows7.0` to `net10.0-windows7.0`
+* (Change) Updated `NtfsReader` target framework from `net8.0` to `net10.0`
+* (Fix) Added WinForms serialization metadata for `BarHeight`, `RowHeight`, `EntryImageList`, and `ShellIconService`
+* (Change) Updated the release workflow from .NET 8 SDK to .NET 10 SDK
+* (Change) Updated README badges and runtime requirements for .NET 10
+
+**Full Changelog**: https://github.com/UncleRiot/c2flux/compare/v1.3.5...v1.4.0
+
 ## Changelog v1.3.5-beta.3
 
 ##What's new
