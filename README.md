@@ -20,7 +20,7 @@ A huge thank you to everyone behind these projects — you’re amazing! Thanks 
 
 <br>
 <br>
-## Troubleshooting
+**Troubleshooting
 
 Experiencing slow scans or other issues?
 
