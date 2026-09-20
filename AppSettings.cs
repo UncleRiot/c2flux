@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -86,7 +86,7 @@ namespace c2flux
         public TreeSortMode TreeSortMode { get; set; } = TreeSortMode.SizeDescending;
         public AppLayout Layout { get; set; } = AppLayout.WindowsDarkMode;
         public ViewMode SelectedViewMode { get; set; } = ViewMode.Table;
-        public string LanguageCode { get; set; } = LocalizationService.GermanLanguageCode;
+        public string LanguageCode { get; set; } = LocalizationService.EnglishLanguageCode;
         public bool SaveScanHistory { get; set; }
         public string ScanHistoryDatabasePath { get; set; } = ScanHistoryService.DefaultDatabasePath;
         public int ScanHistoryMaximumScansPerPath { get; set; } = 30;
@@ -201,7 +201,10 @@ namespace c2flux
 
             if (!System.IO.File.Exists(SettingsFilePath))
             {
-                AppSettings settings = new AppSettings();
+                AppSettings settings = new AppSettings
+                {
+                    LanguageCode = GetInitialLanguageCode()
+                };
                 settings.EnsureToolbarButtonVisibilitySettings();
 
                 return settings;
@@ -294,6 +297,36 @@ namespace c2flux
 
                 return new AppSettings();
             }
+        }
+
+        private static string GetInitialLanguageCode()
+        {
+            string[] availableLanguageCodes =
+                LocalizationService.GetAvailableLanguageCodes();
+
+            System.Globalization.CultureInfo culture =
+                System.Globalization.CultureInfo.CurrentUICulture;
+
+            while (culture != null &&
+                   !string.IsNullOrWhiteSpace(culture.Name))
+            {
+                string normalizedLanguageCode =
+                    LocalizationService.NormalizeLanguageCode(culture.Name);
+
+                if (System.Array.Exists(
+                        availableLanguageCodes,
+                        availableLanguageCode => string.Equals(
+                            availableLanguageCode,
+                            normalizedLanguageCode,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    return normalizedLanguageCode;
+                }
+
+                culture = culture.Parent;
+            }
+
+            return LocalizationService.EnglishLanguageCode;
         }
 
         // Migrates toolbar visibility defaults for older settings versions.
