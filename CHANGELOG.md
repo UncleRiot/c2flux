@@ -1,3 +1,11 @@
+## Changelog v1.4.1
+
+## What's new
+
+* (Fix) Fixed first-launch language detection to use the OS UI language when available, with English as fallback
+
+**Full Changelog**: https://github.com/UncleRiot/c2flux/compare/v1.4.0...v1.4.1
+
 ## Changelog v1.4.0
 
 ## What's new
