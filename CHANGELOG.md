@@ -1,3 +1,17 @@
+## Changelog v1.4.2
+
+# v1.4.2
+
+## Changelog v1.4.2
+
+- (Security) Updated Microsoft.Data.Sqlite from 8.0.22 to 10.0.14
+- (Security) Updated SQLitePCLRaw.bundle_e_sqlite3 from 2.1.13 to 3.0.5
+- (Security) Hardened GitHub release URL validation to restrict untrusted update destinations
+- (Improvement) Replaced full-file JSON string loading with stream-based deserialization in `ScanResultFileService.cs`
+- (Security) Completed NuGet vulnerability scan with no known vulnerable packages reported
+
+**Full Changelog**: https://github.com/UncleRiot/c2flux/compare/v1.4.1...v1.4.2
+
 ## Changelog v1.4.1
 
 ## What's new
