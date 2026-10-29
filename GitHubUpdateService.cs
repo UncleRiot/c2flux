@@ -149,7 +149,7 @@ namespace c2flux
                             "html_url",
                             out JsonElement htmlUrlElement) &&
                         htmlUrlElement.ValueKind == JsonValueKind.String &&
-                        !string.IsNullOrWhiteSpace(
+                        IsTrustedReleaseUrl(
                             htmlUrlElement.GetString()))
                     {
                         downloadUrl = htmlUrlElement.GetString();
@@ -237,6 +237,37 @@ namespace c2flux
                     "The GitHub update check failed unexpectedly.",
                     exception.ToString());
             }
+        }
+
+        // SECURITY INVARIANT: Release links must remain HTTPS pages belonging
+        // to this repository. AppConstants is the single source of truth for
+        // the repository URL; untrusted API values fall back to that URL.
+        private static bool IsTrustedReleaseUrl(string candidate)
+        {
+            if (!Uri.TryCreate(
+                    AppConstants.GitHubRepositoryUrl,
+                    UriKind.Absolute,
+                    out Uri repositoryUri) ||
+                !Uri.TryCreate(
+                    candidate,
+                    UriKind.Absolute,
+                    out Uri releaseUri))
+            {
+                return false;
+            }
+
+            string releasePathPrefix =
+                repositoryUri.AbsolutePath.TrimEnd('/') + "/releases/";
+
+            return releaseUri.Scheme == Uri.UriSchemeHttps &&
+                releaseUri.Host.Equals(
+                    repositoryUri.Host,
+                    StringComparison.OrdinalIgnoreCase) &&
+                releaseUri.IsDefaultPort &&
+                string.IsNullOrEmpty(releaseUri.UserInfo) &&
+                releaseUri.AbsolutePath.StartsWith(
+                    releasePathPrefix,
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         public static string GetApplicationVersionText()

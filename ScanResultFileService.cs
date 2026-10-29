@@ -20,14 +20,16 @@ namespace c2flux
 
         public static FileSystemEntry Load(string filePath)
         {
-            string json = File.ReadAllText(filePath);
-
             JsonSerializerOptions options = new JsonSerializerOptions
             {
                 ReferenceHandler = ReferenceHandler.Preserve
             };
 
-            return JsonSerializer.Deserialize<FileSystemEntry>(json, options);
+            // SECURITY INVARIANT: Read imported scans as a stream rather than
+            // materializing a second full-size JSON string in memory.
+            // Preserve the existing JSON format and reference handling.
+            using FileStream input = File.OpenRead(filePath);
+            return JsonSerializer.Deserialize<FileSystemEntry>(input, options);
         }
     }
 }
