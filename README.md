@@ -1,8 +1,7 @@
 ![Windows](https://img.shields.io/badge/Windows-10%2B-0078D6?logo=windows&logoColor=white) ![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white) ![C%23](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) ![Platform](https://img.shields.io/badge/Platform-x64-lightgrey) ![License](https://img.shields.io/github/license/UncleRiot/c2flux) ![Release](https://img.shields.io/github/v/release/UncleRiot/c2flux)
 
 
-Total downloads so far: <br>
-[![Downloads](https://img.shields.io/github/downloads/UncleRiot/c2flux/total)](https://github.com/UncleRiot/c2flux/releases)
+[![Total Downloads](https://img.shields.io/github/downloads/UncleRiot/c2flux/total)](https://github.com/UncleRiot/c2flux/releases)
 
 
 # c² flux – Tree Scanner
