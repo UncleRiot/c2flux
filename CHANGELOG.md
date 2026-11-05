@@ -1,3 +1,22 @@
+## Changelog v1.4.3-alpha
+
+## What's new
+
+* (Security) Fixed potentially unsafe pointer arithmetic in NTFS MFT processing
+* (Security) Enabled GitHub CodeQL security scanning
+* (Security) Enabled Dependabot vulnerability alerts and security updates
+
+## Changelog
+
+* (Fix) Added bounds validation for NTFS MFT record buffer access
+* (Security) Addressed two critical CodeQL findings in NtfsReader.cs
+* (Security) Added SECURITY.md with vulnerability reporting guidelines
+* (Security) Enabled private vulnerability reporting
+* (Security) Enabled dependency scanning and security advisories
+* (Improvement) Added buffer safety checks while preserving existing NTFS processing logic
+
+**Full Changelog**: https://github.com/UncleRiot/c2flux/compare/v1.4.2...v1.4.3-alpha
+
 ## Changelog v1.4.2
 
 # v1.4.2
