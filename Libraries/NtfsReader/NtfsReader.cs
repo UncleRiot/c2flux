@@ -939,6 +939,10 @@ public sealed partial class NtfsReader : IDisposable
         byte[] data = ArrayPool<byte>.Shared.Rent((int)bufferSize);
         try
         {
+            // Validate Rent's result before any unsafe access to the rented buffer.
+            if ((ulong)data.Length < bufferSize)
+                throw new InvalidOperationException("Rented MFT buffer is smaller than requested.");
+
         fixed (byte* buffer = data)
         {
             //Read the $MFT record from disk into memory, which is always the first record in the MFT. 
@@ -1027,36 +1031,42 @@ public sealed partial class NtfsReader : IDisposable
                     totalBytesRead += (BlockEnd - BlockStart) * _diskInfo.BytesPerMftRecord;
                 }
 
-                // ReadNextChunk bounds BlockEnd so that (nodeIndex - BlockStart) * BytesPerMftRecord
-                // stays within bufferSize.  Validate explicitly against the actual rented-array
-                // length (data.Length ≥ bufferSize) so that the pointer arithmetic below is
-                // demonstrably in-bounds for both the analyzer and the runtime.
-                ulong recordOffset = (nodeIndex - BlockStart) * _diskInfo.BytesPerMftRecord;
-                if (recordOffset + _diskInfo.BytesPerMftRecord > (ulong)data.Length)
+                // ReadNextChunk limits valid records to the requested bufferSize.
+                // Check the full record range before obtaining a pointer to it.
+                if (nodeIndex < BlockStart)
                     break;
 
-                FixupRawMftdata(
-                        buffer + recordOffset,
-                        _diskInfo.BytesPerMftRecord
-                    );
+                ulong recordOffset = (nodeIndex - BlockStart) * bytesPerMftRecord;
+                if (recordOffset > bufferSize - bytesPerMftRecord)
+                    break;
 
-                List<Stream> streams = null;
-                if ((_retrieveMode & RetrieveMode.Streams) == RetrieveMode.Streams)
-                    streams = [];
+                // A managed span verifies the bounds of the rented array as well.
+                Span<byte> recordData = new(data, (int)recordOffset, (int)bytesPerMftRecord);
+                fixed (byte* recordBuffer = recordData)
+                {
+                    FixupRawMftdata(
+                            recordBuffer,
+                            _diskInfo.BytesPerMftRecord
+                        );
 
-                if (!ProcessMftRecord(
-                        buffer + recordOffset,
-                        _diskInfo.BytesPerMftRecord,
-                        nodeIndex,
-                        out Node newNode,
-                        streams,
-                        false))
-                    continue;
+                    List<Stream> streams = null;
+                    if ((_retrieveMode & RetrieveMode.Streams) == RetrieveMode.Streams)
+                        streams = [];
 
-                nodes[nodeIndex] = newNode;
+                    if (!ProcessMftRecord(
+                            recordBuffer,
+                            _diskInfo.BytesPerMftRecord,
+                            nodeIndex,
+                            out Node newNode,
+                            streams,
+                            false))
+                        continue;
 
-                if (streams != null)
-                    _streams[nodeIndex] = [.. streams];
+                    nodes[nodeIndex] = newNode;
+
+                    if (streams != null)
+                        _streams[nodeIndex] = [.. streams];
+                }
             }
 
             return nodes;
