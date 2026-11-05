@@ -1,7 +1,8 @@
 # NtfsReader — Third-Party Copyright and Modification Notice
 
-**Included in:** c² flux 1.4.2  
+**Included in:** c² flux 1.4.3  
 **Notice prepared:** 2026-11-04  
+**Last updated:** 2026-11-05  
 **Library license:** GNU Lesser General Public License, version 2.1 or later (LGPL-2.1-or-later)
 
 ## Original project and attribution
@@ -18,10 +19,11 @@ The original copyright holders retain their respective rights. The `itsWindows11
 
 ## Comparison reference
 
-- **Compared application:** `c2flux2_1.4.2_Final.zip`.
+- **Historical comparison baseline:** `c2flux2_1.4.2_Final.zip` (the earlier c² flux 1.4.2 source archive).
+- **Current documented application version:** c² flux 1.4.3. The later NTFS safety change is documented separately below; no new full upstream comparison for 1.4.3 is claimed.
 - **Reference:** publicly available `itsWindows11/NtfsReader` source on branch `main`, inspected on 2026-11-04 (its project file identifies version `0.1.0`).
 - **Scope:** substantive differences confirmed by comparing the included source with publicly accessible upstream files. This is **not** a byte-for-byte diff against a pinned Git commit and does not establish which person made each change or the date of each historical edit.
-- **Date distinction:** 2026-11-04 is the **date of this comparison and notice**, **not** an assertion that the code modifications were made on that date. Individual modification dates were not provided in the archive.
+- **Date distinction:** 2026-11-04 is the **date of the upstream comparison and original notice**, **not** an assertion that the historical code modifications were made on that date. Individual historical modification dates were not provided in the archive. The subsequently applied security change is documented as of 2026-11-05.
 
 ## Confirmed changes relative to that upstream reference
 
@@ -63,15 +65,26 @@ The original copyright holders retain their respective rights. The `itsWindows11
 - Changed the target framework declaration from upstream's `netstandard2.0;net8.0;net9.0;net10.0` to `net10.0` only.
 - The upstream package identifier and package version `0.1.0` are retained in the reviewed file. The application-local modifications should not be mistaken for an unmodified official `0.1.0` package release.
 
+## Subsequent security change documented for c² flux 1.4.3
+
+### `Libraries/NtfsReader/NtfsReader.cs` — modified on 2026-11-05
+
+- Hardened MFT record buffer bounds checks in `ProcessMft()` before obtaining a record pointer.
+- Used a bounds-checked `Span<byte>` over the rented array and a pinned record pointer for both `FixupRawMftdata()` and `ProcessMftRecord()`.
+- Addressed two CodeQL findings (`cs/unvalidated-local-pointer-arithmetic`) previously reported at lines 1039 and 1048 of the earlier source.
+- Following the fix and subsequent GitHub scan, both findings appeared as closed, with zero open code-scanning alerts for the `master` branch at the time of review.
+
+This addition documents the specific subsequent change and the reported scan result; it does not assert a complete security audit or runtime regression test.
+
 ## Other source files
 
-The remaining files under `Libraries/NtfsReader/` retain the examined upstream types and APIs. Formatting, blank-line, or file-encoding differences have **not** been exhaustively classified. This notice intentionally does **not** claim that every other file is byte-for-byte identical to upstream.
+In the historical 1.4.2 comparison, the remaining files under `Libraries/NtfsReader/` retained the examined upstream types and APIs. Formatting, blank-line, or file-encoding differences have **not** been exhaustively classified. This notice intentionally does **not** claim that every other file is byte-for-byte identical to upstream.
 
 ## Licensing and distribution notes
 
 1. NtfsReader remains subject to **LGPL-2.1-or-later**; the application's own GPL-3.0 licensing does not erase the library's original terms or copyright notices.
 2. Keep this notice, the original upstream attribution and the complete LGPL license text with any published modified source distribution.
-3. **Important:** LGPL 2.1 section 2(b) calls for prominent notices in **the changed source files themselves**, stating that the files were changed and the date of changes. This standalone notice is an additional record and **does not by itself replace file-level modification notices**. Actual historical modification dates and responsible authors must be established before adding definitive file-level statements; do not substitute the review date for an unknown change date.
+3. **Important:** LGPL 2.1 section 2(b) calls for prominent notices in **the changed source files themselves**, stating that the files were changed and the date of changes. This standalone notice is an additional record and **does not by itself replace file-level modification notices**. Actual historical modification dates and responsible authors must be established before adding definitive file-level statements; do not substitute the review date for an unknown change date. The additional 2026-11-05 security change has a known modification date for the purposes of this notice.
 4. The distribution must also satisfy the LGPL conditions applicable to the way the library is combined with and distributed alongside the application; the presence of a license file alone does not establish full compliance.
 
 ## References
